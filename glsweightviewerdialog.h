@@ -2,7 +2,7 @@
 #define GLSWEIGHTVIEWERDIALOG_H
 
 #include <QDialog>
-#include <Qimage>
+#include <QImage>
 #include <QGraphicsPixmapItem>
 #include <memory>
 #include "raster/glsweightset.h"

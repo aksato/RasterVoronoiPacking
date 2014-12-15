@@ -1,14 +1,21 @@
 cmake_minimum_required(VERSION 2.8.11)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules) 
 
 project(RasterVoronoiPacking)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-# Instruct CMake to run moc automatically when needed.
+
+find_package(Qt5Widgets)
+find_package(Qt5Gui)
+
+
 set(CMAKE_AUTOMOC ON)
 
-# Find the QtWidgets library
-find_package(Qt5Widgets)
+find_package(CXX11)
+IF(CMAKE_COMPILER_IS_GNUCXX)
+	SET(CMAKE_CXX_FLAGS "-std=c++11")
+endif()
 
 set(SRC 
 	colormap.cpp 
@@ -29,10 +36,11 @@ set(SRC
 	raster/glsweightset.cpp
 	viewer/graphicsindexedrectitem.cpp
 	viewer/packingitem.cpp
+	viewer/packingviewer.cpp
 	viewer/weightviewer.cpp
 	viewer/zoomedmapview.cpp)
 	
-QT5_WRAP_UI(UIS_HDRS
+qt5_wrap_ui(UIS_HDRS
     glsweightviewerdialog.ui
     mainwindow.ui
     packingviewer.ui
@@ -40,8 +48,6 @@ QT5_WRAP_UI(UIS_HDRS
 	zoomedmapviewdialog.ui
 )
 	
-	
-
 add_executable(RasterVoronoiPacking ${SRC} ${UIS_HDRS})
 
-target_link_libraries(RasterVoronoiPacking Qt5::Widgets)
+qt5_use_modules(RasterVoronoiPacking Widgets Gui)

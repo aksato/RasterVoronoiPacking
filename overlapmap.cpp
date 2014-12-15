@@ -2,7 +2,7 @@
 #include "raster/rasternofitpolygon.h"
 #include <QImage>
 #include <memory>
-#include "packingProblem.h"
+#include "packingproblem.h"
 #include "colormap.h"
 
 using namespace RASTERVORONOIPACKING;

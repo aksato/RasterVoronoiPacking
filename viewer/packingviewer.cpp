@@ -1,6 +1,6 @@
 #include "packingviewer.h"
 #include "ui_packingviewer.h"
-#include "../packingProblem.h"
+#include "../packingproblem.h"
 #include "../colormap.h"
 #include <QGraphicsPixmapItem>
 #include <QWheelEvent>

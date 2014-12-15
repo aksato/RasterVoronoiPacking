@@ -1,4 +1,4 @@
-#include "PackingProblem.h"
+#include "packingproblem.h"
 #include <QString>
 #include <QStringList>
 #include <QFile>

@@ -1,5 +1,5 @@
 #include "rasternofitpolygon.h"
-#include "../packingProblem.h"
+#include "../packingproblem.h"
 #include<QImage>
 #include<QPoint>
 using namespace RASTERVORONOIPACKING;

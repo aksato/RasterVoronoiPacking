@@ -47,7 +47,9 @@ qt5_wrap_ui(UIS_HDRS
     runconfigurationsdialog.ui
 	zoomedmapviewdialog.ui
 )
+
+qt5_add_resources (ResourceSources resources.qrc)
 	
-add_executable(RasterVoronoiPacking ${SRC} ${UIS_HDRS})
+add_executable(RasterVoronoiPacking ${SRC} ${UIS_HDRS} ${ResourceSources})
 
 qt5_use_modules(RasterVoronoiPacking Widgets Gui)

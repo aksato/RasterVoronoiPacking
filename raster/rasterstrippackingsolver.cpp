@@ -162,7 +162,7 @@ void RasterStripPackingSolver::resetWeights() {
 // --> Return total overlap map for a given item
 std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights) {
     if(currentProblem == zoomedProblem) {
-        Q_ASSERT_X(width-pixels > 0, "RasterStripPackingSolver::getTotalOverlapMap", "Tried to obtain total overlap map, which is not permitted.");
+        //Q_ASSERT_X(width-pixels > 0, "RasterStripPackingSolver::getTotalOverlapMap", "Tried to obtain total overlap map, which is not permitted.");
         return 0;
     }
 

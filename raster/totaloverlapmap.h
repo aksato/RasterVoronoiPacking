@@ -33,8 +33,8 @@ namespace RASTERVORONOIPACKING {
         QPoint getReferencePoint() {return reference;}
         int getWidth() {return width;}
         int getHeight() {return height;}
-        qreal getValue(QPoint &pt) {return getLocalValue(pt.x()+reference.x(),pt.y()+reference.y());}
-        void setValue(QPoint &pt, qreal value) {setLocalValue(pt.x()+reference.x(), pt.y()+reference.y(), value);}
+        qreal getValue(const QPoint &pt) {return getLocalValue(pt.x()+reference.x(),pt.y()+reference.y());}
+        void setValue(const QPoint &pt, qreal value) {setLocalValue(pt.x()+reference.x(), pt.y()+reference.y(), value);}
 
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, qreal weight);

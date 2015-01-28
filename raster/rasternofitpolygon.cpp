@@ -31,3 +31,16 @@ void RasterNoFitPolygonSet::eraseRasterNoFitPolygon(int staticPieceTypeId, int s
 void RasterNoFitPolygonSet::clear() {
     Nfps.clear();
 }
+
+void RasterNoFitPolygon::setMatrix(QImage image) {
+    matrix = std::vector< std::vector<quint8> >(image.height(), std::vector<quint8>(image.width()));
+
+    for(int j = 0; j < image.height(); j++)
+        for(int i = 0; i < image.width(); i++)
+            matrix[j][i] = image.pixelIndex(i,j);
+//    for(int pixelY = 0; pixelY < image.height(); pixelY++) {
+//        uchar *scanLine = (uchar *)image.scanLine(pixelY);
+//        for(int pixelX = 0; pixelX < image.width(); pixelX++, scanLine++)
+//                matrix[pixelY][pixelX] = *scanLine;
+//    }
+}

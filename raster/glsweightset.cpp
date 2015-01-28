@@ -30,31 +30,33 @@ void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
     });
 }
 
-QImage GlsWeightSet::getImage(int numItems) {
-    QImage image(numItems, numItems, QImage::Format_Indexed8);
-    setColormap(image, false);
+#ifndef CONSOLE
+    QImage GlsWeightSet::getImage(int numItems) {
+        QImage image(numItems, numItems, QImage::Format_Indexed8);
+        setColormap(image, false);
 
-    qreal minW = 1.0;
-    qreal maxW = 1.0;
+        qreal minW = 1.0;
+        qreal maxW = 1.0;
 
-    for(int itemId1 = 0; itemId1 < numItems; itemId1++)
-        for(int itemId2 = 0; itemId2 < numItems; itemId2++)
-            if(itemId1 != itemId2) {
-                qreal curW = getWeight(itemId1, itemId2);
-                if(curW < minW) minW = curW;
-                if(curW > maxW) maxW = curW;
-            }
+        for(int itemId1 = 0; itemId1 < numItems; itemId1++)
+            for(int itemId2 = 0; itemId2 < numItems; itemId2++)
+                if(itemId1 != itemId2) {
+                    qreal curW = getWeight(itemId1, itemId2);
+                    if(curW < minW) minW = curW;
+                    if(curW > maxW) maxW = curW;
+                }
 
-    for(int itemId1 = 0; itemId1 < numItems; itemId1++)
-        for(int itemId2 = 0; itemId2 < numItems; itemId2++)
-            if(itemId1 != itemId2) {
-                qreal curW = getWeight(itemId1, itemId2);
-                int index = qRound(255*(curW-minW)/(maxW-minW));
-                image.setPixel(itemId1, itemId2, index);
-            }
-            else image.setPixel(itemId1, itemId2, 0);
-    return image;
-}
+        for(int itemId1 = 0; itemId1 < numItems; itemId1++)
+            for(int itemId2 = 0; itemId2 < numItems; itemId2++)
+                if(itemId1 != itemId2) {
+                    qreal curW = getWeight(itemId1, itemId2);
+                    int index = qRound(255*(curW-minW)/(maxW-minW));
+                    image.setPixel(itemId1, itemId2, index);
+                }
+                else image.setPixel(itemId1, itemId2, 0);
+        return image;
+    }
+#endif
 
 void GlsWeightSet::reset(int numItems) {
     for(int itemId1 = 0; itemId1 < numItems; itemId1++)

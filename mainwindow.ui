@@ -484,6 +484,10 @@
     <addaction name="actionLoad_Problem"/>
     <addaction name="actionLoad_Zoomed_Problem"/>
     <addaction name="separator"/>
+    <addaction name="actionLoad_Solution"/>
+    <addaction name="actionSave_Solution"/>
+    <addaction name="actionExport_Solution_to_SVG"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <addaction name="menuFile"/>
@@ -521,6 +525,21 @@
    </property>
    <property name="text">
     <string>Load Zoomed Problem</string>
+   </property>
+  </action>
+  <action name="actionLoad_Solution">
+   <property name="text">
+    <string>Load Solution</string>
+   </property>
+  </action>
+  <action name="actionSave_Solution">
+   <property name="text">
+    <string>Save Solution</string>
+   </property>
+  </action>
+  <action name="actionExport_Solution_to_SVG">
+   <property name="text">
+    <string>Export Solution to SVG</string>
    </property>
   </action>
  </widget>

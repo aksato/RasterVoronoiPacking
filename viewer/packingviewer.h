@@ -11,7 +11,6 @@
 #include "../raster/rasterpackingproblem.h"
 #include "../raster/rasterpackingsolution.h"
 #include "../raster/totaloverlapmap.h"
-#include "../overlapmap.h"
 #include "packingitem.h"
 namespace RASTERPREPROCESSING {class PackingProblem;}
 class QGraphicsPolygonItem;
@@ -52,6 +51,9 @@ public:
         for(int i = 0; i < pieces.size(); i++)
             pieces[i]->setGridSize(1/newScale);
     }
+
+    void disableItemSelection();
+    void enableItemSelection();
 
 public slots:
     void setCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution);

@@ -21,7 +21,6 @@ set(SRC
 	colormap.cpp 
 	glsweightviewerdialog.cpp 
 	mainwindow.cpp 
-	overlapmap.cpp
 	packingproblem.cpp
 	runconfigurationsdialog.cpp
 	zoomedmapviewdialog.cpp
@@ -52,4 +51,4 @@ qt5_add_resources (ResourceSources resources.qrc)
 	
 add_executable(RasterVoronoiPacking ${SRC} ${UIS_HDRS} ${ResourceSources})
 
-qt5_use_modules(RasterVoronoiPacking Widgets Gui)
+qt5_use_modules(RasterVoronoiPacking Widgets Gui Svg)

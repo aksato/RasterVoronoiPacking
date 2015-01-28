@@ -4,27 +4,35 @@
 #include <QHash>
 #include <QImage>
 #include <QPoint>
+#include <vector>
 
 namespace RASTERPACKING {class PackingProblem;}
 
 namespace RASTERVORONOIPACKING {
     class RasterNoFitPolygon {
     public:
-        RasterNoFitPolygon(QImage _image, QPoint _origin, qreal _maxD) : origin(_origin), image(_image) , maxD(_maxD) {}
+//        RasterNoFitPolygon(QImage _image, QPoint _origin, qreal _maxD) : origin(_origin), image(_image) , maxD(_maxD) {}
+        RasterNoFitPolygon(QImage _image, QPoint _origin, qreal _maxD) : origin(_origin), maxD(_maxD) {setMatrix(_image);}
         ~RasterNoFitPolygon() {}
 
         void setOrigin(QPoint origin) {this->origin = origin;}
-        void setImage(QImage image) {this->image = image;}
+//        void setImage(QImage image) {this->image = image;}
         QPoint getOrigin() {return this->origin;}
         int getOriginX() {return this->origin.x();}
         int getOriginY() {return this->origin.y();}
-        QImage getImage() {return this->image;}
+//        QImage getImage() {return this->image;}
         qreal getMaxD() {return this->maxD;}
+
+        void setMatrix(QImage image);
+        quint8 getPixel(int i, int j) {return matrix[j][i];}
+        int width() {return (int)matrix[0].size();}
+        int height() {return (int)matrix.size();}
 
     private:
         QPoint origin;
-        QImage image;
+//        QImage image;
         qreal maxD;
+        std::vector< std::vector<quint8> > matrix;
     };
 
     class RasterNoFitPolygonSet

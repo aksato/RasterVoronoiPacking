@@ -38,11 +38,13 @@ void RasterStripPackingSolver::generateRandomSolution(RasterPackingSolution &sol
 
         // Shuffle position
         std::shared_ptr<RasterNoFitPolygon> ifp = currentProblem->getIfps()->getRasterNoFitPolygon(-1,-1,originalProblem->getItemType(i),rnd_angle);
-        int newIfpWidth = ifp->getImage().width() - qRound(this->currentProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
+//        int newIfpWidth = ifp->getImage().width() - qRound(this->currentProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
+        int newIfpWidth = ifp->width() - qRound(this->currentProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
         int minX = -ifp->getOriginX(); int minY = -ifp->getOriginY();
 //        int maxX = minX + ifp->getImage().width() - 1;
         int maxX = minX + newIfpWidth - 1;
-        int maxY = minY + ifp->getImage().height() - 1;
+//        int maxY = minY + ifp->getImage().height() - 1;
+        int maxY = minY + ifp->height() - 1;
 
         int rnd_x =  qrand() % ((maxX + 1) - minX) + minX;
         int rnd_y =  qrand() % ((maxY + 1) - minY) + minY;
@@ -216,11 +218,13 @@ qreal RasterStripPackingSolver::getTotalOverlapMapSingleValue(int itemId, int or
 std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, bool useGlsWeights) {
     // FIXME: Check if zoomed area is inside the innerfit polygon
     std::shared_ptr<RasterNoFitPolygon> curIfp = this->currentProblem->getIfps()->getRasterNoFitPolygon(-1,-1,this->originalProblem->getItemType(itemId),orientation);
-    int newIfpWidth = curIfp->getImage().width() - qRound(this->currentProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
+//    int newIfpWidth = curIfp->getImage().width() - qRound(this->currentProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
+    int newIfpWidth = curIfp->width() - qRound(this->currentProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
     int bottomleftX = pos.x() -  width/2 < -curIfp->getOriginX() ? -curIfp->getOriginX() : pos.x() -  width/2;
     int bottomleftY = pos.y() - height/2 < -curIfp->getOriginY() ? -curIfp->getOriginY() : pos.y() - height/2;
     int topRightX   = pos.x() +  width/2 > -curIfp->getOriginX() + newIfpWidth - 1 ? -curIfp->getOriginX() + newIfpWidth - 1: pos.x() +  width/2;
-    int topRightY   = pos.y() +  height/2 > -curIfp->getOriginY() + curIfp->getImage().height() - 1 ? -curIfp->getOriginY() + curIfp->getImage().height() - 1: pos.y() +  height/2;
+//    int topRightY   = pos.y() +  height/2 > -curIfp->getOriginY() + curIfp->getImage().height() - 1 ? -curIfp->getOriginY() + curIfp->getImage().height() - 1: pos.y() +  height/2;
+    int topRightY   = pos.y() +  height/2 > -curIfp->getOriginY() + curIfp->height() - 1 ? -curIfp->getOriginY() + curIfp->height() - 1: pos.y() +  height/2;
     width = topRightX - bottomleftX + 1;
     height = topRightY - bottomleftY + 1;
 //    qDebug() << pos << curIfp->getOrigin() << bottomleftX << bottomleftY << topRightX << topRightY << width << height;
@@ -254,12 +258,14 @@ qreal getNfpValue(QPoint pos1, QPoint pos2, std::shared_ptr<RasterNoFitPolygon> 
     isZero = false;
     QPoint relPos = pos2 - pos1 + curNfp->getOrigin();
 
-    if(relPos.x() < 0 || relPos.x() > curNfp->getImage().width()-1 || relPos.y() < 0 || relPos.y() > curNfp->getImage().height()-1) {
+//    if(relPos.x() < 0 || relPos.x() > curNfp->getImage().width()-1 || relPos.y() < 0 || relPos.y() > curNfp->getImage().height()-1) {
+    if(relPos.x() < 0 || relPos.x() > curNfp->width()-1 || relPos.y() < 0 || relPos.y() > curNfp->height()-1) {
         isZero = true;
         return 0.0;
     }
 
-    int indexValue = curNfp->getImage().pixelIndex(relPos);
+//    int indexValue = curNfp->getImage().pixelIndex(relPos);
+    int indexValue = curNfp->getPixel(relPos.x(), relPos.y());
     if(indexValue == 0) {
         isZero = true;
         return 0.0;

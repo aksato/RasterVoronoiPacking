@@ -469,7 +469,7 @@ bool PackingProblem::loadEsicup(QString &fileName) {
              this->addRasterInnerfitPolygon(std::static_pointer_cast<RasterInnerFitPolygon>(curGeometricTool)); //qDebug() << "New rifp:" << std::static_pointer_cast<RasterInnerFitPolygon>(curGeometricTool)->getFileName();
          }
      }
-     qDebug() << "XML parsed.";
+//     qDebug() << "XML parsed.";
 
      if (xml.hasError()) {
          // do error handling
@@ -481,7 +481,7 @@ bool PackingProblem::loadEsicup(QString &fileName) {
              (*it)->setPolygon(*resultingPolygonIt);
          else return false; // do error handling
      }
-     qDebug() << "NFPs polygons associated.";
+//     qDebug() << "NFPs polygons associated.";
 
      for(QList<std::shared_ptr<InnerFitPolygon>>::const_iterator it = this->cifpbegin(); it != this->cifpend(); it++) {
          QMap<QString, std::shared_ptr<Polygon> >::iterator resultingPolygonIt = polygonsTempSet.find((*it)->getName());
@@ -489,7 +489,7 @@ bool PackingProblem::loadEsicup(QString &fileName) {
              (*it)->setPolygon(*resultingPolygonIt);
          else return false; // do error handling
      }
-     qDebug() << "IFPs polygons associated.";
+//     qDebug() << "IFPs polygons associated.";
 
      file.close();
      return true;

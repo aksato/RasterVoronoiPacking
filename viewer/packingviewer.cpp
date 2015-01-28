@@ -119,7 +119,7 @@ void PackingViewer::recreateContainerGraphics(int pixelWidth) {
     QRectF containerPolygon = container->polygon().boundingRect();
     containerPolygon.setWidth((qreal)pixelWidth/this->rasterScale);
     container->setPolygon(containerPolygon);
-    std::for_each(pieces.begin(), pieces.end(), [&containerPolygon](PackingItem *curItem){curItem->setContainer(containerPolygon);});
+    std::for_each(pieces.begin(), pieces.end(), [&containerPolygon](PackingItem *curItem){curItem->setContainer(containerPolygon, curItem->getAngle(curItem->getCurAngle()));});
 //    mainScene->setSceneRect(container->boundingRect());
 }
 
@@ -221,6 +221,22 @@ void PackingViewer::setSelectedItem(int id) {
         emit currentPositionChanged(pieces[this->currentPieceId]->pos());
         curMap->setVisible(false);
     }
+}
+
+void PackingViewer::disableItemSelection() {
+    if(this->currentPieceId != -1) {
+        PackingItem *curStatic  = pieces[this->currentPieceId];
+        curStatic->setPen(QPen(Qt::red, 1/rasterScale));
+        curStatic->setBrush(QColor(255,100,100,100));
+        originItem->setVisible(false);
+    }
+}
+
+void PackingViewer::enableItemSelection() {
+    int id = this->currentPieceId;
+    this->currentPieceId = -1;
+    originItem->setVisible(true);
+    setSelectedItem(id);
 }
 
 void PackingViewer::highlightPair(int id1, int id2) {

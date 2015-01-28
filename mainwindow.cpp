@@ -8,6 +8,8 @@
 #include <QTextStream>
 #include <QTime>
 #include <QDebug>
+#include <QXmlStreamReader>
+#include <QtSvg/QSvgGenerator>
 
 using namespace RASTERVORONOIPACKING;
 
@@ -22,6 +24,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionLoad_Problem, SIGNAL(triggered()), this, SLOT(loadPuzzle()));
     connect(ui->actionLoad_Zoomed_Problem, SIGNAL(triggered()), this, SLOT(loadZoomedPuzzle()));
+    connect(ui->actionLoad_Solution, SIGNAL(triggered()), this, SLOT(loadSolution()));
+    connect(ui->actionSave_Solution, SIGNAL(triggered()), this, SLOT(saveSolution()));
+    connect(ui->actionExport_Solution_to_SVG, SIGNAL(triggered()), this, SLOT(exportSolutionToSvg()));
     connect(ui->comboBox, SIGNAL(currentIndexChanged(int)), ui->graphicsView, SLOT(setSelectedItem(int)));
     connect(ui->graphicsView, SIGNAL(selectedItemChanged(int)), ui->comboBox, SLOT(setCurrentIndex(int)));
     connect(ui->spinBox, SIGNAL(valueChanged(int)), ui->graphicsView, SLOT(setSelectedItem(int)));
@@ -53,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution,qreal)), ui->graphicsView, SLOT(setCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution,qreal)));
     connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
     connect(&runThread, SIGNAL(statusUpdated(int,int,qreal,qreal,qreal,qreal)), this, SLOT(showExecutionStatus(int,int,qreal,qreal,qreal,qreal)));
-    connect(&runThread, SIGNAL(finishedExecution(int,int,qreal,qreal,qreal,qreal)), this, SLOT(showExecutionFinishedStatus(int,int,qreal,qreal,qreal,qreal)));
+    connect(&runThread, SIGNAL(finishedExecution(int,qreal,qreal,qreal,qreal)), this, SLOT(showExecutionFinishedStatus(int,qreal,qreal,qreal,qreal)));
     connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(terminate())); // FIXME: Using terminate() is not recommended
 
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
@@ -184,7 +189,7 @@ void MainWindow::translateCurrentToMinimumPosition() {
     ui->graphicsView->showTotalOverlapMap(curMap);
 }
 
-void MainWindow::createOverlapMessageBox(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale) {
+void MainWindow::createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale) {
     globalOverlap /= scale;
     QString log; QTextStream stream(&log);
     stream <<  "Starting global overlap evaluation...\n";
@@ -219,7 +224,7 @@ void MainWindow::showGlobalOverlap() {
     ui->graphicsView->getCurrentSolution(solution);
     QVector<qreal> overlaps;
     qreal globalOverlap = solver->getGlobalOverlap(solution,overlaps);
-    createOverlapMessageBox(solution, globalOverlap, overlaps, this->rasterProblem->getScale());
+    createOverlapMessageBox(globalOverlap, overlaps, this->rasterProblem->getScale());
 
 //    QString log; QTextStream stream(&log); int linenum = 1;
 //    stream <<  "Starting global overlap evaluation...\n";
@@ -358,7 +363,7 @@ void MainWindow::showZoomedMap() {
 
 void MainWindow::translateCurrentToMinimumZoomedPosition() {
     qreal minVal;
-    int zoomSquareSize = qRound(this->rasterZoomedProblem->getScale()/this->rasterProblem->getScale());
+    int zoomSquareSize = 3*qRound(this->rasterZoomedProblem->getScale()/this->rasterProblem->getScale());
     ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
     int itemId = ui->graphicsView->getCurrentItemId();
     solver->switchProblem(true);
@@ -378,7 +383,7 @@ void MainWindow::showZoomedGlobalOverlap() {
     solver->switchProblem(true);
     qreal globalOverlap = solver->getGlobalOverlap(solution,overlaps);
     solver->switchProblem(false);
-    createOverlapMessageBox(solution, globalOverlap, overlaps, this->rasterZoomedProblem->getScale());
+    createOverlapMessageBox(globalOverlap, overlaps, this->rasterZoomedProblem->getScale());
 }
 
 void MainWindow::updateZoomedGlsWeights() {
@@ -407,14 +412,76 @@ void MainWindow::showExecutionStatus(int totalItNum, int worseSolutionsCount, qr
                              ". Time elapsed: " + QString::number(elapsed) + " secs.");
 }
 
-void MainWindow::showExecutionFinishedStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale) {
+void MainWindow::showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale) {
     statusBar()->showMessage("Finished. Total iterations: " + QString::number(totalItNum) +
                              ".Minimum overlap: " + QString::number(minOverlap/scale) +
                              ". Elapsed time: " + QString::number(elapsed));
     if(qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) {
         ui->graphicsView->getCurrentSolution(solution, scale);
-        qDebug() << solution;
+//        qDebug() << solution;
+    }
+}
+
+void MainWindow::saveSolution() {
+    QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
+}
+
+void MainWindow::loadSolution() {
+    QString  fileName = QFileDialog::getOpenFileName(this, tr("Load solution"), "", tr("Modified ESICUP Files (*.xml)"));
+
+    QFile file(fileName);
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        qCritical() << "Error: Cannot read file"
+                    << ": " << qPrintable(file.errorString());
+        return;
     }
 
+    QXmlStreamReader xml;
 
+    xml.setDevice(&file);
+    int itemId = 0;
+    while (!xml.atEnd()) {
+        xml.readNext();
+
+        if(xml.name()=="placement" && xml.tokenType() == QXmlStreamReader::StartElement) {
+            int posX = qRound(this->rasterProblem->getScale()*xml.attributes().value("x").toFloat());
+            int posY = qRound(this->rasterProblem->getScale()*xml.attributes().value("y").toFloat());
+            solution.setPosition(itemId, QPoint(posX,posY));
+            unsigned int angleId = 0;
+            for(; angleId < this->rasterProblem->getItem(itemId)->getAngleCount(); angleId++)
+                if(this->rasterProblem->getItem(itemId)->getAngleValue(angleId) == xml.attributes().value("angle").toInt())
+                    break;
+            solution.setOrientation(itemId, angleId);
+//            qDebug() << itemId << xml.attributes().value("x").toFloat() << xml.attributes().value("y").toFloat() << xml.attributes().value("angle").toInt();
+            itemId++;
+        }
+
+        if(xml.name()=="length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
+            int scaledWidth = qRound(xml.readElementText().toFloat()*this->rasterProblem->getScale());
+            solver->setContainerWidth(scaledWidth);
+            ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+        }
+
+        if(xml.name()=="solution" && xml.tokenType() == QXmlStreamReader::EndElement) break;
+    }
+    file.close();
+
+    ui->graphicsView->setCurrentSolution(solution);
+}
+
+void MainWindow::exportSolutionToSvg() {
+    QString  fileName = QFileDialog::getSaveFileName(this, tr("Export solution"), "", tr("Scalable Vector Graphics (*.svg)"));
+
+     QSvgGenerator svgGen;
+
+     svgGen.setFileName(fileName);
+     svgGen.setSize(QSize(200, 200));
+     svgGen.setViewBox(QRect(0, 0, 200, 200));
+     svgGen.setTitle(tr("SVG Generator Example Drawing"));
+     svgGen.setDescription(tr("An SVG drawing created by the SVG Generator "));
+
+     QPainter painter( &svgGen );
+     ui->graphicsView->disableItemSelection();
+     ui->graphicsView->scene()->render( &painter );
+     ui->graphicsView->enableItemSelection();
 }

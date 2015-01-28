@@ -49,10 +49,14 @@ private slots:
 
     void executePacking();
     void showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale);
-    void showExecutionFinishedStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale);
+    void showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale);
+
+    void saveSolution();
+    void loadSolution();
+    void exportSolutionToSvg();
 
 private:
-    void createOverlapMessageBox(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale);
+    void createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale);
 
     Ui::MainWindow *ui;
     std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;

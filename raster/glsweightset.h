@@ -33,7 +33,9 @@ namespace RASTERVORONOIPACKING {
         qreal getWeight(int itemId1, int itemId2);
         void updateWeights(QVector<WeightIncrement> &increments);
 
-        QImage getImage(int numItems);
+        #ifndef CONSOLE
+            QImage getImage(int numItems);
+        #endif
 
     private:
         void addWeight(int itemId1, int itemId2, qreal weight);

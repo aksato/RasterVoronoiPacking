@@ -4,8 +4,10 @@
 #include <QVector>
 #include <QPoint>
 #include <QDebug>
+#include <memory>
 
 namespace RASTERVORONOIPACKING {
+    class RasterPackingProblem;
 
     class RasterItemPlacement {
     public:
@@ -33,6 +35,7 @@ namespace RASTERVORONOIPACKING {
         QPoint getPosition(int id) const {return placements[id].getPos();}
         void setOrientation(int id, int newOrientation) {placements[id].setOrientation(newOrientation);}
         int getOrientation(int id) const {return placements[id].getOrientation();}
+        bool save(QString fileName, std::shared_ptr<RasterPackingProblem> problem, qreal length, bool printSeed, uint seed = 0);
 
     private:
         QVector<RasterItemPlacement> placements;

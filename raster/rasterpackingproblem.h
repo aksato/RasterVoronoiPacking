@@ -21,10 +21,18 @@ namespace RASTERVORONOIPACKING {
         void setAngleCount(unsigned int aCount) {this->angleCount = aCount;}
         unsigned int getAngleCount() {return this->angleCount;}
 
+        void setPieceName(QString pName) {this->pieceName = pName;}
+        QString getPieceName() {return this->pieceName;}
+        void addAngleValue(int angle) {this->angleValues.push_back(angle);}
+        int getAngleValue(int id) {return this->angleValues.at(id);}
+
     private:
         unsigned int id;
         unsigned int pieceType;
         unsigned int angleCount;
+
+        QString pieceName;
+        QVector<int> angleValues;
     };
 
     class RasterPackingProblem
@@ -43,12 +51,14 @@ namespace RASTERVORONOIPACKING {
         int count() {return items.size();}
         int getItemType(int id) {return items[id]->getPieceType();}
         int getContainerWidth() {return containerWidth;}
+        QString getContainerName() {return containerName;}
         qreal getScale() {return scale;}
 
     private:
 //        QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<QPair<int,int>, int> &pieceAngleMap);
 
         int containerWidth;
+        QString containerName;
         unsigned int maxOrientations;
         QVector<std::shared_ptr<RasterPackingItem>> items;
         std::shared_ptr<RasterNoFitPolygonSet> noFitPolygons;

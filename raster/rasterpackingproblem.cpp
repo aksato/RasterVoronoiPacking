@@ -41,8 +41,13 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
     // 1. Load items information
     int typeId = 0; int itemId = 0;
     for(QList<std::shared_ptr<RASTERPREPROCESSING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++, typeId++)
-        for(uint mult = 0; mult < (*it)->getMultiplicity(); mult++, itemId++)
-            items.append(std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount())));
+        for(uint mult = 0; mult < (*it)->getMultiplicity(); mult++, itemId++) {
+            std::shared_ptr<RasterPackingItem> curItem = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount()));
+            curItem->setPieceName((*it)->getName());
+            for(QVector<unsigned int>::const_iterator it2 = (*it)->corbegin(); it2 != (*it)->corend(); it2++) curItem->addAngleValue(*it2);
+            items.append(curItem);
+//            items.append(std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount())));
+        }
     std::shared_ptr<RASTERPREPROCESSING::Container> container = *problem.ccbegin();
     std::shared_ptr<RASTERPREPROCESSING::Polygon> pol = container->getPolygon();
     qreal minX = (*pol->begin()).x();
@@ -53,7 +58,7 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
     });
     qreal rasterScale = (*problem.crnfpbegin())->getScale(); // FIXME: Global scale
     containerWidth = qRound(rasterScale*(maxX - minX));
-
+    containerName = (*problem.ccbegin())->getName();
 
     // 2. Link the name and angle of the piece with the ids defined for the items
     QHash<QString, int> pieceIndexMap;
@@ -86,6 +91,7 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
         // Create image. FIXME: Use data file instead?
         QImage curImage(curRasterNfp->getFileName());
         std::shared_ptr<RasterNoFitPolygon> curMountain(new RasterNoFitPolygon(curImage, curRasterNfp->getReferencePoint(), curRasterNfp->getMaxD()));
+        curMountain->setMatrix(curImage);
 
         // Determine ids
         QPair<int,int> staticIds, orbitingIds;

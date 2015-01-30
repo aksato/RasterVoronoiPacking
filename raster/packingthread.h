@@ -1,14 +1,14 @@
 #ifndef PACKINGTHREAD_H
 #define PACKINGTHREAD_H
 
-#include <QThread>
-#include <QMutex>
-#include <QWaitCondition>
 #include <memory>
 #include "rasterpackingsolution.h"
 #include "rasterstrippackingsolver.h"
 
 #ifndef CONSOLE
+#include <QThread>
+#include <QMutex>
+#include <QWaitCondition>
 class PackingThread : public QThread
 #else
 class PackingThread : public QObject

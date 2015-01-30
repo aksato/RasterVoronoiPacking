@@ -18,27 +18,30 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 set(SRC 
+	raster/glsweightset.cpp
+	raster/packingthread.cpp
+	raster/rasterinnerfitpolygon.cpp
+	raster/rasternofitpolygon.cpp
+	raster/rasterpackingproblem.cpp
+	raster/rasterpackingsolution.cpp
+	raster/rasterstrippackingsolver.cpp
+	raster/totaloverlapmap.cpp
+	packingproblem.cpp
+)
+	
+set(UIS_SRC
 	colormap.cpp 
 	glsweightviewerdialog.cpp 
 	mainwindow.cpp 
-	packingproblem.cpp
 	runconfigurationsdialog.cpp
 	zoomedmapviewdialog.cpp
-	main.cpp
-	raster/totaloverlapmap.cpp
-	raster/rasterstrippackingsolver.cpp
-	raster/rasterpackingsolution.cpp
-	raster/rasterpackingproblem.cpp
-	raster/rasternofitpolygon.cpp
-	raster/rasterinnerfitpolygon.cpp
-	raster/packingthread.cpp
-	raster/glsweightset.cpp
 	viewer/graphicsindexedrectitem.cpp
 	viewer/packingitem.cpp
 	viewer/packingviewer.cpp
 	viewer/weightviewer.cpp
-	viewer/zoomedmapview.cpp)
-	
+	viewer/zoomedmapview.cpp
+)
+
 qt5_wrap_ui(UIS_HDRS
     glsweightviewerdialog.ui
     mainwindow.ui
@@ -48,7 +51,15 @@ qt5_wrap_ui(UIS_HDRS
 )
 
 qt5_add_resources (ResourceSources resources.qrc)
+
+add_executable(RasterVoronoiConsole console/mainConsole.cpp console/packingParametersParser.cpp ${SRC})
+
+qt5_use_modules(RasterVoronoiConsole Core Gui)
+
+set_target_properties(RasterVoronoiConsole PROPERTIES COMPILE_DEFINITIONS "CONSOLE")
 	
-add_executable(RasterVoronoiPacking ${SRC} ${UIS_HDRS} ${ResourceSources})
+add_executable(RasterVoronoiPacking main.cpp ${SRC} ${UIS_SRC} ${UIS_HDRS} ${ResourceSources})
 
 qt5_use_modules(RasterVoronoiPacking Widgets Gui Svg)
+
+#add_definitions(-CONSOLE)

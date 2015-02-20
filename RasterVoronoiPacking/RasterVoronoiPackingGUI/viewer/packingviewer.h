@@ -8,9 +8,9 @@
 #include <QPolygonF>
 #include <QStatusBar>
 //#include "raster/rasternofitpolygon.h"
-#include "../raster/rasterpackingproblem.h"
-#include "../raster/rasterpackingsolution.h"
-#include "../raster/totaloverlapmap.h"
+#include "raster/rasterpackingproblem.h"
+#include "raster/rasterpackingsolution.h"
+#include "raster/totaloverlapmap.h"
 #include "packingitem.h"
 namespace RASTERPREPROCESSING {class PackingProblem;}
 class QGraphicsPolygonItem;

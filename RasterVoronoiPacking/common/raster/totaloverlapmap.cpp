@@ -1,5 +1,8 @@
 #include "totaloverlapmap.h"
-#include "../colormap.h"
+
+#ifndef CONSOLE
+	#include "colormap.h"
+#endif
 
 using namespace RASTERVORONOIPACKING;
 

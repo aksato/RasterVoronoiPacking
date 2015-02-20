@@ -1,8 +1,10 @@
 #include "glsweightset.h"
 #include "rasterpackingproblem.h"
-#include "../colormap.h"
 #include <QImage>
 #include <QDebug>
+#ifndef CONSOLE
+	#include "colormap.h"
+#endif
 
 using namespace RASTERVORONOIPACKING;
 

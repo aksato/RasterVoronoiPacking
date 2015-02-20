@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 2.8.11)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules) 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake_modules) 
 
-project(RasterVoronoiPacking)
+project(RasterVoronoiPackingGUI)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+include_directories(../common)
 
 find_package(Qt5Widgets)
 find_package(Qt5Gui)
@@ -21,18 +22,18 @@ set(SRC
 	colormap.cpp 
 	glsweightviewerdialog.cpp 
 	mainwindow.cpp 
-	packingproblem.cpp
+	../common/packingproblem.cpp
 	runconfigurationsdialog.cpp
 	zoomedmapviewdialog.cpp
 	main.cpp
-	raster/totaloverlapmap.cpp
-	raster/rasterstrippackingsolver.cpp
-	raster/rasterpackingsolution.cpp
-	raster/rasterpackingproblem.cpp
-	raster/rasternofitpolygon.cpp
-	raster/rasterinnerfitpolygon.cpp
-	raster/packingthread.cpp
-	raster/glsweightset.cpp
+	../common/raster/totaloverlapmap.cpp
+	../common/raster/rasterstrippackingsolver.cpp
+	../common/raster/rasterpackingsolution.cpp
+	../common/raster/rasterpackingproblem.cpp
+	../common/raster/rasternofitpolygon.cpp
+	../common/raster/rasterinnerfitpolygon.cpp
+	../common/raster/packingthread.cpp
+	../common/raster/glsweightset.cpp
 	viewer/graphicsindexedrectitem.cpp
 	viewer/packingitem.cpp
 	viewer/packingviewer.cpp
@@ -49,6 +50,6 @@ qt5_wrap_ui(UIS_HDRS
 
 qt5_add_resources (ResourceSources resources.qrc)
 	
-add_executable(RasterVoronoiPacking ${SRC} ${UIS_HDRS} ${ResourceSources})
+add_executable(RasterVoronoiPackingGUI ${SRC} ${UIS_HDRS} ${ResourceSources})
 
-qt5_use_modules(RasterVoronoiPacking Widgets Gui Svg)
+qt5_use_modules(RasterVoronoiPackingGUI Widgets Gui Svg)

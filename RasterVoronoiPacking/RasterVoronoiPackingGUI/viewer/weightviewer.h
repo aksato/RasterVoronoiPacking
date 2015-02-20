@@ -4,7 +4,7 @@
 #include <QGraphicsView>
 #include <QPixmap>
 #include "graphicsindexedrectitem.h"
-#include "../raster/glsweightset.h"
+#include "raster/glsweightset.h"
 
 class QGraphicsPixmapItem;
 

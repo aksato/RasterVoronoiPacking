@@ -1,10 +1,10 @@
 #include <QCoreApplication>
 
-#include "../packingproblem.h"
-#include "../raster/rasterpackingproblem.h"
-#include "../raster/rasterpackingsolution.h"
-#include "../raster/rasterstrippackingsolver.h"
-#include "../raster/packingthread.h"
+#include "packingproblem.h"
+#include "raster/rasterpackingproblem.h"
+#include "raster/rasterpackingsolution.h"
+#include "raster/rasterstrippackingsolver.h"
+#include "raster/packingthread.h"
 #include "packingParametersParser.h"
 #include <QDebug>
 #include <QDir>

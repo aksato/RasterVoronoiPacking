@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 2.8.11)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../cmake_modules) 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake_modules) 
 
-project(RasterVoronoiConsole)
+project(RasterVoronoiPackingConsole)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+include_directories(../common)
 
 find_package(Qt5Widgets)
 find_package(Qt5Gui)
-
 
 set(CMAKE_AUTOMOC ON)
 
@@ -20,19 +20,19 @@ endif()
 set(SRC
 	mainConsole.cpp
 	packingParametersParser.cpp
-	../raster/glsweightset.cpp
-	../raster/packingthread.cpp
-	../raster/rasterinnerfitpolygon.cpp
-	../raster/rasternofitpolygon.cpp
-	../raster/rasterpackingproblem.cpp
-	../raster/rasterpackingsolution.cpp
-	../raster/rasterstrippackingsolver.cpp
-	../raster/totaloverlapmap.cpp
-	../packingproblem.cpp
+	../common/raster/glsweightset.cpp
+	../common/raster/packingthread.cpp
+	../common/raster/rasterinnerfitpolygon.cpp
+	../common/raster/rasternofitpolygon.cpp
+	../common/raster/rasterpackingproblem.cpp
+	../common/raster/rasterpackingsolution.cpp
+	../common/raster/rasterstrippackingsolver.cpp
+	../common/raster/totaloverlapmap.cpp
+	../common/packingproblem.cpp
 )
 
-add_executable(RasterVoronoiConsole ${SRC})
+add_executable(RasterVoronoiPackingConsole ${SRC})
 
-qt5_use_modules(RasterVoronoiConsole Core Gui)
+qt5_use_modules(RasterVoronoiPackingConsole Core Gui)
 
-set_target_properties(RasterVoronoiConsole PROPERTIES COMPILE_DEFINITIONS "CONSOLE")
+set_target_properties(RasterVoronoiPackingConsole PROPERTIES COMPILE_DEFINITIONS "CONSOLE")

@@ -424,6 +424,35 @@ void MainWindow::showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, 
 
 void MainWindow::saveSolution() {
     QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
+
+	QFile file(fileName);
+	if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        qCritical() << "Error: Cannot open file"
+                    << ": " << qPrintable(file.errorString());
+        return;
+    }
+
+	QXmlStreamWriter stream(&file);
+	stream.setAutoFormatting(true);
+	stream.writeStartDocument();
+	stream.writeStartElement("solution");
+	for(int itemId = 0; itemId < this->rasterProblem->count(); itemId++) {
+		std::shared_ptr<RasterPackingItem> curItem = this->rasterProblem->getItem(itemId);
+		stream.writeStartElement("placement");
+		stream.writeAttribute("boardNumber", "1");
+		stream.writeAttribute("x", QString::number(this->solution.getPosition(itemId).x()/this->rasterProblem->getScale()));
+		stream.writeAttribute("y", QString::number(this->solution.getPosition(itemId).y()/this->rasterProblem->getScale()));
+		stream.writeAttribute("idBoard", this->rasterProblem->getContainerName());
+		stream.writeAttribute("idPiece", "piece" + QString::number(this->rasterProblem->getItemType(itemId))); // FIXME: Change to Name
+		stream.writeAttribute("angle", QString::number(this->rasterProblem->getItem(itemId)->getAngleValue(this->solution.getOrientation(itemId))));
+		stream.writeAttribute("mirror", "none");
+		stream.writeEndElement(); // placement
+	}
+	stream.writeTextElement("length", QString::number(solver->getCurrentWidth()/this->rasterProblem->getScale()));
+	stream.writeEndElement(); // solution
+	stream.writeEndDocument();
+
+	file.close();
 }
 
 void MainWindow::loadSolution() {
@@ -431,7 +460,7 @@ void MainWindow::loadSolution() {
 
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        qCritical() << "Error: Cannot read file"
+        qCritical() << "Error: Cannot open file"
                     << ": " << qPrintable(file.errorString());
         return;
     }

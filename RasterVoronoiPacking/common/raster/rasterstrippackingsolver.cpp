@@ -1,6 +1,10 @@
 #include "rasterstrippackingsolver.h"
 #include <QtCore/qmath.h>
 
+//TOERASE
+#include <Qfile>
+#include <QTextStream>
+
 using namespace RASTERVORONOIPACKING;
 
 void RasterStripPackingSolver::setProblem(std::shared_ptr<RasterPackingProblem> _problem, bool isZoomedProblem) {
@@ -177,8 +181,14 @@ std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMap(in
                 currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation),
                 solution.getPosition(i)
             );
+
+			// TOERASE
+			currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->save("nfp" + QString::number(i) + ".txt");// TEST
+			qDebug() << originalProblem->getItemType(i) << solution.getOrientation(i) << originalProblem->getItemType(itemId) << orientation << currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->width() << currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->height();
         }
     } else {
+		// TOERASE
+		QVector<qreal> weights;
         for(int i =0; i < originalProblem->count(); i++) {
             if(i == itemId) continue;
             currrentPieceMap->addVoronoi(
@@ -186,7 +196,18 @@ std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMap(in
                 solution.getPosition(i),
                 glsWeights->getWeight(itemId, i)
             );
+
+			// TOERASE
+			weights.push_back(glsWeights->getWeight(itemId, i));
+			currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->save("nfp" + QString::number(i) + ".txt");// TEST
         }
+		// TOERASE
+		QFile outfile("weights.txt");
+		if (outfile.open(QFile::WriteOnly)) {
+			QTextStream out(&outfile);
+			for(QVector<qreal>::iterator it = weights.begin(); it != weights.end(); it++) out << QString::number(*it) << " ";
+		}
+		outfile.close();
     }
     return currrentPieceMap;
 }

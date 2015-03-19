@@ -28,6 +28,8 @@ namespace RASTERVORONOIPACKING {
         int width() {return (int)matrix[0].size();}
         int height() {return (int)matrix.size();}
 
+		void save(QString fname); // For debug purposes
+
     private:
         QPoint origin;
 //        QImage image;

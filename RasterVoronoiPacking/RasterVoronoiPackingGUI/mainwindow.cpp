@@ -171,7 +171,18 @@ void MainWindow::printCurrentSolution() {
 void MainWindow::generateCurrentTotalOverlapMap() {
     ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
-    ui->graphicsView->showTotalOverlapMap(solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false));
+	// TEST
+	std::shared_ptr<TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
+	curMap->save("overlapmap.txt");
+	QFile outfile("layout.txt"); 
+	if (outfile.open(QFile::WriteOnly)) {
+		QTextStream out(&outfile);
+		for(int i = 0; i < this->rasterProblem->count(); i++) out << solution.getPosition(i).x() << " " << solution.getPosition(i).y() << " " << solution.getOrientation(i) << " ";
+		outfile.close();
+	}
+
+	ui->graphicsView->showTotalOverlapMap(curMap);
+    //ui->graphicsView->showTotalOverlapMap(solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false));
 }
 
 void MainWindow::createRandomLayout() {

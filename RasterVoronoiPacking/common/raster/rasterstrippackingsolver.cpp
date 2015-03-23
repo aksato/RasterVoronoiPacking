@@ -1,9 +1,6 @@
 #include "rasterstrippackingsolver.h"
 #include <QtCore/qmath.h>
-
-//TOERASE
-#include <Qfile>
-#include <QTextStream>
+#include "../cuda/gpuinfo.h"
 
 using namespace RASTERVORONOIPACKING;
 
@@ -181,14 +178,8 @@ std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMap(in
                 currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation),
                 solution.getPosition(i)
             );
-
-			// TOERASE
-			currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->save("nfp" + QString::number(i) + ".txt");// TEST
-			qDebug() << originalProblem->getItemType(i) << solution.getOrientation(i) << originalProblem->getItemType(itemId) << orientation << currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->width() << currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->height();
         }
     } else {
-		// TOERASE
-		QVector<qreal> weights;
         for(int i =0; i < originalProblem->count(); i++) {
             if(i == itemId) continue;
             currrentPieceMap->addVoronoi(
@@ -196,18 +187,7 @@ std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMap(in
                 solution.getPosition(i),
                 glsWeights->getWeight(itemId, i)
             );
-
-			// TOERASE
-			weights.push_back(glsWeights->getWeight(itemId, i));
-			currentProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation)->save("nfp" + QString::number(i) + ".txt");// TEST
         }
-		// TOERASE
-		QFile outfile("weights.txt");
-		if (outfile.open(QFile::WriteOnly)) {
-			QTextStream out(&outfile);
-			for(QVector<qreal>::iterator it = weights.begin(); it != weights.end(); it++) out << QString::number(*it) << " ";
-		}
-		outfile.close();
     }
     return currrentPieceMap;
 }
@@ -745,3 +725,47 @@ qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution
 //        solution.setPosition(shuffledId, minPos);
 //    }
 //}
+
+// --> Return total overlap map for a given item using GPU
+std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getCUDATotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights) {
+	if (currentProblem == zoomedProblem) {
+		//Q_ASSERT_X(width-pixels > 0, "RasterStripPackingSolver::getTotalOverlapMap", "Tried to obtain total overlap map, which is not permitted.");
+		return 0;
+	}
+
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	currrentPieceMap->reset();
+	if (!useGlsWeights) {
+
+		// --> Converting parameter for cuda input
+
+		// Inner fit polygon data conversion
+		int ifpWidth, ifpHeight, ifpX, ifpY;
+		ifpWidth = currrentPieceMap->getWidth(); ifpHeight = currrentPieceMap->getHeight();
+		ifpX = currrentPieceMap->getReferencePoint().x(); ifpY = currrentPieceMap->getReferencePoint().y();
+		//qDebug() << "Innerfit polygon" << itemId << "..." << ifpWidth << " x " << ifpHeight << ". Origin: (" << ifpX << ", " << ifpY << ")";
+
+		// Solution data conversion
+		int *placementsx, *placementsy, *angles;
+		placementsx = (int*)malloc(originalProblem->count()*sizeof(int));
+		placementsy = (int*)malloc(originalProblem->count()*sizeof(int));
+		angles = (int*)malloc(originalProblem->count()*sizeof(int));
+		for (int k = 0; k < originalProblem->count(); k++) {
+			placementsx[k] = solution.getPosition(k).x();
+			placementsy[k] = solution.getPosition(k).y();
+			angles[k] = solution.getOrientation(k);
+		}
+		//for (int k = 0; k < originalProblem->count(); k++) qDebug() << "Position of item" << k << ": (" << placementsx[k] << "," << placementsy[k] << ")" << "angle:" << angles[k];
+
+		// Determine the overlap map
+		//createGPUOverlapMap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles);
+		float *overlapMapRawData = CUDAPACKING::getcuOverlapMap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles);
+		for (int j = 0; j < ifpHeight; j++)
+		for (int i = 0; i < ifpWidth; i++) {
+			QPoint curPt(i, j);
+			currrentPieceMap->setValue(curPt, overlapMapRawData[j*ifpWidth + i]);
+		}
+	}
+
+	return currrentPieceMap;
+}

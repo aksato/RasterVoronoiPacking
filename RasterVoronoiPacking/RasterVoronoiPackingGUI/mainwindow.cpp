@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "packingproblem.h"
+#include "../common/cuda/gpuinfo.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -40,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->doubleSpinBox_2, SIGNAL(valueChanged(double)), ui->graphicsView, SLOT(setCurrentYCoord(double)));
 
     connect(ui->pushButton_3, SIGNAL(clicked()), this, SLOT(generateCurrentTotalOverlapMap()));
+	connect(ui->pushButton_11, SIGNAL(clicked()), this, SLOT(generateCurrentTotalOverlapMapGPU()));
     connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumPosition()));
     connect(ui->pushButton_5, SIGNAL(clicked()), this, SLOT(createRandomLayout()));
     connect(ui->pushButton_14, SIGNAL(clicked()), this, SLOT(changeContainerWidth()));
@@ -80,12 +82,47 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::loadPuzzle() {
+	// TOREMOVE
+
+
     QString  fileName = QFileDialog::getOpenFileName(this, tr("Open Puzzle"), "", tr("Modified ESICUP Files (*.xml)"));
     QDir::setCurrent(QFileInfo(fileName).absolutePath());
     RASTERPREPROCESSING::PackingProblem problem;
     if(problem.load(fileName)) {
         rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-        rasterProblem->load(problem);
+
+		// Get GPU memory requirements
+		bool loadGPU = false;
+		int numGPUs;  size_t freeCUDAMem, totalCUDAmem;
+		if (CUDAPACKING::getTotalMemory(numGPUs, freeCUDAMem, totalCUDAmem)) {
+			qDebug() << numGPUs << "GPU(s) found. Total memory:" << totalCUDAmem << "bytes (" << totalCUDAmem / 1024 / 1024 << "MB). Available memory : " << freeCUDAMem << "bytes (" << freeCUDAMem / 1024 / 1024 << "MB).";
+			size_t problemIfpTotalMem, problemIfpMaxMem, problemNfpTotalMem;
+			RasterPackingProblem::getProblemGPUMemRequirements(problem, problemIfpTotalMem, problemIfpMaxMem, problemNfpTotalMem);
+			qDebug() << problem.getInnerfitPolygonsCount() << "IFPs processed. Total IFP set size:" << problemIfpTotalMem << "bytes. (" << problemIfpTotalMem / 1024 / 1024 << "MB). Max size:" << problemIfpMaxMem << "bytes. (" << problemIfpMaxMem / 1024 / 1024 << "MB)."; // TOREMOVE
+			qDebug() << problem.getNofitPolygonsCount() << "nfps processed. Total nfp set size:" << problemNfpTotalMem << "bytes. (" << problemNfpTotalMem / 1024 / 1024 << "MB)."; // TOREMOVE
+
+			if (freeCUDAMem - problemIfpTotalMem - problemNfpTotalMem > 0) {
+				size_t remainingCUDAMem = freeCUDAMem - problemIfpTotalMem - problemNfpTotalMem;
+				//qDebug() << "Complete GPU allocation possible. Estimated free space after allocation:" << remainingCUDAMem << "bytes. (" << remainingCUDAMem / 1024 / 1024 << "MB).";
+				if (QMessageBox::question(this, "Confirm CUDA allocation", "Complete GPU allocation possible. Estimated free space after allocation: " + QString::number(remainingCUDAMem / 1024 / 1024) + " MB. Do you want to allocate NFP memory?", QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
+					loadGPU = true;
+				}
+				
+			}
+			//else if (freeCUDAMem - problemIfpMaxMem - problemNfpTotalMem > 0) {
+			//	size_t remainingCUDAMem = freeCUDAMem - problemIfpMaxMem - problemNfpTotalMem;
+			//	qDebug() << "Partial GPU allocation possible. Estimated free space after allocation:" << remainingCUDAMem << "bytes. (" << remainingCUDAMem / 1024 / 1024 << "MB).";
+			//}
+		}
+		else {
+			qDebug() << "GPU not found.";
+		}
+		
+		rasterProblem->load(problem, loadGPU);
+		if (loadGPU) {  
+			CUDAPACKING::getTotalMemory(numGPUs, freeCUDAMem, totalCUDAmem);
+			qDebug() << "GPU memory allocated. Available memory" << freeCUDAMem / 1024 / 1024 << "MB.";
+		}
 
         solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
 
@@ -107,7 +144,7 @@ void MainWindow::loadPuzzle() {
         ui->pushButton_3->setEnabled(true); ui->pushButton_4->setEnabled(true);
         ui->pushButton_5->setEnabled(true); ui->pushButton_6->setEnabled(true);
         ui->pushButton_7->setEnabled(true); ui->pushButton_8->setEnabled(true);
-        ui->pushButton_9->setEnabled(true); ui->pushButton_10->setEnabled(true);
+		ui->pushButton_9->setEnabled(true); ui->pushButton_10->setEnabled(true); ui->pushButton_11->setEnabled(true);
         ui->pushButton_12->setEnabled(true); ui->pushButton_13->setEnabled(true);
         ui->pushButton_14->setEnabled(true); ui->pushButton_15->setEnabled(true);
         ui->actionLoad_Zoomed_Problem->setEnabled(true);
@@ -171,18 +208,9 @@ void MainWindow::printCurrentSolution() {
 void MainWindow::generateCurrentTotalOverlapMap() {
     ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
-	// TEST
-	std::shared_ptr<TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
-	curMap->save("overlapmap.txt");
-	QFile outfile("layout.txt"); 
-	if (outfile.open(QFile::WriteOnly)) {
-		QTextStream out(&outfile);
-		for(int i = 0; i < this->rasterProblem->count(); i++) out << solution.getPosition(i).x() << " " << solution.getPosition(i).y() << " " << solution.getOrientation(i) << " ";
-		outfile.close();
-	}
-
-	ui->graphicsView->showTotalOverlapMap(curMap);
-    //ui->graphicsView->showTotalOverlapMap(solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false));
+	QTime myTimer; myTimer.start();
+    ui->graphicsView->showTotalOverlapMap(solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false));
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
 }
 
 void MainWindow::createRandomLayout() {
@@ -524,4 +552,12 @@ void MainWindow::exportSolutionToSvg() {
      ui->graphicsView->disableItemSelection();
      ui->graphicsView->scene()->render( &painter );
      ui->graphicsView->enableItemSelection();
+}
+
+void MainWindow::generateCurrentTotalOverlapMapGPU() {
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	ui->graphicsView->showTotalOverlapMap(solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false));
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
 }

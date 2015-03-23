@@ -1,5 +1,8 @@
 #include "rasterpackingproblem.h"
 #include "../packingproblem.h"
+#include "../cuda/gpuinfo.h"
+
+#define NUM_ORIENTATIONS 4 // FIXME: Get form problem
 
 using namespace RASTERVORONOIPACKING;
 
@@ -37,7 +40,15 @@ QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, Q
     return ids;
 }
 
-bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
+int *getMatrixFromQImage(QImage image) {
+	int *ans = (int*)malloc(image.width()*image.height()*sizeof(int));
+	for (int j = 0; j < image.height(); j++)
+	for (int i = 0; i < image.width(); i++)
+		ans[j*image.width() + i] = image.pixelIndex(i, j);
+	return ans;
+}
+
+bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem, bool loadGPU) {
     // 1. Load items information
     int typeId = 0; int itemId = 0;
     for(QList<std::shared_ptr<RASTERPREPROCESSING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++, typeId++)
@@ -85,6 +96,7 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
     }
 
     // 4. Load nofit polygons
+	if (loadGPU) CUDAPACKING::allocHostNfpPointers(problem.getPiecesCount(), NUM_ORIENTATIONS); // FIXME: get number of orientations
     noFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
     for(QList<std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
         std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon> curRasterNfp = *it;
@@ -101,10 +113,40 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
 
         // Create nofit polygon
         noFitPolygons->addRasterNoFitPolygon(staticIds.first, staticIds.second, orbitingIds.first, orbitingIds.second, curMountain);
+
+		// Alloc in GPU
+		int static1DId, orbitingDId;
+		static1DId = staticIds.first * NUM_ORIENTATIONS + staticIds.second; orbitingDId = orbitingIds.first*NUM_ORIENTATIONS + orbitingIds.second;  // FIXME: get number of orientations
+		if (loadGPU) CUDAPACKING::allocSingleDeviceNfpMatrix(static1DId, orbitingDId, getMatrixFromQImage(curImage), curImage.width(), curImage.height(), curRasterNfp->getReferencePoint().x(), curRasterNfp->getReferencePoint().y());
     }
+	if (loadGPU) CUDAPACKING::allocDeviceNfpPointers(problem.getPiecesCount(), NUM_ORIENTATIONS);
 
     // 5. Read problem scale
     this->scale = (*problem.crnfpbegin())->getScale();
 
     return true;
+}
+
+void RasterPackingProblem::getProblemGPUMemRequirements(RASTERPREPROCESSING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem) {
+	unsigned int ifpCount = 0; ifpTotalMem = 0;  ifpMaxMem = 0;
+	for (QList<std::shared_ptr<RASTERPREPROCESSING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
+		std::shared_ptr<RASTERPREPROCESSING::RasterInnerFitPolygon> curRasterIfp = *it;
+		// Create image. FIXME: Use data file instead?
+		QImage curImage(curRasterIfp->getFileName());
+
+		// Determine memory space
+		size_t curIfpMemSize = curImage.width()*curImage.height()*sizeof(qreal);
+		if (ifpMaxMem == 0 || curIfpMemSize > ifpMaxMem) ifpMaxMem = curIfpMemSize; 
+		ifpTotalMem += curIfpMemSize; ifpCount++;
+	}
+
+	unsigned int nfpCount = 0; nfpTotalMem = 0;
+	for (QList<std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
+		std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon> curRasterNfp = *it;
+		// Create image. FIXME: Use data file instead?
+		QImage curImage(curRasterNfp->getFileName());
+
+		// Determine memory space
+		nfpTotalMem += curImage.width()*curImage.height()*sizeof(int); nfpCount++;
+	}
 }

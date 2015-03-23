@@ -30,6 +30,7 @@ private slots:
     void updatePositionValues(QPointF pos);
     void printCurrentSolution();
     void generateCurrentTotalOverlapMap();
+	void generateCurrentTotalOverlapMapGPU();
     void translateCurrentToMinimumPosition();
     void createRandomLayout();
     void changeContainerWidth();

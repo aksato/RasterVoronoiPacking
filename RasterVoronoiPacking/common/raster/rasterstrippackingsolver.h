@@ -37,6 +37,7 @@ namespace RASTERVORONOIPACKING {
         // To be private functions
         // --> Return total overlap map for a given item
         std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
+		std::shared_ptr<TotalOverlapMap> getCUDATotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
         // --> Get absolute minimum overlap position
         QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value);
         // --> Retrieve a rectangular area of the total overlap map

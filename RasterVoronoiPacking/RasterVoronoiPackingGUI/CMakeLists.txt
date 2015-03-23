@@ -9,7 +9,10 @@ include_directories(../common)
 
 find_package(Qt5Widgets)
 find_package(Qt5Gui)
+find_package(CUDA QUIET REQUIRED)
 
+# Pass options to NVCC
+# set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -gencode arch=compute_22,code=sm_22)
 
 set(CMAKE_AUTOMOC ON)
 
@@ -38,8 +41,33 @@ set(SRC
 	viewer/packingitem.cpp
 	viewer/packingviewer.cpp
 	viewer/weightviewer.cpp
-	viewer/zoomedmapview.cpp)
+	viewer/zoomedmapview.cpp
+	../common/cuda/gpuinfo.cu
+	)
 	
+set(HEADERS
+	colormap.h 
+	glsweightviewerdialog.h 
+	mainwindow.h 
+	../common/packingproblem.h
+	runconfigurationsdialog.h
+	zoomedmapviewdialog.h
+	../common/raster/totaloverlapmap.h
+	../common/raster/rasterstrippackingsolver.h
+	../common/raster/rasterpackingsolution.h
+	../common/raster/rasterpackingproblem.h
+	../common/raster/rasternofitpolygon.h
+	../common/raster/rasterinnerfitpolygon.h
+	../common/raster/packingthread.h
+	../common/raster/glsweightset.h
+	viewer/graphicsindexedrectitem.h
+	viewer/packingitem.h
+	viewer/packingviewer.h
+	viewer/weightviewer.h
+	viewer/zoomedmapview.h
+	../common/cuda/gpuinfo.h
+	)
+
 qt5_wrap_ui(UIS_HDRS
     glsweightviewerdialog.ui
     mainwindow.ui
@@ -50,6 +78,6 @@ qt5_wrap_ui(UIS_HDRS
 
 qt5_add_resources (ResourceSources resources.qrc)
 	
-add_executable(RasterVoronoiPackingGUI ${SRC} ${UIS_HDRS} ${ResourceSources})
+cuda_add_executable(RasterVoronoiPackingGUI ${SRC} ${HEADERS} ${UIS_HDRS} ${ResourceSources})
 
 qt5_use_modules(RasterVoronoiPackingGUI Widgets Gui Svg)

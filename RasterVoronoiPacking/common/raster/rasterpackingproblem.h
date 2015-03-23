@@ -43,7 +43,7 @@ namespace RASTERVORONOIPACKING {
         ~RasterPackingProblem() {}
 
     public:
-        bool load(RASTERPREPROCESSING::PackingProblem &problem);
+        bool load(RASTERPREPROCESSING::PackingProblem &problem, bool loadGPU = false);
         std::shared_ptr<RasterPackingItem> getItem(int id) {return items[id];}
 
         std::shared_ptr<RasterNoFitPolygonSet> getIfps() {return innerFitPolygons;}
@@ -53,6 +53,8 @@ namespace RASTERVORONOIPACKING {
         int getContainerWidth() {return containerWidth;}
         QString getContainerName() {return containerName;}
         qreal getScale() {return scale;}
+
+		static void getProblemGPUMemRequirements(RASTERPREPROCESSING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem);
 
     private:
 //        QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<QPair<int,int>, int> &pieceAngleMap);

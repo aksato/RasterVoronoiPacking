@@ -43,7 +43,6 @@ namespace RASTERVORONOIPACKING {
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes
-			void save(QString fname); // For debug purposes
         #endif
 
     protected:

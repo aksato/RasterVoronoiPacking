@@ -2,8 +2,6 @@
 #include "../packingproblem.h"
 #include<QImage>
 #include<QPoint>
-#include <QFile>
-#include <QTextStream>
 using namespace RASTERVORONOIPACKING;
 
 RasterNoFitPolygonSet::RasterNoFitPolygonSet() {
@@ -45,16 +43,4 @@ void RasterNoFitPolygon::setMatrix(QImage image) {
 //        for(int pixelX = 0; pixelX < image.width(); pixelX++, scanLine++)
 //                matrix[pixelY][pixelX] = *scanLine;
 //    }
-}
-
-void RasterNoFitPolygon::save(QString fname) {
-	QFile outfile(fname);
-	if (outfile.open(QFile::WriteOnly)) {
-		QTextStream out(&outfile);
-		out << width() << " " << height() << " " << origin.x() << " " << origin.y();
-		for(int j = 0; j < height(); j++)
-			for(int i = 0; i < width(); i++)
-				out << " " << matrix[j][i];
-	}
-	outfile.close();
 }

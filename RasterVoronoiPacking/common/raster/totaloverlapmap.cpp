@@ -1,6 +1,4 @@
 #include "totaloverlapmap.h"
-#include <QFile>
-#include <QTextStream>
 
 #ifndef CONSOLE
 	#include "colormap.h"
@@ -150,16 +148,6 @@ QPoint TotalOverlapMap::getMinimum(qreal &minVal) {
         }
         return image;
     }
-
-	void TotalOverlapMap::save(QString fname) {
-		QFile outfile(fname);
-		if (outfile.open(QFile::WriteOnly)) {
-			QTextStream out(&outfile);
-			out << width << " " << height << " " << reference.x() << " " << reference.y();
-			for(int i = 0; i < width*height; i++) out << " " << data[i];
-		}
-		outfile.close();
-	}
 #endif
 
 //QImage TotalOverlapMap::getImage2() {

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>789</width>
-    <height>738</height>
+    <width>972</width>
+    <height>1041</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -234,6 +234,16 @@
             </property>
             <property name="text">
              <string>Display Total Overlap Map</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_11">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Display Total Overlap Map (GPU)</string>
             </property>
            </widget>
           </item>
@@ -473,8 +483,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>789</width>
-     <height>21</height>
+     <width>972</width>
+     <height>36</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

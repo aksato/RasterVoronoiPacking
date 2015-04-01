@@ -39,10 +39,14 @@ namespace CUDAPACKING {
 	};
 
 	bool getTotalMemory(int &gpuDeviceCount, size_t &free, size_t &total);
+	void allocItemTypes(int numItems);
+	void setItemType(int itemId, int typeId);
 	void allocHostNfpPointers(int numItems, int numOrientations);
 	void allocSingleDeviceNfpMatrix(int staticId, int orbitingId, int *matrix, int width, int height, int originx, int originy);
 	void allocDeviceNfpPointers(int numItems, int numOrientations);
-	float *getcuOverlapMap(int curItem, int curItemAngle, int nItems, int numAngles, int overlapmap_width, int overlapmap_height, int overlapmapx, int overlapmapy, int *posx, int *posy, int *angles);
+	void allocDeviceMaxIfp(size_t memSize);
+	float *getcuOverlapMap(int curItem, int curItemAngle, int nItems, int numAngles, int overlapmap_width, int overlapmap_height, int overlapmapx, int overlapmapy, int *posx, int *posy, int *angles, float *weights, bool useGlsWeights = false);
+	float getcuMinimumOverlap(int curItem, int curItemAngle, int nItems, int numAngles, int overlapmap_width, int overlapmap_height, int overlapmapx, int overlapmapy, int *posx, int *posy, int *angles, float *weights, int &minX, int &minY, bool useGlsWeights = false);
 }
 
 #endif // GPUINFO_H

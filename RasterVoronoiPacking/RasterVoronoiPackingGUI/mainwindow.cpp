@@ -43,13 +43,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_3, SIGNAL(clicked()), this, SLOT(generateCurrentTotalOverlapMap()));
 	connect(ui->pushButton_11, SIGNAL(clicked()), this, SLOT(generateCurrentTotalOverlapMapGPU()));
     connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumPosition()));
+	connect(ui->pushButton_21, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumPositionGPU()));
     connect(ui->pushButton_5, SIGNAL(clicked()), this, SLOT(createRandomLayout()));
     connect(ui->pushButton_14, SIGNAL(clicked()), this, SLOT(changeContainerWidth()));
     connect(ui->pushButton_6, SIGNAL(clicked()), this, SLOT(showGlobalOverlap()));
     connect(ui->pushButton_7, SIGNAL(clicked()), this, SLOT(localSearch()));
+	connect(ui->pushButton_22, SIGNAL(clicked()), this, SLOT(localSearchGPU()));
     connect(ui->pushButton_10, SIGNAL(clicked()), this, SLOT(generateCurrentTotalGlsWeightedOverlapMap()));
+	connect(ui->pushButton_23, SIGNAL(clicked()), this, SLOT(generateCurrentTotalGlsWeightedOverlapMapGPU()));
     connect(ui->pushButton_9, SIGNAL(clicked()), this, SLOT(translateCurrentToGlsWeightedMinimumPosition()));
+	connect(ui->pushButton_24, SIGNAL(clicked()), this, SLOT(translateCurrentToGlsWeightedMinimumPositionGPU()));
     connect(ui->pushButton_8, SIGNAL(clicked()), this, SLOT(glsWeightedlocalSearch()));
+	connect(ui->pushButton_25, SIGNAL(clicked()), this, SLOT(glsWeightedlocalSearchGPU()));
     connect(ui->pushButton_12, SIGNAL(clicked()), this, SLOT(updateGlsWeightedOverlapMap()));
     connect(ui->pushButton_13, SIGNAL(clicked()), this, SLOT(resetGlsWeightedOverlapMap()));
     connect(&weightViewer, SIGNAL(weightViewerSelectionChanged(int,int)), ui->graphicsView, SLOT(highlightPair(int,int)));
@@ -106,6 +111,7 @@ void MainWindow::loadPuzzle() {
 				//qDebug() << "Complete GPU allocation possible. Estimated free space after allocation:" << remainingCUDAMem << "bytes. (" << remainingCUDAMem / 1024 / 1024 << "MB).";
 				if (QMessageBox::question(this, "Confirm CUDA allocation", "Complete GPU allocation possible. Estimated free space after allocation: " + QString::number(remainingCUDAMem / 1024 / 1024) + " MB. Do you want to allocate NFP memory?", QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
 					loadGPU = true;
+					CUDAPACKING::allocDeviceMaxIfp(problemIfpMaxMem);
 				}
 				
 			}
@@ -145,8 +151,9 @@ void MainWindow::loadPuzzle() {
         ui->pushButton_5->setEnabled(true); ui->pushButton_6->setEnabled(true);
         ui->pushButton_7->setEnabled(true); ui->pushButton_8->setEnabled(true);
 		ui->pushButton_9->setEnabled(true); ui->pushButton_10->setEnabled(true); ui->pushButton_11->setEnabled(true);
-        ui->pushButton_12->setEnabled(true); ui->pushButton_13->setEnabled(true);
-        ui->pushButton_14->setEnabled(true); ui->pushButton_15->setEnabled(true);
+		ui->pushButton_12->setEnabled(true); ui->pushButton_13->setEnabled(true); ui->pushButton_21->setEnabled(true);
+		ui->pushButton_14->setEnabled(true); ui->pushButton_15->setEnabled(true); 
+		ui->pushButton_22->setEnabled(true); ui->pushButton_23->setEnabled(true); ui->pushButton_24->setEnabled(true); ui->pushButton_25->setEnabled(true);
         ui->actionLoad_Zoomed_Problem->setEnabled(true);
 
         weightViewer.setWeights(solver->getGlsWeights(), solution.getNumItems());
@@ -209,8 +216,10 @@ void MainWindow::generateCurrentTotalOverlapMap() {
     ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
-    ui->graphicsView->showTotalOverlapMap(solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false));
-	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	int milliseconds = myTimer.elapsed();
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
 
 void MainWindow::createRandomLayout() {
@@ -222,10 +231,14 @@ void MainWindow::translateCurrentToMinimumPosition() {
     qreal minVal;
     ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
     std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
-    solution.setPosition(itemId, solver->getMinimumOverlapPosition(curMap, minVal));
+	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal);
+	int milliseconds = myTimer.elapsed();
+	solution.setPosition(itemId, minPos);
     ui->graphicsView->setCurrentSolution(solution);
     ui->graphicsView->showTotalOverlapMap(curMap);
+	ui->statusBar->showMessage("Minimum position determined. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
 
 void MainWindow::createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale) {
@@ -373,7 +386,7 @@ void MainWindow::executePacking() {
     else ui->graphicsView->getCurrentSolution(solution);
     solver->switchProblem(false);
     runThread.setInitialSolution(solution);
-    runThread.setParameters(runConfig.getMaxWorse(),runConfig.getMetaheuristic(),runConfig.getMaxSeconds());
+    runThread.setParameters(runConfig.getMaxWorse(),runConfig.getMetaheuristic(),runConfig.getMaxSeconds(), runConfig.getUseCUDA());
     runThread.setSolver(solver);
     if(runConfig.getMetaheuristic() == 0 || runConfig.getMetaheuristic() == 1) runThread.setScale(this->rasterProblem->getScale());
     else if(runConfig.getMetaheuristic() == 2) runThread.setScale(this->rasterZoomedProblem->getScale());
@@ -558,6 +571,68 @@ void MainWindow::generateCurrentTotalOverlapMapGPU() {
 	ui->graphicsView->getCurrentSolution(solution);
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
-	ui->graphicsView->showTotalOverlapMap(solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false));
-	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
+	int milliseconds = myTimer.elapsed();
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
+}
+
+void MainWindow::translateCurrentToMinimumPositionGPU() {
+	qreal minVal;
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	QPoint newPos = solver->getMinimumOverlapPositionGPU(itemId, solution.getOrientation(itemId), solution, minVal, false);
+	solution.setPosition(itemId, newPos);
+	ui->graphicsView->setCurrentSolution(solution);
+	int milliseconds = myTimer.elapsed();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	ui->statusBar->showMessage("Minimum position determined. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
+}
+
+void MainWindow::localSearchGPU() {
+	ui->graphicsView->getCurrentSolution(solution);
+	QTime myTimer; myTimer.start();
+	solver->performLocalSearchGPU(solution, false);
+	ui->statusBar->showMessage("Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
+	ui->graphicsView->setCurrentSolution(solution);
+}
+
+void MainWindow::generateCurrentTotalGlsWeightedOverlapMapGPU() {
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, true);
+	int milliseconds = myTimer.elapsed();
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
+	weightViewer.updateImage();
+	weightViewer.show();
+}
+
+void MainWindow::translateCurrentToGlsWeightedMinimumPositionGPU() {
+	qreal minVal;
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	QPoint newPos = solver->getMinimumOverlapPositionGPU(itemId, solution.getOrientation(itemId), solution, minVal, true);
+	solution.setPosition(itemId, newPos);
+	ui->graphicsView->setCurrentSolution(solution);
+	int milliseconds = myTimer.elapsed();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, true);
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	ui->statusBar->showMessage("Minimum position determined. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
+	weightViewer.updateImage();
+	weightViewer.show();
+}
+
+void MainWindow::glsWeightedlocalSearchGPU() {
+	ui->graphicsView->getCurrentSolution(solution);
+	QTime myTimer; myTimer.start();
+	solver->performLocalSearchGPU(solution, true);
+	ui->statusBar->showMessage("Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
+	ui->graphicsView->setCurrentSolution(solution);
+	weightViewer.updateImage();
+	weightViewer.show();
 }

@@ -26,6 +26,7 @@ namespace RASTERVORONOIPACKING {
         qreal getGlobalOverlap(RasterPackingSolution &solution);
         // --> Local search
         void performLocalSearch(RasterPackingSolution &solution, bool useGlsWeights = false);
+		void performLocalSearchGPU(RasterPackingSolution &solution, bool useGlsWeights = false);
         // --> Switch between original and zoomed problems
         void switchProblem(bool zoomedProblem);
         // --> Local search with zoomed approach
@@ -40,6 +41,7 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<TotalOverlapMap> getCUDATotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
         // --> Get absolute minimum overlap position
         QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value);
+		QPoint getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, bool useGlsWeights = false);
         // --> Retrieve a rectangular area of the total overlap map
         std::shared_ptr<TotalOverlapMap> getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, bool useGlsWeights = false);
 

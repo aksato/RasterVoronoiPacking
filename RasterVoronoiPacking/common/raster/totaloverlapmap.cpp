@@ -35,19 +35,19 @@ TotalOverlapMap::TotalOverlapMap(int width, int height) {
 void TotalOverlapMap::init(uint _width, uint _height) {
     this->width = _width;
     this->height = _height;
-    data = new qreal[width*height];
+    data = new float[width*height];
     Q_CHECK_PTR(data);
-    std::fill(data, data+width*height, 0);
+    std::fill(data, data+width*height, (float)0.0);
     #ifdef QT_DEBUG
         initialWidth = width;
     #endif
 }
 
 void TotalOverlapMap::reset() {
-     std::fill(data, data+width*height, 0);
+     std::fill(data, data+width*height, (float)0.0);
 }
 
-qreal *TotalOverlapMap::scanLine(int y) {
+float *TotalOverlapMap::scanLine(int y) {
     return data+y*width;
 }
 
@@ -72,15 +72,16 @@ void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint
         for(int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
             int indexValue = nfp->getPixel(i-relativeOrigin.x(), j-relativeOrigin.y());
 //            int indexValue = nfp->getImage().pixelIndex(i-relativeOrigin.x(), j-relativeOrigin.y());
-            qreal distanceValue = 0.0;
-            if(indexValue != 0) distanceValue = 1.0 + (nfp->getMaxD()-1.0)*((qreal)indexValue-1.0)/254.0;
-            data[j*width+i] += distanceValue;
+            float distanceValue = 0.0;
+            //if(indexValue != 0) distanceValue = 1.0 + (nfp->getMaxD()-1.0)*((float)indexValue-1.0)/254.0;
+            //data[j*width+i] += distanceValue;
+			data[j*width + i] += indexValue;
 //            data[j*width+i] += nfp->getImage().pixelIndex(i-relativeOrigin.x(), j-relativeOrigin.y());
         }
 
 }
 
-void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, qreal weight) {
+void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight) {
     QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
     QRect intersection;
 //    if(!getLimits(relativeOrigin, nfp->getImage().width(), nfp->getImage().height(), intersection)) return;
@@ -90,27 +91,28 @@ void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint
         for(int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
             int indexValue = nfp->getPixel(i-relativeOrigin.x(), j-relativeOrigin.y());
 //            int indexValue = nfp->getImage().pixelIndex(i-relativeOrigin.x(), j-relativeOrigin.y());
-            qreal distanceValue = 0.0;
-            if(indexValue != 0) distanceValue = 1.0 + (nfp->getMaxD()-1.0)*((qreal)indexValue-1.0)/254.0;
-            data[j*width+i] += weight*distanceValue;
+            float distanceValue = 0.0;
+            //if(indexValue != 0) distanceValue = 1.0 + (nfp->getMaxD()-1.0)*((float)indexValue-1.0)/254.0;
+            //data[j*width+i] += weight*distanceValue;
+			data[j*width + i] += weight*(float)indexValue;
         }
 }
 
-//void TotalOverlapMap::setZoomedMap(QPoint nonZoomedpos, qreal zoomFactor) {
+//void TotalOverlapMap::setZoomedMap(QPoint nonZoomedpos, float zoomFactor) {
 //    QPoint bottomLeft = QPoint(qRound(nonZoomedpos.x()*zoomFactor), qRound(nonZoomedpos.y()*zoomFactor));
 //    for(int j = bottomLeft.y; j < bottomLeft.y+width; j++)
 //        for(int i = bottomLeft.x; i < bottomLeft.x+width; i++)
 
 //}
 
-QPoint TotalOverlapMap::getMinimum(qreal &minVal) {
-    qreal *curPt = data;
+QPoint TotalOverlapMap::getMinimum(float &minVal) {
+    float *curPt = data;
     minVal = *curPt;
     QPoint minPoint;
     minPoint.setX(0); minPoint.setY(0);
     for(int j = 0; j < height; j++)
         for(int i = 0; i < width; i++,curPt++) {
-            qreal curVal = *curPt;
+            float curVal = *curPt;
             if(curVal < minVal) {
                 minVal = curVal;
                 minPoint.setX(i); minPoint.setY(j);
@@ -122,9 +124,9 @@ QPoint TotalOverlapMap::getMinimum(qreal &minVal) {
 
 #ifndef CONSOLE
     QImage TotalOverlapMap::getImage() {
-        qreal maxD = 0;
+        float maxD = 0;
         for(int pixelY = 0; pixelY < height; pixelY++) {
-            qreal *mapLine = scanLine(pixelY);
+            float *mapLine = scanLine(pixelY);
             for(int pixelX = 0; pixelX < width; pixelX++) {
                 if(*mapLine > maxD) maxD = *mapLine;
                 mapLine++;
@@ -135,7 +137,7 @@ QPoint TotalOverlapMap::getMinimum(qreal &minVal) {
         setColormap(image);
         for(int pixelY = 0; pixelY < height; pixelY++) {
             uchar *resultLine = (uchar *)image.scanLine(pixelY);
-            qreal *mapLine = scanLine(pixelY);
+            float *mapLine = scanLine(pixelY);
             for(int pixelX = 0; pixelX < width; pixelX++) {
                 if(*mapLine==0)
                     *resultLine=0;
@@ -151,10 +153,10 @@ QPoint TotalOverlapMap::getMinimum(qreal &minVal) {
 #endif
 
 //QImage TotalOverlapMap::getImage2() {
-//    qreal maxD = 0;
-//    qreal minD = data[0];
+//    float maxD = 0;
+//    float minD = data[0];
 //    for(int pixelY = 0; pixelY < height; pixelY++) {
-//        qreal *mapLine = scanLine(pixelY);
+//        float *mapLine = scanLine(pixelY);
 //        for(int pixelX = 0; pixelX < width; pixelX++) {
 //            if(*mapLine > maxD) maxD = *mapLine;
 //            if(!qFuzzyCompare(1.0 + 0.0, 1.0 + minD) && *mapLine < minD) minD = *mapLine;
@@ -166,7 +168,7 @@ QPoint TotalOverlapMap::getMinimum(qreal &minVal) {
 //    setColormap(image);
 //    for(int pixelY = 0; pixelY < height; pixelY++) {
 //        uchar *resultLine = (uchar *)image.scanLine(pixelY);
-//        qreal *mapLine = scanLine(pixelY);
+//        float *mapLine = scanLine(pixelY);
 //        for(int pixelX = 0; pixelX < width; pixelX++) {
 //            if(qFuzzyCompare(1.0 + 0.0, 1.0 + *mapLine))
 //                *resultLine=0;

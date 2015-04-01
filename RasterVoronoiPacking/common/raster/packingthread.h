@@ -21,8 +21,9 @@ public:
 
     void setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution);
     void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {solver =_solver;}
-    void setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds);
+	void setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds, const bool _useCUDA);
     void setScale(qreal scale) {this->scale = scale;}
+	void setCuda(bool useCUDA) { this->useCUDA = useCUDA; }
 
 #ifndef CONSOLE
     protected:
@@ -47,6 +48,7 @@ private:
     int Nmo, heuristicType, maxSeconds;
     uint seed;
     qreal scale;
+	bool useCUDA;
 };
 
 #endif // PACKINGTHREAD_H

@@ -40,3 +40,8 @@ void RunConfigurationsDialog::setInitialLenght(qreal lenght, qreal step) {
     ui->doubleSpinBox->setMaximum(lenght);
     ui->doubleSpinBox->setSingleStep(step);
 }
+
+bool RunConfigurationsDialog::getUseCUDA() {
+	return ui->checkBox_2->isChecked();
+
+}

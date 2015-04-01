@@ -32,15 +32,20 @@ private slots:
     void generateCurrentTotalOverlapMap();
 	void generateCurrentTotalOverlapMapGPU();
     void translateCurrentToMinimumPosition();
+	void translateCurrentToMinimumPositionGPU();
     void createRandomLayout();
     void changeContainerWidth();
     void showGlobalOverlap();
     void localSearch();
+	void localSearchGPU();
     void generateCurrentTotalGlsWeightedOverlapMap();
+	void generateCurrentTotalGlsWeightedOverlapMapGPU();
     void updateGlsWeightedOverlapMap();
     void resetGlsWeightedOverlapMap();
     void translateCurrentToGlsWeightedMinimumPosition();
+	void translateCurrentToGlsWeightedMinimumPositionGPU();
     void glsWeightedlocalSearch();
+	void glsWeightedlocalSearchGPU();
 
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();

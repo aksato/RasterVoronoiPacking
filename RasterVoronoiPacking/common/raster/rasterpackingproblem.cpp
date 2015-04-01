@@ -56,9 +56,15 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem, bo
             std::shared_ptr<RasterPackingItem> curItem = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount()));
             curItem->setPieceName((*it)->getName());
             for(QVector<unsigned int>::const_iterator it2 = (*it)->corbegin(); it2 != (*it)->corend(); it2++) curItem->addAngleValue(*it2);
-            items.append(curItem);
-//            items.append(std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount())));
+			items.append(curItem);
         }
+	if (loadGPU) {
+		CUDAPACKING::allocItemTypes(items.count());
+		for each (std::shared_ptr<RasterPackingItem> curItem in items) CUDAPACKING::setItemType(curItem->getId(), curItem->getPieceType());
+		{
+
+		}
+	}
     std::shared_ptr<RASTERPREPROCESSING::Container> container = *problem.ccbegin();
     std::shared_ptr<RASTERPREPROCESSING::Polygon> pol = container->getPolygon();
     qreal minX = (*pol->begin()).x();
@@ -117,7 +123,8 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem, bo
 		// Alloc in GPU
 		int static1DId, orbitingDId;
 		static1DId = staticIds.first * NUM_ORIENTATIONS + staticIds.second; orbitingDId = orbitingIds.first*NUM_ORIENTATIONS + orbitingIds.second;  // FIXME: get number of orientations
-		if (loadGPU) CUDAPACKING::allocSingleDeviceNfpMatrix(static1DId, orbitingDId, getMatrixFromQImage(curImage), curImage.width(), curImage.height(), curRasterNfp->getReferencePoint().x(), curRasterNfp->getReferencePoint().y());
+		//if (loadGPU) CUDAPACKING::allocSingleDeviceNfpMatrix(static1DId, orbitingDId, getMatrixFromQImage(curImage), curImage.width(), curImage.height(), curRasterNfp->getReferencePoint().x(), curRasterNfp->getReferencePoint().y());
+		if (loadGPU) CUDAPACKING::allocSingleDeviceNfpMatrix(static1DId, orbitingDId, curMountain->getMatrix(), curImage.width(), curImage.height(), curRasterNfp->getReferencePoint().x(), curRasterNfp->getReferencePoint().y());
     }
 	if (loadGPU) CUDAPACKING::allocDeviceNfpPointers(problem.getPiecesCount(), NUM_ORIENTATIONS);
 

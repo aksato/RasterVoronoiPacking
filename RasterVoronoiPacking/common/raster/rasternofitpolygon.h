@@ -13,7 +13,7 @@ namespace RASTERVORONOIPACKING {
     public:
 //        RasterNoFitPolygon(QImage _image, QPoint _origin, qreal _maxD) : origin(_origin), image(_image) , maxD(_maxD) {}
         RasterNoFitPolygon(QImage _image, QPoint _origin, qreal _maxD) : origin(_origin), maxD(_maxD) {setMatrix(_image);}
-        ~RasterNoFitPolygon() {}
+		~RasterNoFitPolygon() { delete[] matrix; }
 
         void setOrigin(QPoint origin) {this->origin = origin;}
 //        void setImage(QImage image) {this->image = image;}
@@ -24,15 +24,23 @@ namespace RASTERVORONOIPACKING {
         qreal getMaxD() {return this->maxD;}
 
         void setMatrix(QImage image);
-        quint8 getPixel(int i, int j) {return matrix[j][i];}
-        int width() {return (int)matrix[0].size();}
-        int height() {return (int)matrix.size();}
+		quint8 getPixel(int i, int j) { return matrix[j*w + i]; }
+        //quint8 getPixel(int i, int j) {return matrix[j][i];}
+        //int width() {return (int)matrix[0].size();}
+        //int height() {return (int)matrix.size();}
+		int width() {return w;}
+		int height() {return h;}
+
+		int *getMatrix() { return matrix; }
+		void setMatrix(int *_matrix) { matrix = _matrix; }
 
     private:
         QPoint origin;
 //        QImage image;
         qreal maxD;
-        std::vector< std::vector<quint8> > matrix;
+        //std::vector< std::vector<quint8> > matrix;
+		int *matrix;
+		int w, h;
     };
 
     class RasterNoFitPolygonSet

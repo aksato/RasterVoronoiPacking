@@ -14,6 +14,7 @@ PackingThread::PackingThread(QObject *parent) :
     Nmo = 200;
     maxSeconds = 60;
     heuristicType = 1;
+	useCUDA = false;
     finishNow = false;
     seed = QDateTime::currentDateTime().toTime_t();// seed = 561; //TOREMOVE
     qDebug() << "Seed:" << seed;
@@ -27,10 +28,11 @@ PackingThread::~PackingThread() {
     #endif
 }
 
-void PackingThread::setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds) {
+void PackingThread::setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds, const bool _useCUDA) {
     this->Nmo = _Nmo;
     this->heuristicType = _heuristicType;
     this->maxSeconds = _maxSeconds;
+	this->useCUDA = _useCUDA;
 }
 
 void PackingThread::setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution) {
@@ -66,7 +68,10 @@ void PackingThread::run(qreal &overlap, qreal &elapsedTime, int &totalIterations
     emit solutionGenerated(threadSolution, scale);
     while(myTimer.elapsed()/1000.0 < maxSeconds) {
         if(finishNow) break;
-        if(heuristicType == 0 || heuristicType == 1) solver->performLocalSearch(threadSolution, gls);
+		if (heuristicType == 0 || heuristicType == 1) {
+			if (useCUDA) solver->performLocalSearchGPU(threadSolution, gls);
+			else solver->performLocalSearch(threadSolution, gls);
+		}
         else if(heuristicType == 2) solver->performTwoLevelLocalSearch(threadSolution, gls, 3);
         emit solutionGenerated(threadSolution, scale);
         if(heuristicType == 2) solver->switchProblem(true);

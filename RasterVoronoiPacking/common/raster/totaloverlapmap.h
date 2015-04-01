@@ -19,7 +19,7 @@ namespace RASTERVORONOIPACKING {
         void shrink(int pixels) {
             Q_ASSERT_X(width-pixels > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
             this->width = width-pixels;
-            std::fill(data, data+width*height, 0);
+            std::fill(data, data+width*height, (float)0.0);
         }
         // Does not expand more than the initial container!
         void expand(int pixels) {
@@ -33,27 +33,29 @@ namespace RASTERVORONOIPACKING {
         QPoint getReferencePoint() {return reference;}
         int getWidth() {return width;}
         int getHeight() {return height;}
-        qreal getValue(const QPoint &pt) {return getLocalValue(pt.x()+reference.x(),pt.y()+reference.y());}
-        void setValue(const QPoint &pt, qreal value) {setLocalValue(pt.x()+reference.x(), pt.y()+reference.y(), value);}
+        float getValue(const QPoint &pt) {return getLocalValue(pt.x()+reference.x(),pt.y()+reference.y());}
+        void setValue(const QPoint &pt, float value) {setLocalValue(pt.x()+reference.x(), pt.y()+reference.y(), value);}
 
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
-        void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, qreal weight);
+        void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight);
 
-        virtual QPoint getMinimum(qreal &minVal);
+        virtual QPoint getMinimum(float &minVal);
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes
         #endif
 
+		void setData(float *_data) { data = _data; }
+
     protected:
-        qreal *data;
+        float *data;
         int width;
         int height;
 
     private:
-        qreal *scanLine(int y);
-        qreal getLocalValue(int i, int j) {return data[j*width+i];}
-        void setLocalValue(int i, int j, qreal value) {data[j*width+i] = value;}
+        float *scanLine(int y);
+        float getLocalValue(int i, int j) {return data[j*width+i];}
+        void setLocalValue(int i, int j, float value) {data[j*width+i] = value;}
         bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);
 
         #ifdef QT_DEBUG

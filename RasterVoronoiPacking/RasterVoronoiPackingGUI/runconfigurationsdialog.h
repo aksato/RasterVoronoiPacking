@@ -20,6 +20,7 @@ public:
     int getMaxWorse();
     int getMaxSeconds();
     qreal getLenght();
+	bool getUseCUDA();
 
     void setInitialLenght(qreal lenght, qreal step);
 private:

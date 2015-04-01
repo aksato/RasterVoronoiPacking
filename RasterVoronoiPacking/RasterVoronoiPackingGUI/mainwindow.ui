@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>972</width>
-    <height>1041</height>
+    <height>1256</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -258,6 +258,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushButton_21">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Translate To Minimum (GPU)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_6">
             <property name="enabled">
              <bool>false</bool>
@@ -274,6 +284,16 @@
             </property>
             <property name="text">
              <string>Local Search</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_22">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Local Search (GPU)</string>
             </property>
            </widget>
           </item>
@@ -308,6 +328,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushButton_23">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Display Total Overlap Map (GPU)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_9">
             <property name="enabled">
              <bool>false</bool>
@@ -318,12 +348,32 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushButton_24">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Translate To Minimum (GPU)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_8">
             <property name="enabled">
              <bool>false</bool>
             </property>
             <property name="text">
              <string>Local Search</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_25">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Local Search (GPU)</string>
             </property>
            </widget>
           </item>

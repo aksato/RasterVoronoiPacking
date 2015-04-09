@@ -313,6 +313,16 @@ void RasterStripPackingSolver::setContainerWidth(int pixelWidth) {
     currentWidth = pixelWidth;
 }
 
+void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterPackingSolution &solution) {
+	setContainerWidth(pixelWidth);
+	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
+		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, solution.getOrientation(itemId));
+		QPoint curItemPos = solution.getPosition(itemId);
+		int maxPositionX = curMap->getReferencePoint().x() + curMap->getWidth() - 1;
+		if (curItemPos.x() > maxPositionX) solution.setPosition(itemId, QPoint(maxPositionX, curItemPos.y()));
+	}
+}
+
 // --> Get nfp distance value: pos1 is static item and pos2 is orbiting item
 qreal getNfpValue(QPoint pos1, QPoint pos2, std::shared_ptr<RasterNoFitPolygon> curNfp, bool &isZero) {
     isZero = false;
@@ -785,42 +795,42 @@ qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution
 //    }
 //}
 
-// --> Return total overlap map for a given item using GPU
-std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMapGPU(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights) {
-	if (currentProblem == zoomedProblem) {
-		//Q_ASSERT_X(width-pixels > 0, "RasterStripPackingSolver::getTotalOverlapMap", "Tried to obtain total overlap map, which is not permitted.");
-		return 0;
-	}
-
-	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
-	currrentPieceMap->reset();
-
-	// --> Converting parameter for cuda input
-
-	// Inner fit polygon data conversion
-	int ifpWidth, ifpHeight, ifpX, ifpY;
-	ifpWidth = currrentPieceMap->getWidth(); ifpHeight = currrentPieceMap->getHeight();
-	ifpX = currrentPieceMap->getReferencePoint().x(); ifpY = currrentPieceMap->getReferencePoint().y();
-
-	// Solution data conversion
-	int *placementsx, *placementsy, *angles; float *weights;
-	placementsx = (int*)malloc(originalProblem->count()*sizeof(int));
-	placementsy = (int*)malloc(originalProblem->count()*sizeof(int));
-	angles = (int*)malloc(originalProblem->count()*sizeof(int));
-	weights = (float*)malloc(originalProblem->count()*sizeof(float));
-	for (int k = 0; k < originalProblem->count(); k++) {
-		placementsx[k] = solution.getPosition(k).x();
-		placementsy[k] = solution.getPosition(k).y();
-		angles[k] = solution.getOrientation(k);
-		if (useGlsWeights && k != itemId) weights[k] = glsWeights->getWeight(itemId, k);
-	}
-
-	// --> Determine the overlap map
-	float *overlapMapRawData = CUDAPACKING::getcuOverlapMap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, useGlsWeights);
-	currrentPieceMap->setData(overlapMapRawData);
-
-	return currrentPieceMap;
-}
+//// --> Return total overlap map for a given item using GPU
+//std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMapGPU(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights) {
+//	if (currentProblem == zoomedProblem) {
+//		//Q_ASSERT_X(width-pixels > 0, "RasterStripPackingSolver::getTotalOverlapMap", "Tried to obtain total overlap map, which is not permitted.");
+//		return 0;
+//	}
+//
+//	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+//	currrentPieceMap->reset();
+//
+//	// --> Converting parameter for cuda input
+//
+//	// Inner fit polygon data conversion
+//	int ifpWidth, ifpHeight, ifpX, ifpY;
+//	ifpWidth = currrentPieceMap->getWidth(); ifpHeight = currrentPieceMap->getHeight();
+//	ifpX = currrentPieceMap->getReferencePoint().x(); ifpY = currrentPieceMap->getReferencePoint().y();
+//
+//	// Solution data conversion
+//	int *placementsx, *placementsy, *angles; float *weights;
+//	placementsx = (int*)malloc(originalProblem->count()*sizeof(int));
+//	placementsy = (int*)malloc(originalProblem->count()*sizeof(int));
+//	angles = (int*)malloc(originalProblem->count()*sizeof(int));
+//	weights = (float*)malloc(originalProblem->count()*sizeof(float));
+//	for (int k = 0; k < originalProblem->count(); k++) {
+//		placementsx[k] = solution.getPosition(k).x();
+//		placementsy[k] = solution.getPosition(k).y();
+//		angles[k] = solution.getOrientation(k);
+//		if (useGlsWeights && k != itemId) weights[k] = glsWeights->getWeight(itemId, k);
+//	}
+//
+//	// --> Determine the overlap map
+//	float *overlapMapRawData = CUDAPACKING::getcuOverlapMap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, useGlsWeights);
+//	currrentPieceMap->setData(overlapMapRawData);
+//
+//	return currrentPieceMap;
+//}
 
 QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, bool useGlsWeights) {
 	if (currentProblem == zoomedProblem) {
@@ -854,6 +864,12 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int or
 
 	// --> Determine the overlap map	 and minimum overlap placement
 	value = CUDAPACKING::getcuMinimumOverlap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, minx, miny, useGlsWeights);
+
+	// Free pointers
+	free(placementsx);
+	free(placementsy);
+	free(angles);
+	free(weights);
 
 	return QPoint(minx, miny);
 }

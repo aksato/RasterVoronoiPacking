@@ -22,9 +22,13 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
 
 namespace CUDAPACKING {
 
+	// Problem pointers
 	CudaRasterNoFitPolygon **h_dpointerdpointers, **h_hpointerdpointers, **d_dpointerdpointer;
 	int *d_itemTypeMap;
 	float *d_overlapmap;
+	// Solution pointers
+	int *d_posx, *d_posy, *d_angles;
+	float *d_weights;
 
 	bool getTotalMemory(int &gpuDeviceCount, size_t &free, size_t &total) {
 		int deviceCount, device;
@@ -53,6 +57,13 @@ namespace CUDAPACKING {
 
 	void allocItemTypes(int numItems) {
 		gpuErrchk(cudaMalloc((void**)&d_itemTypeMap, numItems*sizeof(int)));
+	}
+
+	void alloDevicecSolutionPointers(int numItems) {
+		gpuErrchk(cudaMalloc((void**)&d_posx, numItems*sizeof(int)));
+		gpuErrchk(cudaMalloc((void**)&d_posy, numItems*sizeof(int)));
+		gpuErrchk(cudaMalloc((void**)&d_angles, numItems*sizeof(int)));
+		gpuErrchk(cudaMalloc((void**)&d_weights, numItems*sizeof(float)));
 	}
 
 	void setItemType(int itemId, int typeId) {
@@ -130,41 +141,41 @@ namespace CUDAPACKING {
 		gpuErrchk(cudaMalloc((void**)&d_overlapmap, memSize));
 	}
 
-	float *getcuOverlapMap(int curItem, int curItemAngle, int nItems, int numAngles, int overlapmap_width, int overlapmap_height, int overlapmapx, int overlapmapy, int *posx, int *posy, int *angles, float *weights, bool useGlsWeights) {
-		// Create overlap map on device
-		//float *d_overlapmap;
-		//cudaMalloc((void**)&d_overlapmap, overlapmap_width*overlapmap_height*sizeof(float));
+	//float *getcuOverlapMap(int curItem, int curItemAngle, int nItems, int numAngles, int overlapmap_width, int overlapmap_height, int overlapmapx, int overlapmapy, int *posx, int *posy, int *angles, float *weights, bool useGlsWeights) {
+	//	// Create overlap map on device
+	//	//float *d_overlapmap;
+	//	//cudaMalloc((void**)&d_overlapmap, overlapmap_width*overlapmap_height*sizeof(float));
 
-		// Copy position and angles to device
-		int *d_posx, *d_posy, *d_angles; 
-		cudaMalloc((void**)&d_posx, nItems*sizeof(int));
-		cudaMalloc((void**)&d_posy, nItems*sizeof(int));
-		cudaMalloc((void**)&d_angles, nItems*sizeof(int));
-		cudaMemcpy(d_posx, posx, nItems*sizeof(int), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_posy, posy, nItems*sizeof(int), cudaMemcpyHostToDevice);
-		cudaMemcpy(d_angles, angles, nItems*sizeof(int), cudaMemcpyHostToDevice);
+	//	// Copy position and angles to device
+	//	int *d_posx, *d_posy, *d_angles; 
+	//	cudaMalloc((void**)&d_posx, nItems*sizeof(int));
+	//	cudaMalloc((void**)&d_posy, nItems*sizeof(int));
+	//	cudaMalloc((void**)&d_angles, nItems*sizeof(int));
+	//	cudaMemcpy(d_posx, posx, nItems*sizeof(int), cudaMemcpyHostToDevice);
+	//	cudaMemcpy(d_posy, posy, nItems*sizeof(int), cudaMemcpyHostToDevice);
+	//	cudaMemcpy(d_angles, angles, nItems*sizeof(int), cudaMemcpyHostToDevice);
 
-		// Copy weights
-		float *d_weights;
-		if (useGlsWeights) {
-			cudaMalloc((void**)&d_weights, nItems*sizeof(float));
-			cudaMemcpy(d_weights, weights, nItems*sizeof(float), cudaMemcpyHostToDevice);
-		}
+	//	// Copy weights
+	//	float *d_weights;
+	//	if (useGlsWeights) {
+	//		cudaMalloc((void**)&d_weights, nItems*sizeof(float));
+	//		cudaMemcpy(d_weights, weights, nItems*sizeof(float), cudaMemcpyHostToDevice);
+	//	}
 
-		// Execute Kernel
-		dim3 blocks(1, 1, 1);
-		dim3 threadsperblock(BLOCK_SIZE, BLOCK_SIZE, 1);
-		blocks.x = ((overlapmap_width / BLOCK_SIZE) + (((overlapmap_width) % BLOCK_SIZE) == 0 ? 0 : 1));
-		blocks.y = ((overlapmap_height / BLOCK_SIZE) + (((overlapmap_height) % BLOCK_SIZE) == 0 ? 0 : 1));
-		if (!useGlsWeights) DisplacedSumKernel << <blocks, threadsperblock >> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy, numAngles, d_dpointerdpointer, nItems, d_itemTypeMap, curItem, curItemAngle, d_posx, d_posy, d_angles);
-		else DisplacedWeightedSumKernel << <blocks, threadsperblock >> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy, numAngles, d_dpointerdpointer, nItems, d_itemTypeMap, curItem, curItemAngle, d_posx, d_posy, d_angles, d_weights);
+	//	// Execute Kernel
+	//	dim3 blocks(1, 1, 1);
+	//	dim3 threadsperblock(BLOCK_SIZE, BLOCK_SIZE, 1);
+	//	blocks.x = ((overlapmap_width / BLOCK_SIZE) + (((overlapmap_width) % BLOCK_SIZE) == 0 ? 0 : 1));
+	//	blocks.y = ((overlapmap_height / BLOCK_SIZE) + (((overlapmap_height) % BLOCK_SIZE) == 0 ? 0 : 1));
+	//	if (!useGlsWeights) DisplacedSumKernel << <blocks, threadsperblock >> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy, numAngles, d_dpointerdpointer, nItems, d_itemTypeMap, curItem, curItemAngle, d_posx, d_posy, d_angles);
+	//	else DisplacedWeightedSumKernel << <blocks, threadsperblock >> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy, numAngles, d_dpointerdpointer, nItems, d_itemTypeMap, curItem, curItemAngle, d_posx, d_posy, d_angles, d_weights);
 
-		// Copy overlap map result to host
-		float *h_overlapmap = (float *)malloc(overlapmap_width*overlapmap_height*sizeof(float));
-		cudaMemcpy(h_overlapmap, d_overlapmap, overlapmap_width * overlapmap_height * sizeof(float), cudaMemcpyDeviceToHost);
+	//	// Copy overlap map result to host
+	//	float *h_overlapmap = (float *)malloc(overlapmap_width*overlapmap_height*sizeof(float));
+	//	cudaMemcpy(h_overlapmap, d_overlapmap, overlapmap_width * overlapmap_height * sizeof(float), cudaMemcpyDeviceToHost);
 
-		return h_overlapmap;
-	}
+	//	return h_overlapmap;
+	//}
 
 	__global__ void FindMinimumPositionKernel(float *g_idata, float *g_odata, int *g_opos, int n, bool first) {
 		extern __shared__ float smem[];
@@ -215,20 +226,21 @@ namespace CUDAPACKING {
 		if (tid == 0) { g_odata[blockIdx.x] = sdata[0]; g_opos[blockIdx.x] = sdatapos[0]; }// printf("(%d, %f) ", g_opos[blockIdx.x], g_odata[blockIdx.x]);
 	}
 	
+	// Returns minimum overlap position and value using GPU. TODO: Change placement in gpu memory.
 	float getcuMinimumOverlap(int curItem, int curItemAngle, int nItems, int numAngles, int overlapmap_width, int overlapmap_height, int overlapmapx, int overlapmapy, int *posx, int *posy, int *angles, float *weights, int &minX, int &minY, bool useGlsWeights) {
 		// Copy position and angles to device
-		int *d_posx, *d_posy, *d_angles;
-		cudaMalloc((void**)&d_posx, nItems*sizeof(int));
-		cudaMalloc((void**)&d_posy, nItems*sizeof(int));
-		cudaMalloc((void**)&d_angles, nItems*sizeof(int));
+		//int *d_posx, *d_posy, *d_angles;
+		//cudaMalloc((void**)&d_posx, nItems*sizeof(int));
+		//cudaMalloc((void**)&d_posy, nItems*sizeof(int));
+		//cudaMalloc((void**)&d_angles, nItems*sizeof(int));
 		cudaMemcpy(d_posx, posx, nItems*sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_posy, posy, nItems*sizeof(int), cudaMemcpyHostToDevice);
 		cudaMemcpy(d_angles, angles, nItems*sizeof(int), cudaMemcpyHostToDevice);
 
 		// Copy weights
-		float *d_weights;
+		//float *d_weights;
 		if (useGlsWeights) {
-			cudaMalloc((void**)&d_weights, nItems*sizeof(float));
+			//cudaMalloc((void**)&d_weights, nItems*sizeof(float));
 			cudaMemcpy(d_weights, weights, nItems*sizeof(float), cudaMemcpyHostToDevice);
 		}
 
@@ -251,7 +263,8 @@ namespace CUDAPACKING {
 		dim3 threadsperblock2(REDUCTION_BLOCK_SIZE, 1, 1);
 		blocks2.x = ((overlapmap_width*overlapmap_height) / REDUCTION_BLOCK_SIZE) + (((overlapmap_width*overlapmap_height) % REDUCTION_BLOCK_SIZE) == 0 ? 0 : 1);
 		float *d_temp_output; int *d_temp_pos;
-		cudaMalloc((void**)&d_temp_output, blocks2.x*sizeof(float)); cudaMalloc((void**)&d_temp_pos, blocks2.x*sizeof(int));
+		gpuErrchk(cudaMalloc((void**)&d_temp_output, blocks2.x*sizeof(float)));
+		gpuErrchk(cudaMalloc((void**)&d_temp_pos, blocks2.x*sizeof(int)));
 		FindMinimumPositionKernel << <blocks2, threadsperblock2, REDUCTION_BLOCK_SIZE*sizeof(float)+REDUCTION_BLOCK_SIZE*sizeof(int) >> >(d_overlapmap, d_temp_output, d_temp_pos, overlapmap_width*overlapmap_height, true);
 		int reducedsize = blocks2.x;
 		while (reducedsize > 1) {
@@ -267,6 +280,10 @@ namespace CUDAPACKING {
 		minX = - overlapmapx + linearPosition % overlapmap_width;
 		minY = - overlapmapy + linearPosition / overlapmap_width;
 		//float realVal; cudaMemcpy(&realVal, d_overlapmap + linearPosition, sizeof(float), cudaMemcpyDeviceToHost); printf("Minimum overlap: %f (actually %f) at position %d (%d, %d).\n", minVal, realVal, linearPosition, minX, minY);
+
+		// Free GPU temporary pointers
+		gpuErrchk(cudaFree(d_temp_output));
+		gpuErrchk(cudaFree(d_temp_pos));
 
 		return minVal;
 	}

@@ -28,7 +28,7 @@ namespace RASTERVORONOIPACKING {
     {
     public:
         RasterPackingSolution();
-        RasterPackingSolution(int numItems);
+		RasterPackingSolution(int numItems, bool loadGPU = false);
 
         int getNumItems() const {return placements.size();}
         void setPosition(int id, QPoint newPos) {placements[id].setPos(newPos);}

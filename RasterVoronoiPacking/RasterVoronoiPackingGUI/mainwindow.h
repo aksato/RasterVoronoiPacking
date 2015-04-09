@@ -31,6 +31,7 @@ private slots:
     void printCurrentSolution();
     void generateCurrentTotalOverlapMap();
 	void generateCurrentTotalOverlapMapGPU();
+	void generateCurrentTotalOverlapMapCache();
     void translateCurrentToMinimumPosition();
 	void translateCurrentToMinimumPositionGPU();
     void createRandomLayout();
@@ -38,14 +39,17 @@ private slots:
     void showGlobalOverlap();
     void localSearch();
 	void localSearchGPU();
+	void localSearchCache();
     void generateCurrentTotalGlsWeightedOverlapMap();
 	void generateCurrentTotalGlsWeightedOverlapMapGPU();
     void updateGlsWeightedOverlapMap();
     void resetGlsWeightedOverlapMap();
     void translateCurrentToGlsWeightedMinimumPosition();
 	void translateCurrentToGlsWeightedMinimumPositionGPU();
+	void generateCurrentTotalGlsWeightedOverlapMapCache();
     void glsWeightedlocalSearch();
 	void glsWeightedlocalSearchGPU();
+	void glsWeightedlocalSearchCache();
 
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();
@@ -60,6 +64,9 @@ private slots:
     void saveSolution();
     void loadSolution();
     void exportSolutionToSvg();
+
+	void printCacheInfo();
+	void printGlsWeightedCacheInfo();
 
 private:
     void createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale);

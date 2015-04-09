@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>300</width>
-    <height>279</height>
+    <height>294</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -121,7 +121,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="3">
+   <item row="8" column="0" colspan="3">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -158,6 +158,13 @@
     <widget class="QCheckBox" name="checkBox_2">
      <property name="text">
       <string>CUDA ver.</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QCheckBox" name="checkBox_3">
+     <property name="text">
+      <string>Use Map Cache</string>
      </property>
     </widget>
    </item>

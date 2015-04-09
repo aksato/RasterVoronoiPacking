@@ -42,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->pushButton_3, SIGNAL(clicked()), this, SLOT(generateCurrentTotalOverlapMap()));
 	connect(ui->pushButton_11, SIGNAL(clicked()), this, SLOT(generateCurrentTotalOverlapMapGPU()));
+	connect(ui->pushButton_29, SIGNAL(clicked()), this, SLOT(generateCurrentTotalOverlapMapCache()));
     connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumPosition()));
 	connect(ui->pushButton_21, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumPositionGPU()));
     connect(ui->pushButton_5, SIGNAL(clicked()), this, SLOT(createRandomLayout()));
@@ -49,12 +50,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_6, SIGNAL(clicked()), this, SLOT(showGlobalOverlap()));
     connect(ui->pushButton_7, SIGNAL(clicked()), this, SLOT(localSearch()));
 	connect(ui->pushButton_22, SIGNAL(clicked()), this, SLOT(localSearchGPU()));
+	connect(ui->pushButton_26, SIGNAL(clicked()), this, SLOT(localSearchCache()));
+	connect(ui->pushButton_28, SIGNAL(clicked()), this, SLOT(printCacheInfo()));
+	connect(ui->pushButton_30, SIGNAL(clicked()), this, SLOT(printGlsWeightedCacheInfo()));
     connect(ui->pushButton_10, SIGNAL(clicked()), this, SLOT(generateCurrentTotalGlsWeightedOverlapMap()));
 	connect(ui->pushButton_23, SIGNAL(clicked()), this, SLOT(generateCurrentTotalGlsWeightedOverlapMapGPU()));
+	connect(ui->pushButton_31, SIGNAL(clicked()), this, SLOT(generateCurrentTotalGlsWeightedOverlapMapCache()));
     connect(ui->pushButton_9, SIGNAL(clicked()), this, SLOT(translateCurrentToGlsWeightedMinimumPosition()));
 	connect(ui->pushButton_24, SIGNAL(clicked()), this, SLOT(translateCurrentToGlsWeightedMinimumPositionGPU()));
     connect(ui->pushButton_8, SIGNAL(clicked()), this, SLOT(glsWeightedlocalSearch()));
 	connect(ui->pushButton_25, SIGNAL(clicked()), this, SLOT(glsWeightedlocalSearchGPU()));
+	connect(ui->pushButton_27, SIGNAL(clicked()), this, SLOT(glsWeightedlocalSearchCache()));
     connect(ui->pushButton_12, SIGNAL(clicked()), this, SLOT(updateGlsWeightedOverlapMap()));
     connect(ui->pushButton_13, SIGNAL(clicked()), this, SLOT(resetGlsWeightedOverlapMap()));
     connect(&weightViewer, SIGNAL(weightViewerSelectionChanged(int,int)), ui->graphicsView, SLOT(highlightPair(int,int)));
@@ -128,6 +134,8 @@ void MainWindow::loadPuzzle() {
 		if (loadGPU) {  
 			CUDAPACKING::getTotalMemory(numGPUs, freeCUDAMem, totalCUDAmem);
 			qDebug() << "GPU memory allocated. Available memory" << freeCUDAMem / 1024 / 1024 << "MB.";
+			ui->pushButton_11->setEnabled(true); ui->pushButton_21->setEnabled(true); ui->pushButton_22->setEnabled(true);
+			ui->pushButton_23->setEnabled(true); ui->pushButton_24->setEnabled(true); ui->pushButton_25->setEnabled(true);
 		}
 
         solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
@@ -150,10 +158,11 @@ void MainWindow::loadPuzzle() {
         ui->pushButton_3->setEnabled(true); ui->pushButton_4->setEnabled(true);
         ui->pushButton_5->setEnabled(true); ui->pushButton_6->setEnabled(true);
         ui->pushButton_7->setEnabled(true); ui->pushButton_8->setEnabled(true);
-		ui->pushButton_9->setEnabled(true); ui->pushButton_10->setEnabled(true); ui->pushButton_11->setEnabled(true);
-		ui->pushButton_12->setEnabled(true); ui->pushButton_13->setEnabled(true); ui->pushButton_21->setEnabled(true);
-		ui->pushButton_14->setEnabled(true); ui->pushButton_15->setEnabled(true); 
-		ui->pushButton_22->setEnabled(true); ui->pushButton_23->setEnabled(true); ui->pushButton_24->setEnabled(true); ui->pushButton_25->setEnabled(true);
+		ui->pushButton_9->setEnabled(true); ui->pushButton_10->setEnabled(true); 
+		ui->pushButton_12->setEnabled(true); ui->pushButton_13->setEnabled(true); 
+		ui->pushButton_14->setEnabled(true); ui->pushButton_15->setEnabled(true);
+		ui->pushButton_27->setEnabled(true);
+		
         ui->actionLoad_Zoomed_Problem->setEnabled(true);
 
         weightViewer.setWeights(solver->getGlsWeights(), solution.getNumItems());
@@ -211,6 +220,19 @@ void MainWindow::printCurrentSolution() {
     ui->graphicsView->getCurrentSolution(solution);
     qDebug() << solution;
 }
+
+//void updateOverlapMapsCachedInfo(RasterPackingSolution& newSolution, RasterPackingSolution& prevSolution, std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver) {
+//	for (int curItemId = 0; curItemId < prevSolution.getNumItems(); curItemId++) {
+//		if (newSolution.getPosition(curItemId) != prevSolution.getPosition(curItemId) || newSolution.getOrientation(curItemId) != prevSolution.getOrientation(curItemId)) {
+//			qDebug() << "Cache info of item" << curItemId << "updated.";
+//			solver->setCacheInfo(curItemId, true, newSolution.getPosition(curItemId), newSolution.getOrientation(curItemId));
+//		}
+//		else {
+//			qDebug() << "Placement of item" << curItemId << "did not change.";
+//			solver->setCacheInfo(curItemId, false, newSolution.getPosition(curItemId), newSolution.getOrientation(curItemId));
+//		}
+//	}
+//}
 
 void MainWindow::generateCurrentTotalOverlapMap() {
     ui->graphicsView->getCurrentSolution(solution);
@@ -312,9 +334,13 @@ void MainWindow::showGlobalOverlap() {
 void MainWindow::localSearch() {
     ui->graphicsView->getCurrentSolution(solution);
     QTime myTimer; myTimer.start();
-    solver->performLocalSearch(solution, false);
+    solver->performLocalSearch(solution, false, true);
     ui->statusBar->showMessage( "Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed()/1000.0) + "seconds");
     ui->graphicsView->setCurrentSolution(solution);
+
+	ui->pushButton_26->setEnabled(true);
+	ui->pushButton_28->setEnabled(true);
+	ui->pushButton_29->setEnabled(true);
 }
 
 void MainWindow::generateCurrentTotalGlsWeightedOverlapMap() {
@@ -362,11 +388,14 @@ void MainWindow::glsWeightedlocalSearch() {
 //    weightViewer.show();
     ui->graphicsView->getCurrentSolution(solution);
     QTime myTimer; myTimer.start();
-    solver->performLocalSearch(solution, true);
+    solver->performLocalSearch(solution, true, true);
     ui->statusBar->showMessage( "Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed()/1000.0) + "seconds");
     ui->graphicsView->setCurrentSolution(solution);
     weightViewer.updateImage();
     weightViewer.show();
+
+	ui->pushButton_30->setEnabled(true);
+	ui->pushButton_31->setEnabled(true);
 }
 
 
@@ -386,7 +415,7 @@ void MainWindow::executePacking() {
     else ui->graphicsView->getCurrentSolution(solution);
     solver->switchProblem(false);
     runThread.setInitialSolution(solution);
-    runThread.setParameters(runConfig.getMaxWorse(),runConfig.getMetaheuristic(),runConfig.getMaxSeconds(), runConfig.getUseCUDA());
+	runThread.setParameters(runConfig.getMaxWorse(), runConfig.getMetaheuristic(), runConfig.getMaxSeconds(), runConfig.getUseCUDA(), runConfig.getCacheMaps());
     runThread.setSolver(solver);
     if(runConfig.getMetaheuristic() == 0 || runConfig.getMetaheuristic() == 1) runThread.setScale(this->rasterProblem->getScale());
     else if(runConfig.getMetaheuristic() == 2) runThread.setScale(this->rasterZoomedProblem->getScale());
@@ -571,7 +600,7 @@ void MainWindow::generateCurrentTotalOverlapMapGPU() {
 	ui->graphicsView->getCurrentSolution(solution);
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, false);
 	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
@@ -586,7 +615,7 @@ void MainWindow::translateCurrentToMinimumPositionGPU() {
 	solution.setPosition(itemId, newPos);
 	ui->graphicsView->setCurrentSolution(solution);
 	int milliseconds = myTimer.elapsed();
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, false);
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Minimum position determined. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
@@ -603,7 +632,7 @@ void MainWindow::generateCurrentTotalGlsWeightedOverlapMapGPU() {
 	ui->graphicsView->getCurrentSolution(solution);
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, true);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, true);
 	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
@@ -620,7 +649,7 @@ void MainWindow::translateCurrentToGlsWeightedMinimumPositionGPU() {
 	solution.setPosition(itemId, newPos);
 	ui->graphicsView->setCurrentSolution(solution);
 	int milliseconds = myTimer.elapsed();
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getCUDATotalOverlapMap(itemId, solution.getOrientation(itemId), solution, true);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, true);
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Minimum position determined. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 	weightViewer.updateImage();
@@ -635,4 +664,50 @@ void MainWindow::glsWeightedlocalSearchGPU() {
 	ui->graphicsView->setCurrentSolution(solution);
 	weightViewer.updateImage();
 	weightViewer.show();
+}
+
+void MainWindow::localSearchCache() {
+	ui->graphicsView->getCurrentSolution(solution);
+	QTime myTimer; myTimer.start();
+	solver->performLocalSearchwithCache(solution, false);
+	ui->statusBar->showMessage("Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
+	ui->graphicsView->setCurrentSolution(solution);
+}
+
+void MainWindow::printCacheInfo() {
+	int itemId = ui->graphicsView->getCurrentItemId();
+	solver->printCompleteCacheInfo(itemId, solution.getOrientation(itemId));
+}
+
+void MainWindow::generateCurrentTotalOverlapMapCache() {
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapwithCache(itemId, solution.getOrientation(itemId), solution, false);
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	int milliseconds = myTimer.elapsed();
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
+}
+
+void MainWindow::printGlsWeightedCacheInfo() {
+	int itemId = ui->graphicsView->getCurrentItemId();
+	solver->printCompleteCacheInfo(itemId, solution.getOrientation(itemId), true);
+}
+
+void MainWindow::generateCurrentTotalGlsWeightedOverlapMapCache() {
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapwithCache(itemId, solution.getOrientation(itemId), solution, true);
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	int milliseconds = myTimer.elapsed();
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
+}
+
+void MainWindow::glsWeightedlocalSearchCache() {
+	ui->graphicsView->getCurrentSolution(solution);
+	QTime myTimer; myTimer.start();
+	solver->performLocalSearchwithCache(solution, true);
+	ui->statusBar->showMessage("Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
+	ui->graphicsView->setCurrentSolution(solution);
 }

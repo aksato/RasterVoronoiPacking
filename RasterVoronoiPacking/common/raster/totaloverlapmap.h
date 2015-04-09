@@ -6,6 +6,39 @@
 
 namespace RASTERVORONOIPACKING {
 
+	class CachePlacementInfo {
+	public:
+		CachePlacementInfo() : oldPosition(QPoint(0, 0)), oldOrientation(0), oldWeight(1.0), placementChanged(false) {}
+		~CachePlacementInfo() {}
+
+		void cacheOldPlacement(QPoint oldPosition, int oldOrientation) {
+			if (placementChanged) return; // Keep old cached placement
+			this->oldPosition = oldPosition;
+			this->oldOrientation = oldOrientation;
+			placementChanged = true;
+		}
+		void cacheOldPlacement(QPoint oldPosition, int oldOrientation, qreal oldWeight) {
+			if (placementChanged) return; // Keep old cached placement
+			this->oldPosition = oldPosition;
+			this->oldOrientation = oldOrientation;
+			this->oldWeight = oldWeight;
+			placementChanged = true;
+		}
+
+		QPoint getPosition() const { return this->oldPosition; }
+		int getOrientation() const { return this->oldOrientation; }
+		qreal getWeight() const { return this->oldWeight; }
+
+		bool changedPlacement() { return placementChanged; }
+		void setPlacementChange(bool isChanged) { placementChanged = isChanged; }
+
+	private:
+		QPoint oldPosition;
+		int oldOrientation;
+		qreal oldWeight;
+		bool placementChanged;
+	};
+
     class TotalOverlapMap
     {
     public:
@@ -47,6 +80,12 @@ namespace RASTERVORONOIPACKING {
 
 		void setData(float *_data) { data = _data; }
 
+		// TEST: Cache operations
+		void initCacheInfo(int nItems);
+		void resetCacheInfo(bool changedValue = false);
+		int getCacheCount();
+		std::shared_ptr<CachePlacementInfo> getCacheInfo(int orbitingPieceId) { return cacheInfo[orbitingPieceId]; }
+
     protected:
         float *data;
         int width;
@@ -62,6 +101,8 @@ namespace RASTERVORONOIPACKING {
         int initialWidth;
         #endif
         QPoint reference;
+
+		QVector<std::shared_ptr<CachePlacementInfo>> cacheInfo;
     };
 
     class TotalOverlapMapSet

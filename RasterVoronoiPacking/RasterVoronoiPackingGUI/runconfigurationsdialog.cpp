@@ -43,5 +43,8 @@ void RunConfigurationsDialog::setInitialLenght(qreal lenght, qreal step) {
 
 bool RunConfigurationsDialog::getUseCUDA() {
 	return ui->checkBox_2->isChecked();
+}
 
+bool RunConfigurationsDialog::getCacheMaps(){
+	return ui->checkBox_3->isChecked();
 }

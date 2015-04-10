@@ -40,7 +40,7 @@ namespace RASTERVORONOIPACKING {
         // --> Return total overlap map for a given item
         std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMapwithCache(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
-		//std::shared_ptr<TotalOverlapMap> getTotalOverlapMapGPU(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
+		std::shared_ptr<TotalOverlapMap> getTotalOverlapMapGPU(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
         // --> Get absolute minimum overlap position
         QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value);
 		QPoint getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, bool useGlsWeights = false);

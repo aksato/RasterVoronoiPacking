@@ -21,10 +21,11 @@ public:
 
     void setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution);
     void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {solver =_solver;}
-	void setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds, const bool _useCUDA, const bool _cacheMaps);
+	void setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds, const bool _useCUDA, const bool _cacheMaps, const bool _stripPacking);
     void setScale(qreal scale) {this->scale = scale;}
 	void setCuda(bool useCUDA) { this->useCUDA = useCUDA; }
 	void setCacheUse(bool cacheMaps) { this->cacheMaps = cacheMaps; }
+	void setStripPacking(bool _stripPacking) { this->stripPacking = stripPacking; }
 
 #ifndef CONSOLE
     protected:
@@ -36,9 +37,10 @@ public:
 
 signals:
     void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
-    void statusUpdated(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale);
-    void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale);
+    void statusUpdated(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int curLength, int minLength);
+	void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int minLength);
     void weightsChanged();
+	void containerLengthChanged(int newLength);
 
 public slots:
 
@@ -51,6 +53,7 @@ private:
     qreal scale;
 	bool useCUDA;
 	bool cacheMaps;
+	bool stripPacking;
 };
 
 #endif // PACKINGTHREAD_H

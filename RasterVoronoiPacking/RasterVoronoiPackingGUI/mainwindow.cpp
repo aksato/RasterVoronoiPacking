@@ -69,9 +69,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     qRegisterMetaType<RASTERVORONOIPACKING::RasterPackingSolution>("RASTERVORONOIPACKING::RasterPackingSolution");
     connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution,qreal)), ui->graphicsView, SLOT(setCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution,qreal)));
-    connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-    connect(&runThread, SIGNAL(statusUpdated(int,int,qreal,qreal,qreal,qreal)), this, SLOT(showExecutionStatus(int,int,qreal,qreal,qreal,qreal)));
-    connect(&runThread, SIGNAL(finishedExecution(int,qreal,qreal,qreal,qreal)), this, SLOT(showExecutionFinishedStatus(int,qreal,qreal,qreal,qreal)));
+    //connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
+    connect(&runThread, SIGNAL(statusUpdated(int,int,qreal,qreal,qreal,qreal, int, int)), this, SLOT(showExecutionStatus(int,int,qreal,qreal,qreal,qreal, int, int)));
+    connect(&runThread, SIGNAL(finishedExecution(int,qreal,qreal,qreal,qreal, int)), this, SLOT(showExecutionFinishedStatus(int,qreal,qreal,qreal,qreal, int)));
+	connect(&runThread, SIGNAL(containerLengthChanged(int)), ui->graphicsView, SLOT(recreateContainerGraphics(int)));
     connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(terminate())); // FIXME: Using terminate() is not recommended
 
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
@@ -415,7 +416,7 @@ void MainWindow::executePacking() {
     else ui->graphicsView->getCurrentSolution(solution);
     solver->switchProblem(false);
     runThread.setInitialSolution(solution);
-	runThread.setParameters(runConfig.getMaxWorse(), runConfig.getMetaheuristic(), runConfig.getMaxSeconds(), runConfig.getUseCUDA(), runConfig.getCacheMaps());
+	runThread.setParameters(runConfig.getMaxWorse(), runConfig.getMetaheuristic(), runConfig.getMaxSeconds(), runConfig.getUseCUDA(), runConfig.getCacheMaps(), runConfig.getStripPacking());
     runThread.setSolver(solver);
     if(runConfig.getMetaheuristic() == 0 || runConfig.getMetaheuristic() == 1) runThread.setScale(this->rasterProblem->getScale());
     else if(runConfig.getMetaheuristic() == 2) runThread.setScale(this->rasterZoomedProblem->getScale());
@@ -491,20 +492,21 @@ void MainWindow::zoomedlocalSearch() {
     weightViewer.show();
 }
 
-void MainWindow::showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale) {
+void MainWindow::showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int curLength, int minLength) {
     statusBar()->showMessage("Iteration: " + QString::number(totalItNum) + " (" + QString::number(worseSolutionsCount) +
                              "). Overlap: " +  QString::number(curOverlap/scale) + ". Minimum overlap: " + QString::number(minOverlap/scale) +
-                             ". Time elapsed: " + QString::number(elapsed) + " secs.");
+							 ". Time elapsed: " + QString::number(elapsed) + " secs. Current Length: " + QString::number((qreal)curLength / scale) + " (Min. " + QString::number((qreal)minLength / scale) + ").");
 }
 
-void MainWindow::showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale) {
+void MainWindow::showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int minLength) {
     statusBar()->showMessage("Finished. Total iterations: " + QString::number(totalItNum) +
                              ".Minimum overlap: " + QString::number(minOverlap/scale) +
-                             ". Elapsed time: " + QString::number(elapsed));
-    if(qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) {
+                             ". Elapsed time: " + QString::number(elapsed) +
+							 " secs. Solution length : " + QString::number((qreal)minLength/scale) + ".");
+    //if(qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) {
         ui->graphicsView->getCurrentSolution(solution, scale);
 //        qDebug() << solution;
-    }
+    //}
 }
 
 void MainWindow::saveSolution() {
@@ -604,9 +606,9 @@ void MainWindow::generateCurrentTotalOverlapMapGPU() {
 	ui->graphicsView->getCurrentSolution(solution);
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
-	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, false);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, false);
 	int milliseconds = myTimer.elapsed();
-	//ui->graphicsView->showTotalOverlapMap(curMap);
+	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
 
@@ -619,8 +621,8 @@ void MainWindow::translateCurrentToMinimumPositionGPU() {
 	solution.setPosition(itemId, newPos);
 	ui->graphicsView->setCurrentSolution(solution);
 	int milliseconds = myTimer.elapsed();
-	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, false);
-	//ui->graphicsView->showTotalOverlapMap(curMap);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, false);
+	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Minimum position determined. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
 
@@ -636,9 +638,9 @@ void MainWindow::generateCurrentTotalGlsWeightedOverlapMapGPU() {
 	ui->graphicsView->getCurrentSolution(solution);
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
-	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, true);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, true);
 	int milliseconds = myTimer.elapsed();
-	//ui->graphicsView->showTotalOverlapMap(curMap);
+	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 	weightViewer.updateImage();
 	weightViewer.show();
@@ -653,8 +655,8 @@ void MainWindow::translateCurrentToGlsWeightedMinimumPositionGPU() {
 	solution.setPosition(itemId, newPos);
 	ui->graphicsView->setCurrentSolution(solution);
 	int milliseconds = myTimer.elapsed();
-	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, true);
-	//ui->graphicsView->showTotalOverlapMap(curMap);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapGPU(itemId, solution.getOrientation(itemId), solution, true);
+	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Minimum position determined. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 	weightViewer.updateImage();
 	weightViewer.show();

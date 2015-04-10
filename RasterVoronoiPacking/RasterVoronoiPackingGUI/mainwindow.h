@@ -58,8 +58,8 @@ private slots:
     void zoomedlocalSearch();
 
     void executePacking();
-    void showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale);
-    void showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale);
+	void showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int curLength, int minLength);
+	void showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int minLength);
 
     void saveSolution();
     void loadSolution();

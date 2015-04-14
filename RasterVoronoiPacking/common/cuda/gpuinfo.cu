@@ -124,20 +124,49 @@ namespace CUDAPACKING {
 	// GPU displaced sum of two matrix with weights. TODO: Store nfp widths, heights and origins in shared memory.
 	__global__ static void DisplacedWeightedSumKernel(float *d_overlapmap, int omwidth, int omheight, int overlapmapx, int overlapmapy, int nAngles, CudaRasterNoFitPolygon **nfpSet, int nfpcount, int *itemType, int itemId, int itemAngle, int *posx, int *posy, int *angles, float *weights)
 	{
+		extern __shared__ int smem0[];
+		int *sposx = smem0;
+		int *sposy = &sposx[nfpcount];
+		int *soriginx = &sposy[nfpcount];;
+		int *soriginy = &soriginx[nfpcount];;
+		int *swidth = &soriginy[nfpcount];;
+		int *sheight = &swidth[nfpcount];;
+		float *sweights = (float*)&sheight[nfpcount];
+		int *sstaticid = (int*)&sweights[nfpcount];
+
+		//const int tid = threadIdx.x + blockDim.x*threadIdx.y + (blockIdx.x*blockDim.x*blockDim.y) + (blockIdx.y*blockDim.x*blockDim.y);
+		const int tid = threadIdx.y * blockDim.x + threadIdx.x;
+		const int orbitingId = itemType[itemId] * nAngles + itemAngle;
+		
+		if      (tid <     nfpcount) sposx[tid] = posx[tid];
+		else if (tid < 2 * nfpcount) sposy[tid - nfpcount] = posy[tid - nfpcount];
+		else if (tid < 3 * nfpcount) { int k = tid - 2 * nfpcount; int staticId = itemType[k] * nAngles + angles[k]; soriginx[k] = nfpSet[staticId][orbitingId].origin.x;}
+		else if (tid < 4 * nfpcount) { int k = tid - 3 * nfpcount; int staticId = itemType[k] * nAngles + angles[k]; soriginy[k] = nfpSet[staticId][orbitingId].origin.y; }
+		else if (tid < 5 * nfpcount) { int k = tid - 4 * nfpcount; int staticId = itemType[k] * nAngles + angles[k]; swidth[k] = nfpSet[staticId][orbitingId].m_width; }
+		else if (tid < 6 * nfpcount) { int k = tid - 5 * nfpcount; int staticId = itemType[k] * nAngles + angles[k]; sheight[k] = nfpSet[staticId][orbitingId].m_height; }
+		else if (tid < 7 * nfpcount) sweights[tid - 6 * nfpcount] = weights[tid - 6 * nfpcount];
+		else if (tid < 8 * nfpcount) { int k = tid - 7 * nfpcount; sstaticid[tid - 7 * nfpcount] = itemType[k] * nAngles + angles[k]; }
+		__syncthreads();
+		//if (tid == 0) 
+		//	for (int i = 0; i < nfpcount; i++)
+		//		printf("%d: %d %d %d %d %d %d %f %d\n", i, sposx[i], sposy[i], soriginx[i], soriginy[i], swidth[i], sheight[i], sweights[i], sstaticid[i]);
+
 		const int tidi = blockDim.x * blockIdx.x + threadIdx.x;
 		const int tidj = blockDim.y * blockIdx.y + threadIdx.y;
-		const int orbitingId = itemType[itemId] * nAngles + itemAngle;
-
 		int nfpCoordx, nfpCoordy;
 		float tempVal = 0;
 		if (tidi < omwidth && tidj < omheight) {
 			for (int k = 0; k < nfpcount; k++) {
 				if (k == itemId) continue;
-				int staticId = itemType[k] * nAngles + angles[k];
-				nfpCoordx = tidi - overlapmapx - posx[k] + nfpSet[staticId][orbitingId].origin.x;
-				nfpCoordy = tidj - overlapmapy - posy[k] + nfpSet[staticId][orbitingId].origin.y;
-				if (nfpCoordx >= 0 && nfpCoordx < nfpSet[staticId][orbitingId].m_width && nfpCoordy >= 0 && nfpCoordy < nfpSet[staticId][orbitingId].m_height)
-					tempVal += weights[k]*(float)nfpSet[staticId][orbitingId].matrix[nfpCoordy*nfpSet[staticId][orbitingId].m_width + nfpCoordx];
+				//int staticId = itemType[k] * nAngles + angles[k];
+				//nfpCoordx = tidi - overlapmapx - posx[k] + nfpSet[staticId][orbitingId].origin.x;
+				//nfpCoordy = tidj - overlapmapy - posy[k] + nfpSet[staticId][orbitingId].origin.y;
+				nfpCoordx = tidi - overlapmapx - sposx[k] + soriginx[k];
+				nfpCoordy = tidj - overlapmapy - sposy[k] + soriginy[k];
+				//if (nfpCoordx >= 0 && nfpCoordx < nfpSet[staticId][orbitingId].m_width && nfpCoordy >= 0 && nfpCoordy < nfpSet[staticId][orbitingId].m_height)
+				if (nfpCoordx >= 0 && nfpCoordx < swidth[k] && nfpCoordy >= 0 && nfpCoordy < sheight[k])
+					//tempVal += weights[k]*(float)nfpSet[staticId][orbitingId].matrix[nfpCoordy*nfpSet[staticId][orbitingId].m_width + nfpCoordx];
+					tempVal += sweights[k] * (float)nfpSet[sstaticid[k]][orbitingId].matrix[nfpCoordy*swidth[k] + nfpCoordx];
 			}
 			d_overlapmap[tidj*omwidth + tidi] = tempVal;
 		}
@@ -208,7 +237,7 @@ namespace CUDAPACKING {
 		blocks.x = ((overlapmap_width / BLOCK_SIZE) + (((overlapmap_width) % BLOCK_SIZE) == 0 ? 0 : 1));
 		blocks.y = ((overlapmap_height / BLOCK_SIZE) + (((overlapmap_height) % BLOCK_SIZE) == 0 ? 0 : 1));
 		if (!useGlsWeights) DisplacedSumKernel << <blocks, threadsperblock >> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy, numAngles, d_dpointerdpointer, nItems, d_itemTypeMap, curItem, curItemAngle, d_posx, d_posy, d_angles);
-		else DisplacedWeightedSumKernel << <blocks, threadsperblock >> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy, numAngles, d_dpointerdpointer, nItems, d_itemTypeMap, curItem, curItemAngle, d_posx, d_posy, d_angles, d_weights);
+		else DisplacedWeightedSumKernel << <blocks, threadsperblock, 7*nItems*sizeof(int)+nItems*sizeof(float)>> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy, numAngles, d_dpointerdpointer, nItems, d_itemTypeMap, curItem, curItemAngle, d_posx, d_posy, d_angles, d_weights);
 	}
 
 	// Returns a pointer to an overlap map on host

@@ -55,6 +55,7 @@ set(HEADERS
 	../common/raster/totaloverlapmap.h
 	../common/raster/rasterstrippackingsolver.h
 	../common/raster/rasterpackingsolution.h
+	../common/raster/rasterstrippackingparameters.h
 	../common/raster/rasterpackingproblem.h
 	../common/raster/rasternofitpolygon.h
 	../common/raster/rasterinnerfitpolygon.h

@@ -21,11 +21,12 @@ public:
 
     void setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution);
     void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {solver =_solver;}
-	void setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds, const bool _useCUDA, const bool _cacheMaps, const bool _stripPacking);
+	//void setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds, const bool _useCUDA, const bool _cacheMaps, const bool _stripPacking);
+	void setParameters(RASTERVORONOIPACKING::RasterStripPackingParameters &_parameters) {parameters.Copy(_parameters);}
     void setScale(qreal scale) {this->scale = scale;}
-	void setCuda(bool useCUDA) { this->useCUDA = useCUDA; }
-	void setCacheUse(bool cacheMaps) { this->cacheMaps = cacheMaps; }
-	void setStripPacking(bool _stripPacking) { this->stripPacking = stripPacking; }
+	//void setCuda(bool useCUDA) { this->useCUDA = useCUDA; }
+	//void setCacheUse(bool cacheMaps) { this->cacheMaps = cacheMaps; }
+	//void setStripPacking(bool _stripPacking) { this->stripPacking = stripPacking; }
 
 #ifndef CONSOLE
     protected:
@@ -48,12 +49,13 @@ private:
     RASTERVORONOIPACKING::RasterPackingSolution threadSolution;
     std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
     bool finishNow;
-    int Nmo, heuristicType, maxSeconds;
+	RASTERVORONOIPACKING::RasterStripPackingParameters parameters;
+ //   int Nmo, heuristicType, maxSeconds;
     uint seed;
     qreal scale;
-	bool useCUDA;
-	bool cacheMaps;
-	bool stripPacking;
+	//bool useCUDA;
+	//bool cacheMaps;
+	//bool stripPacking;
 };
 
 #endif // PACKINGTHREAD_H

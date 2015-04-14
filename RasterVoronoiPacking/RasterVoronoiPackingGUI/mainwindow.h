@@ -75,6 +75,7 @@ private:
     std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;
     RASTERVORONOIPACKING::RasterPackingSolution solution;
     std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
+	RASTERVORONOIPACKING::RasterStripPackingParameters params;
 
     ZoomedMapViewDialog zoomedMapViewer;
     GlsWeightViewerDialog weightViewer;

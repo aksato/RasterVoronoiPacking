@@ -4,7 +4,9 @@
 #include "raster/rasterpackingproblem.h"
 #include "raster/rasterpackingsolution.h"
 #include "raster/rasterstrippackingsolver.h"
+#include "raster/rasterstrippackingparameters.h"
 #include "raster/packingthread.h"
+#include "cuda/gpuinfo.h"
 #include "packingParametersParser.h"
 #include <QDebug>
 #include <QDir>
@@ -22,7 +24,8 @@ int main(int argc, char *argv[])
     // --> Parse command line arguments
     QCommandLineParser parser;
     parser.setApplicationDescription("Raster Packing console version.");
-    PackingParameters params;
+	ConsolePackingArgs params;
+	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParams;
     QString errorMessage;
     switch (parseCommandLine(parser, &params, &errorMessage)) {
     case CommandLineOk:
@@ -67,11 +70,30 @@ int main(int argc, char *argv[])
         qCritical("Could not open file '%s'!", qPrintable(params.inputFilePath));
         return 1;
     }
-    problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-    problem->load(preProblem);
+	// Check if it is possible to use GPU processing
+	if (params.gpuProcessing) {
+		int numGPUs;  size_t freeCUDAMem, totalCUDAmem;
+		if (CUDAPACKING::getTotalMemory(numGPUs, freeCUDAMem, totalCUDAmem)) {
+			size_t problemIfpTotalMem, problemIfpMaxMem, problemNfpTotalMem;
+			RASTERVORONOIPACKING::RasterPackingProblem::getProblemGPUMemRequirements(preProblem, problemIfpTotalMem, problemIfpMaxMem, problemNfpTotalMem);
+			if (freeCUDAMem - problemIfpTotalMem - problemNfpTotalMem > 0) CUDAPACKING::allocDeviceMaxIfp(problemIfpMaxMem);
+			else {
+				qDebug() << "GPU check error: not enough memory";
+				params.gpuProcessing = false;
+			}
+		}
+		else {
+			params.gpuProcessing = false;
+			qDebug() << "GPU check error: could not get gpu memory information";
+		}
+	}
+	if(params.gpuProcessing) qDebug() << "GPU check success";
+	// Create problem object
+	problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
+	problem->load(preProblem, params.gpuProcessing);
     QDir::setCurrent(originalPath);
     // Create solver object
-    solution = RASTERVORONOIPACKING::RasterPackingSolution(problem->count());
+	solution = RASTERVORONOIPACKING::RasterPackingSolution(problem->count(), params.gpuProcessing);
     solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(problem));
     qDebug() << "Problem file read successfully";
 
@@ -93,13 +115,15 @@ int main(int argc, char *argv[])
 
 
     // Configure parameters
-    int metaheuristic;
     switch(params.methodType) {
-        case Method_Default: metaheuristic = 0; break;
-        case Method_Gls: metaheuristic = 1; break;
-        case Method_Zoom: metaheuristic = 3; break;
-        case Method_ZoomGls: metaheuristic = 2; break;
+		case Method_Default: algorithmParams.setHeuristic(RASTERVORONOIPACKING::NONE); algorithmParams.setDoubleResolution(false); break;
+		case Method_Gls: algorithmParams.setHeuristic(RASTERVORONOIPACKING::GLS); algorithmParams.setDoubleResolution(false); break;
+		case Method_Zoom: algorithmParams.setHeuristic(RASTERVORONOIPACKING::NONE); algorithmParams.setDoubleResolution(true); break;
+		case Method_ZoomGls: algorithmParams.setHeuristic(RASTERVORONOIPACKING::GLS); algorithmParams.setDoubleResolution(true); break;
     }
+	algorithmParams.setFixedLength(!params.stripPacking);
+	algorithmParams.setGpuProcessing(params.gpuProcessing);
+	algorithmParams.setTimeLimit(params.timeLimitValue); algorithmParams.setNmo(params.maxWorseSolutionsValue);
     qreal length;
     if(!params.originalContainerLenght) {
         length = params.containerLenght;
@@ -107,14 +131,12 @@ int main(int argc, char *argv[])
         solver->setContainerWidth(scaledWidth);
     }
     else length = solver->getCurrentWidth()/problem->getScale();
-    if(params.methodType == Method_Zoom || params.methodType == Method_ZoomGls) solver->switchProblem(true);
-    if(params.initialSolutionType == Solution_Random)  solver->generateRandomSolution(solution);
-    solver->switchProblem(false);
+	if (params.initialSolutionType == Solution_Random)  solver->generateRandomSolution(solution, algorithmParams);
     singleThreadedPacker.setInitialSolution(solution);
-    singleThreadedPacker.setParameters(params.maxWorseSolutionsValue,metaheuristic,params.timeLimitValue);
+	singleThreadedPacker.setParameters(algorithmParams);
     singleThreadedPacker.setSolver(solver);
     if(params.methodType == Method_Default || params.methodType == Method_Gls) singleThreadedPacker.setScale(problem->getScale());
-    if(params.methodType == Method_Zoom || params.methodType == Method_ZoomGls) singleThreadedPacker.setScale(zoomProblem->getScale());
+    if(params.methodType == Method_Zoom || params.methodType == Method_ZoomGls) singleThreadedPacker.setScale(zoomProblem->getScale(), problem->getScale());
     qDebug() << "Solver configured. The following parameters were set:";
     if(params.methodType == Method_Zoom || params.methodType == Method_ZoomGls)
         qDebug() << "Zoomed problem Scale:" << zoomProblem->getScale() << ". Auxiliary problem scale:" << problem->getScale();
@@ -122,12 +144,14 @@ int main(int argc, char *argv[])
     qDebug() << "Length:" << length;
     qDebug() << "Solver method:" << params.methodType;
     qDebug() << "Inital solution:" << params.initialSolutionType;
+	if(params.stripPacking) qDebug() << "Strip packing version";
+	if(params.gpuProcessing) qDebug() << "Using GPU to process maps";
     qDebug() << "Solver parameters: Nmo =" << params.maxWorseSolutionsValue << "; Time Limit:" << params.timeLimitValue;
 
     // Run!
     int totalIt; qreal minOverlap, totalTime;
     uint seed;
-    singleThreadedPacker.run(minOverlap, totalTime, totalIt, seed, solution);
+    singleThreadedPacker.run(length, minOverlap, totalTime, totalIt, seed, solution);
     if(params.methodType == Method_Default || params.methodType == Method_Gls) solution.save(params.outputXMLFile, problem, length, true, seed);
     if(params.methodType == Method_Zoom || params.methodType == Method_ZoomGls) solution.save(params.outputXMLFile, zoomProblem, length, true, seed);
 
@@ -135,13 +159,9 @@ int main(int argc, char *argv[])
     if(!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << params.outputTXTFile << ": " << qPrintable(file.errorString());
     QTextStream out(&file);
     if(params.methodType == Method_Zoom || params.methodType == Method_ZoomGls)
-        out << problem->getScale() << " " << zoomProblem->getScale() << " " << length  << " " <<  minOverlap << " " <<  totalIt << " " <<  totalTime << " " << totalTime/totalIt << " " << seed << "\n";
+		out << problem->getScale() << " " << zoomProblem->getScale() << " " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt/totalTime << " " << seed << "\n";
     else
-        out << problem->getScale() << " - " <<  length << " " <<  minOverlap << " " <<  totalIt << " " <<  totalTime << " " << totalTime/totalIt << " " << seed << "\n";
+		out << problem->getScale() << " - " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt/totalTime << " " << seed << "\n";
     file.close();
-
-//    qDebug() << QDir::currentPath() << params.outputXMLFile;
-
-//    return app.exec();
     return 0;
 }

@@ -7,8 +7,8 @@ class QString;
 enum RasterPackingMethods {Method_Default, Method_Gls, Method_Zoom, Method_ZoomGls};
 enum InitialSolutionGenerator {Solution_Random};
 
-struct PackingParameters {
-    PackingParameters() {}
+struct ConsolePackingArgs {
+	ConsolePackingArgs() {}
 
     QString inputFilePath;
     QString zoomedInputFilePath;
@@ -22,6 +22,8 @@ struct PackingParameters {
     qreal containerLenght;
 
     bool originalContainerLenght;
+	bool stripPacking;
+	bool gpuProcessing;
 };
 
 enum CommandLineParseResult
@@ -32,7 +34,7 @@ enum CommandLineParseResult
     CommandLineHelpRequested
 };
 
-CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingParameters *params, QString *errorMessage);
-CommandLineParseResult parseOptionsFile(QString fileName, PackingParameters *params, QString *errorMessage);
+CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePackingArgs *params, QString *errorMessage);
+CommandLineParseResult parseOptionsFile(QString fileName, ConsolePackingArgs *params, QString *errorMessage);
 
 #endif // PACKINGPARAMETERSPARSER_H

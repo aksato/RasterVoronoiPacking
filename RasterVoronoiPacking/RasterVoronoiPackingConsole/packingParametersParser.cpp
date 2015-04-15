@@ -4,7 +4,7 @@
 #include <QDebug>
 #include "packingParametersParser.h"
 
-CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingParameters *params, QString *errorMessage)
+CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePackingArgs *params, QString *errorMessage)
 {
     bool zoomedInputFileSet = false;
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
@@ -27,6 +27,10 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingParam
     parser.addOption(valueTimeLimit);
     const QCommandLineOption valueLenght("length", "Container lenght.", "value");
     parser.addOption(valueLenght);
+	const QCommandLineOption boolStripPacking("strippacking", "Strip packing version.");
+	parser.addOption(boolStripPacking);
+	const QCommandLineOption boolGpuProcessing("gpu", "Use GPU to process overlap maps.");
+	parser.addOption(boolGpuProcessing);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -152,6 +156,12 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingParam
         }
     }
     else params->originalContainerLenght = true;
+
+	if (parser.isSet(boolStripPacking)) params->stripPacking = true;
+	else  params->stripPacking = false;
+
+	if (parser.isSet(boolGpuProcessing)) params->gpuProcessing = true;
+	else params->gpuProcessing = false;
 
     return CommandLineOk;
 }

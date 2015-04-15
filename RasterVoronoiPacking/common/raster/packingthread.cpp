@@ -36,7 +36,7 @@ void PackingThread::setInitialSolution(RASTERVORONOIPACKING::RasterPackingSoluti
 #ifndef CONSOLE
 void PackingThread::run()
 #else
-void PackingThread::run(qreal &overlap, qreal &elapsedTime, int &totalIterations, uint &seed, RASTERVORONOIPACKING::RasterPackingSolution &solution)
+void PackingThread::run(qreal &lenght, qreal &overlap, qreal &elapsedTime, int &totalIterations, uint &seed, RASTERVORONOIPACKING::RasterPackingSolution &solution)
 #endif
 {
     qDebug() << "Started";
@@ -77,7 +77,7 @@ void PackingThread::run(qreal &overlap, qreal &elapsedTime, int &totalIterations
 				emit solutionGenerated(threadSolution, scale);
 				emit weightsChanged();
 				#ifdef CONSOLE
-					std::cout << "\r" << "It: " << totalItNum << " (" << worseSolutionsCount <<  "). Overlap: " << curOverlap/scale << ". Min overlap: " << minOverlap/scale << ". Time: " << myTimer.elapsed()/1000.0 <<  " secs.";
+				std::cout << "\r" << "Lenght: " << curLength/nonzoomscale << ". Min Length: " << minSuccessfullLength/nonzoomscale << ". It: " << totalItNum << " (" << worseSolutionsCount << "). Overlap: " << curOverlap / scale << ". Min overlap: " << minOverlap / scale << ". Time: " << myTimer.elapsed() / 1000.0 << " secs.";
 				#endif
 			}
 			itNum++; totalItNum++;
@@ -87,6 +87,9 @@ void PackingThread::run(qreal &overlap, qreal &elapsedTime, int &totalIterations
 			if(success) {
 				bestSolution = threadSolution; minSuccessfullLength = curLength;
 				curLength = qRound((1.0 - rdec)*(qreal)solver->getCurrentWidth());
+				#ifdef CONSOLE
+				std::cout << "\n" << "New minimum length obtained: " << minSuccessfullLength / nonzoomscale << ". Elapsed time: " << myTimer.elapsed() / 1000.0 << " secs.\n";
+				#endif
 			}
 			else {
 				if (qRound((1.0 + rinc)*(qreal)solver->getCurrentWidth()) >= minSuccessfullLength) {
@@ -129,10 +132,12 @@ void PackingThread::run(qreal &overlap, qreal &elapsedTime, int &totalIterations
 	}
 	else emit finishedExecution(totalItNum, curOverlap, minOverlap, myTimer.elapsed() / 1000.0, this->scale, solver->getCurrentWidth());
     emit solutionGenerated(bestSolution, scale);
-    qDebug() << "\nFinished. Total iterations:" << totalItNum << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << myTimer.elapsed()/1000.0;
+	if (parameters.isFixedLength()) qDebug() << "\nFinished. Total iterations:" << totalItNum << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << myTimer.elapsed() / 1000.0;
+	else qDebug() << "\nFinished. Total iterations:" << totalItNum << ".Minimum length =" << minSuccessfullLength / nonzoomscale << ". Elapsed time:" << myTimer.elapsed() / 1000.0;
 
     #ifdef CONSOLE
         overlap = minOverlap;
+		lenght = minSuccessfullLength / nonzoomscale;
         elapsedTime = myTimer.elapsed()/1000.0;
         totalIterations = totalItNum;
         for(int i = 0; i < bestSolution.getNumItems(); i++) {

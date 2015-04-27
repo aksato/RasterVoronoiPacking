@@ -23,6 +23,7 @@ endif()
 
 set(SRC
 	mainConsole.cpp
+	consolepackingloader.cpp
 	packingParametersParser.cpp
 	../common/packingproblem.cpp
 	../common/raster/totaloverlapmap.cpp
@@ -37,6 +38,7 @@ set(SRC
 	)
 	
 set(HEADERS
+	consolepackingloader.h
 	packingParametersParser.h
 	../common/packingproblem.h
 	../common/raster/totaloverlapmap.h

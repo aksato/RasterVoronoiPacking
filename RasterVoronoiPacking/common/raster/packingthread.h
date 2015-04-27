@@ -33,16 +33,20 @@ public:
     protected:
         void run();
 #else
-	void run(qreal &lenght, qreal &overlap, qreal &elapsedTime, int &totalIterations, uint &seed, RASTERVORONOIPACKING::RasterPackingSolution &solution);
+	//void run(qreal &lenght, qreal &overlap, qreal &elapsedTime, int &totalIterations, uint &seed, RASTERVORONOIPACKING::RasterPackingSolution &solution);
+	void run();
 #endif
 
 
 signals:
     void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
-    void statusUpdated(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int curLength, int minLength);
-	void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int minLength);
+    void statusUpdated(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal nonzoomscale, qreal scale, int curLength, int minLength);
+	//void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int minLength);
+	void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomScale, int minLength, uint seed);
     void weightsChanged();
 	void containerLengthChanged(int newLength);
+	void minimumLenghtUpdated(int minLength, qreal scale, qreal zoomScale, int totalItNum, qreal elapsed, uint seed);
+	void finalSolutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &finalSolution, qreal scale, qreal finalLength, uint seed);
 
 public slots:
 

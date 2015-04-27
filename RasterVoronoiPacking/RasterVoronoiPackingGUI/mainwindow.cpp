@@ -70,8 +70,8 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<RASTERVORONOIPACKING::RasterPackingSolution>("RASTERVORONOIPACKING::RasterPackingSolution");
     connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution,qreal)), ui->graphicsView, SLOT(setCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution,qreal)));
     connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-    connect(&runThread, SIGNAL(statusUpdated(int,int,qreal,qreal,qreal,qreal, int, int)), this, SLOT(showExecutionStatus(int,int,qreal,qreal,qreal,qreal, int, int)));
-    connect(&runThread, SIGNAL(finishedExecution(int,qreal,qreal,qreal,qreal, int)), this, SLOT(showExecutionFinishedStatus(int,qreal,qreal,qreal,qreal, int)));
+    connect(&runThread, SIGNAL(statusUpdated(int,int,qreal,qreal,qreal,qreal,qreal,int,int)), this, SLOT(showExecutionStatus(int,int,qreal,qreal,qreal,qreal,qreal,int,int)));
+    connect(&runThread, SIGNAL(finishedExecution(int,qreal,qreal,qreal,qreal, qreal,int,uint)), this, SLOT(showExecutionFinishedStatus(int,qreal,qreal,qreal,qreal,qreal,int,uint)));
 	connect(&runThread, SIGNAL(containerLengthChanged(int)), ui->graphicsView, SLOT(recreateContainerGraphics(int)));
     connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(terminate())); // FIXME: Using terminate() is not recommended
 
@@ -397,7 +397,7 @@ void MainWindow::executePacking() {
 	runThread.setParameters(params);
     runThread.setSolver(solver);
     if(runConfig.getMetaheuristic() == 0 || runConfig.getMetaheuristic() == 1) runThread.setScale(this->rasterProblem->getScale());
-    else if(runConfig.getMetaheuristic() == 2) runThread.setScale(this->rasterZoomedProblem->getScale());
+    else if(runConfig.getMetaheuristic() == 2) runThread.setScale(this->rasterZoomedProblem->getScale(), this->rasterProblem->getScale());
     runThread.start();
 }
 
@@ -465,13 +465,13 @@ void MainWindow::zoomedlocalSearch() {
     weightViewer.show();
 }
 
-void MainWindow::showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int curLength, int minLength) {
+void MainWindow::showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomscale, int curLength, int minLength) {
     statusBar()->showMessage("Iteration: " + QString::number(totalItNum) + " (" + QString::number(worseSolutionsCount) +
-                             "). Overlap: " +  QString::number(curOverlap/scale) + ". Minimum overlap: " + QString::number(minOverlap/scale) +
+		"). Overlap: " + QString::number(curOverlap / scale) + ". Minimum overlap: " + QString::number(minOverlap / zoomscale) +
 							 ". Time elapsed: " + QString::number(elapsed) + " secs. Current Length: " + QString::number((qreal)curLength / scale) + " (Min. " + QString::number((qreal)minLength / scale) + ").");
 }
 
-void MainWindow::showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int minLength) {
+void MainWindow::showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomscale, int minLength, uint seed) {
     statusBar()->showMessage("Finished. Total iterations: " + QString::number(totalItNum) +
                              ".Minimum overlap: " + QString::number(minOverlap/scale) +
                              ". Elapsed time: " + QString::number(elapsed) +

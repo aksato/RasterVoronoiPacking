@@ -4,26 +4,18 @@
 
 #define MAXLOOPSPERLENGTH 5
 
-#ifndef CONSOLE
 PackingThread::PackingThread(QObject *parent) :
     QThread(parent)
-#else
-#include <iostream>
-PackingThread::PackingThread(QObject *parent) :
-    QObject(parent)
-#endif
 {
-    finishNow = false;
+    //finishNow = false;
     seed = QDateTime::currentDateTime().toTime_t();// seed = 561; //TOREMOVE
     qDebug() << "Seed:" << seed;
     qsrand(seed);
 }
 
 PackingThread::~PackingThread() {
-    finishNow = true;
-    #ifndef CONSOLE
-        wait();
-    #endif
+    m_abort = true;
+    wait();
 }
 void PackingThread::setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution) {
     threadSolution = RASTERVORONOIPACKING::RasterPackingSolution(initialSolution.getNumItems());
@@ -33,14 +25,10 @@ void PackingThread::setInitialSolution(RASTERVORONOIPACKING::RasterPackingSoluti
     }
 }
 
-#ifndef CONSOLE
 void PackingThread::run()
-#else
-//void PackingThread::run(qreal &lenght, qreal &overlap, qreal &elapsedTime, int &totalIterations, uint &seed, RASTERVORONOIPACKING::RasterPackingSolution &solution)
-void PackingThread::run()
-#endif
 {
     qDebug() << "Started";
+	m_abort = false;
     seed = this->seed;
     QTime myTimer; myTimer.start();
     int itNum = 0;
@@ -53,16 +41,17 @@ void PackingThread::run()
     qreal minOverlap, curOverlap;
     RASTERVORONOIPACKING::RasterPackingSolution bestSolution = threadSolution;
     solver->resetWeights();
-    emit solutionGenerated(threadSolution, scale);
+	emit solutionGenerated(threadSolution, curLength);
 	int numLoops = 0;
 
 	minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 	itNum++; totalItNum++;
-	emit solutionGenerated(threadSolution, scale);
+	emit solutionGenerated(threadSolution, curLength);
 
-	while (myTimer.elapsed() / 1000.0 < parameters.getTimeLimit()) {
-		while (worseSolutionsCount < parameters.getNmo() && myTimer.elapsed() / 1000.0 < parameters.getTimeLimit()) {
-			if(finishNow) break;
+	while (myTimer.elapsed() / 1000.0 < parameters.getTimeLimit() && !m_abort) {
+		if (m_abort) break;
+		while (worseSolutionsCount < parameters.getNmo() && myTimer.elapsed() / 1000.0 < parameters.getTimeLimit() && !m_abort) {
+			if(m_abort) break;
 			solver->performLocalSearch(threadSolution, parameters);
 			if (parameters.getHeuristic() == RASTERVORONOIPACKING::GLS)  solver->updateWeights(threadSolution, parameters);
 			curOverlap = solver->getGlobalOverlap(threadSolution, parameters);
@@ -74,8 +63,8 @@ void PackingThread::run()
 			}
 			else worseSolutionsCount++;
 			if(itNum % 50 == 0) {
-				emit statusUpdated(totalItNum, worseSolutionsCount, curOverlap, minOverlap, myTimer.elapsed() / 1000.0, this->nonzoomscale, this->scale, curLength, minSuccessfullLength);
-				emit solutionGenerated(threadSolution, scale);
+				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, myTimer.elapsed() / 1000.0);
+				emit solutionGenerated(threadSolution, curLength);
 				emit weightsChanged();
 			}
 			itNum++; totalItNum++;
@@ -85,7 +74,7 @@ void PackingThread::run()
 			if(success) {
 				bestSolution = threadSolution; minSuccessfullLength = curLength;
 				curLength = qRound((1.0 - rdec)*(qreal)solver->getCurrentWidth());
-				emit minimumLenghtUpdated(minSuccessfullLength, nonzoomscale, scale, totalItNum, myTimer.elapsed() / 1000.0, seed);
+				emit minimumLenghtUpdated(minSuccessfullLength, totalItNum, myTimer.elapsed() / 1000.0, seed);
 			}
 			else {
 				if (qRound((1.0 + rinc)*(qreal)solver->getCurrentWidth()) >= minSuccessfullLength) {
@@ -98,51 +87,25 @@ void PackingThread::run()
 				else curLength = qRound((1.0 + rinc)*(qreal)solver->getCurrentWidth());
 			}
 			solver->setContainerWidth(curLength, threadSolution);
-			emit containerLengthChanged(curLength);
-			emit solutionGenerated(threadSolution, scale);
 			success = false;
 			minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 		}
 		else {
 			if (success) break;
 			else {
-				if (numLoops > MAXLOOPSPERLENGTH) {
-					solver->generateRandomSolution(threadSolution, parameters);
-					numLoops = 0;
-				}
+				if (numLoops > MAXLOOPSPERLENGTH) { solver->generateRandomSolution(threadSolution, parameters); numLoops = 0; }
 				else numLoops++;
 			}
 		}
-		itNum = 0;
-		worseSolutionsCount = 0;
-		solver->resetWeights();
+		itNum = 0; worseSolutionsCount = 0; solver->resetWeights();
 		emit weightsChanged();
 	}
-	//
+	if (m_abort) {qDebug() << "Aborted!"; quit();}
+	emit finishedExecution(bestSolution, minSuccessfullLength, totalItNum, curOverlap, minOverlap, myTimer.elapsed() / 1000.0, seed);
+	quit();
+}
 
-    if(finishNow) qDebug() << "Aborted!";
- //   
-	if (!parameters.isFixedLength()) {
-		emit containerLengthChanged(minSuccessfullLength);
-		emit finishedExecution(totalItNum, curOverlap, minOverlap, myTimer.elapsed() / 1000.0, this->scale, this->scale, minSuccessfullLength, seed);
-		emit finalSolutionGenerated(bestSolution, this->scale, minSuccessfullLength / nonzoomscale, seed);
-	}
-	else {
-		emit finishedExecution(totalItNum, curOverlap, minOverlap, myTimer.elapsed() / 1000.0, this->nonzoomscale, this->scale, solver->getCurrentWidth(), seed);
-		emit finalSolutionGenerated(bestSolution, this->scale, solver->getCurrentWidth() / this->scale, seed);
-	}
-    emit solutionGenerated(bestSolution, scale);
-	//if (parameters.isFixedLength()) qDebug() << "\nFinished. Total iterations:" << totalItNum << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << myTimer.elapsed() / 1000.0;
-	//else qDebug() << "\nFinished. Total iterations:" << totalItNum << ".Minimum length =" << minSuccessfullLength / nonzoomscale << ". Elapsed time:" << myTimer.elapsed() / 1000.0;
-
-    #ifdef CONSOLE
-  //      overlap = minOverlap;
-		//lenght = minSuccessfullLength / nonzoomscale;
-  //      elapsedTime = myTimer.elapsed()/1000.0;
-  //      totalIterations = totalItNum;
-  //      for(int i = 0; i < bestSolution.getNumItems(); i++) {
-  //          solution.setPosition(i, bestSolution.getPosition(i));
-  //          solution.setOrientation(i, bestSolution.getOrientation(i));
-  //      }
-    #endif
+void PackingThread::abort() {
+	m_abort = true;
+	wait();
 }

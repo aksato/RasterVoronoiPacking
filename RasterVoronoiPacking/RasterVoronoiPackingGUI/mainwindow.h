@@ -58,8 +58,9 @@ private slots:
     void zoomedlocalSearch();
 
     void executePacking();
-	void showExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomscale, int curLength, int minLength);
-	void showExecutionFinishedStatus(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomscale, int minLength, uint seed);
+	void showCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);
+	void showExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed);
+	void showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed, uint seed);
 
     void saveSolution();
     void loadSolution();

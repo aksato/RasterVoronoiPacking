@@ -5,14 +5,10 @@
 #include "rasterpackingsolution.h"
 #include "rasterstrippackingsolver.h"
 
-#ifndef CONSOLE
 #include <QThread>
 #include <QMutex>
 #include <QWaitCondition>
 class PackingThread : public QThread
-#else
-class PackingThread : public QObject
-#endif
 {
     Q_OBJECT
 public:
@@ -21,46 +17,43 @@ public:
 
     void setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution);
     void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {solver =_solver;}
-	//void setParameters(const int _Nmo, const int _heuristicType, const int _maxSeconds, const bool _useCUDA, const bool _cacheMaps, const bool _stripPacking);
 	void setParameters(RASTERVORONOIPACKING::RasterStripPackingParameters &_parameters) {parameters.Copy(_parameters);}
-	void setScale(qreal scale) { this->scale = scale; this->nonzoomscale = scale; }
-	void setScale(qreal scale, qreal nonzoomscale) { this->scale = scale; this->nonzoomscale = nonzoomscale; }
-	//void setCuda(bool useCUDA) { this->useCUDA = useCUDA; }
-	//void setCacheUse(bool cacheMaps) { this->cacheMaps = cacheMaps; }
-	//void setStripPacking(bool _stripPacking) { this->stripPacking = stripPacking; }
+	//void setScale(qreal scale) { this->scale = scale; this->nonzoomscale = scale; }
+	//void setScale(qreal scale, qreal nonzoomscale) { this->scale = scale; this->nonzoomscale = nonzoomscale; }
+	uint getSeed() { return seed; }
 
-#ifndef CONSOLE
-    protected:
-        void run();
-#else
-	//void run(qreal &lenght, qreal &overlap, qreal &elapsedTime, int &totalIterations, uint &seed, RASTERVORONOIPACKING::RasterPackingSolution &solution);
+protected:
 	void run();
-#endif
-
 
 signals:
-    void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
-    void statusUpdated(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal nonzoomscale, qreal scale, int curLength, int minLength);
-	//void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, int minLength);
-	void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomScale, int minLength, uint seed);
-    void weightsChanged();
-	void containerLengthChanged(int newLength);
-	void minimumLenghtUpdated(int minLength, qreal scale, qreal zoomScale, int totalItNum, qreal elapsed, uint seed);
-	void finalSolutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &finalSolution, qreal scale, qreal finalLength, uint seed);
+	// Basic signals
+	void statusUpdated(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed);
+	void minimumLenghtUpdated(int minLength, int totalItNum, qreal elapsed, uint seed);
+	void finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed, uint seed);
+	// GUI signals
+	void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);
+	//void containerLengthChanged(int newLength);
+	void weightsChanged();
+
+	//void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
+	//void statusUpdated(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal nonzoomscale, qreal scale, int curLength, int minLength);
+	//void finishedExecution(int totalItNum, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomScale, int minLength, uint seed);
+	//void weightsChanged();
+	//void containerLengthChanged(int newLength);
+	//void minimumLenghtUpdated(int minLength, qreal scale, qreal zoomScale, int totalItNum, qreal elapsed, uint seed);
+	//void finalSolutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &finalSolution, qreal scale, qreal finalLength, uint seed);
+	//void totallyFinished();
 
 public slots:
+	void abort();
 
 private:
-    RASTERVORONOIPACKING::RasterPackingSolution threadSolution;
+	uint seed; 
+	bool m_abort; 
     std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-    bool finishNow;
 	RASTERVORONOIPACKING::RasterStripPackingParameters parameters;
- //   int Nmo, heuristicType, maxSeconds;
-    uint seed;
-    qreal scale, nonzoomscale;
-	//bool useCUDA;
-	//bool cacheMaps;
-	//bool stripPacking;
+	RASTERVORONOIPACKING::RasterPackingSolution threadSolution;
+    //qreal scale, nonzoomscale;
 };
 
 #endif // PACKINGTHREAD_H

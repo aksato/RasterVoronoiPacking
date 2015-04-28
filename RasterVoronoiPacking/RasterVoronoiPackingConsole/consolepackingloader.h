@@ -24,20 +24,25 @@ public:
 
 	void setParameters(QString inputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams);
 	void setParameters(QString inputFilePath, QString zoomedInputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams);
+	//void run(PackingThread &threadedPacker);
 	void run();
 
 public slots :
-	void printExecutionStatus(int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed, qreal scale, qreal zoomscale, int curLength, int minLength);
-	void saveMinimumResult(int minLength, qreal scale, qreal zoomScale, int totalItNum, qreal elapsed, uint seed);
-	void saveFinalResult(int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, qreal scale, qreal zoomscale, int length, uint seed);
-	void saveFinalLayout(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, qreal scale, qreal length, uint seed);
+	void printExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed);
+	void saveMinimumResult(int minLength, int totalItNum, qreal elapsed, uint threadSeed);
+	void saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, int length, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, uint seed);
+	void threadFinished();
+
+signals:
+	void quitApp();
 
 private:
 	bool loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, bool &loadGPU);
 	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParamsBackup;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, zoomProblem;
 	QString outputTXTFile, outputXMLFile;
-	PackingThread singleThreadedPacker;
+	int numProcesses;
+	QVector<std::shared_ptr<PackingThread>> threadVector;
 };
 
 #endif // CONSOLEPACKINGLOADER_H

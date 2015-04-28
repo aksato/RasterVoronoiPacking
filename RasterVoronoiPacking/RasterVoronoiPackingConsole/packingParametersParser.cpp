@@ -10,7 +10,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
 
     parser.addPositionalArgument("source","Input problem file path.");
-    const QCommandLineOption nameZoomedInput(QStringList() << "zoom-problem", "Zoomed problem input.", "name");
+    const QCommandLineOption nameZoomedInput(QStringList() << "zoom", "Zoomed problem input.", "name");
     parser.addOption(nameZoomedInput);
     const QCommandLineOption nameOutputTXT(QStringList() << "result", "The output result statistics file name.", "name");
     parser.addOption(nameOutputTXT);
@@ -19,7 +19,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
     const QCommandLineOption typeMethod("method", "Raster packing method choices: default, gls, zoom, zoomgls.", "type");
     parser.addOption(typeMethod);
-    const QCommandLineOption typeInitialSolution("initial-solution", "Initial solution choices: random.", "type");
+    const QCommandLineOption typeInitialSolution("initial", "Initial solution choices: random.", "type");
     parser.addOption(typeInitialSolution);
     const QCommandLineOption valueMaxWorseSolutions("nmo", "Maximum number of non-best solutions.", "value");
     parser.addOption(valueMaxWorseSolutions);
@@ -31,6 +31,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(boolStripPacking);
 	const QCommandLineOption boolGpuProcessing("gpu", "Use GPU to process overlap maps.");
 	parser.addOption(boolGpuProcessing);
+	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value");
+	parser.addOption(valueNumThreads);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -162,6 +164,20 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
 	if (parser.isSet(boolGpuProcessing)) params->gpuProcessing = true;
 	else params->gpuProcessing = false;
+
+	if (parser.isSet(valueNumThreads)) {
+		const QString threadsString = parser.value(valueNumThreads);
+		bool ok;
+		const int nthreads = threadsString.toInt(&ok);
+		if (ok && threadsString > 0) params->numThreads = nthreads;
+		else {
+			*errorMessage = "Bad parallel value.";
+			return CommandLineError;
+		}
+	}
+	else {
+		params->numThreads = 1;
+	}
 
     return CommandLineOk;
 }

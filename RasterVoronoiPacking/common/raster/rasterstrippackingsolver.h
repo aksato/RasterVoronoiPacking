@@ -39,7 +39,7 @@ namespace RASTERVORONOIPACKING {
 		// Auxiliary functions
 		// --> Change container size
 		void setContainerWidth(int pixelWidth);
-		void setContainerWidth(int pixelWidth, RasterPackingSolution &solution);
+		void setContainerWidth(int pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params);
 
 	private:
 		// --> Get two items overlap

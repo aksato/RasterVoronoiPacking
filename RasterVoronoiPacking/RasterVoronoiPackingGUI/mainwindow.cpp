@@ -235,7 +235,8 @@ void MainWindow::generateCurrentTotalOverlapMap() {
 
 void MainWindow::createRandomLayout() {
     solver->generateRandomSolution(solution, params);
-    ui->graphicsView->setCurrentSolution(solution);
+	if (params.isDoubleResolution()) ui->graphicsView->setCurrentSolution(solution, rasterZoomedProblem->getScale());
+    else ui->graphicsView->setCurrentSolution(solution);
 }
 
 void MainWindow::translateCurrentToMinimumPosition() {
@@ -407,7 +408,7 @@ void MainWindow::changeContainerWidth() {
     qreal lenght = QInputDialog::getDouble(this, "New container lenght", "Lenght:", (qreal)solver->getCurrentWidth()/ui->graphicsView->getScale(), 0, (qreal)this->rasterProblem->getContainerWidth()/ui->graphicsView->getScale(), 2, &ok);
 	if (!ok) return;
     int scaledWidth = qRound(lenght*ui->graphicsView->getScale());
-    solver->setContainerWidth(scaledWidth, solution);
+    solver->setContainerWidth(scaledWidth, solution, params);
     ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
 	ui->graphicsView->setCurrentSolution(solution);
 }

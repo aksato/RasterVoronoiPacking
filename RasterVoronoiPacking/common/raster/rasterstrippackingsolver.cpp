@@ -208,12 +208,13 @@ void RasterStripPackingSolver::setContainerWidth(int pixelWidth) {
     currentWidth = pixelWidth;
 }
 
-void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterPackingSolution &solution) {
+void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
 	setContainerWidth(pixelWidth);
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
 		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, solution.getOrientation(itemId));
 		QPoint curItemPos = solution.getPosition(itemId);
 		int maxPositionX = -curMap->getReferencePoint().x() + curMap->getWidth() - 1;
+		if (params.isDoubleResolution()) maxPositionX = qRound((qreal)maxPositionX / originalProblem->getScale() * zoomedProblem->getScale());
 		if (curItemPos.x() > maxPositionX) solution.setPosition(itemId, QPoint(maxPositionX, curItemPos.y()));
 	}
 }

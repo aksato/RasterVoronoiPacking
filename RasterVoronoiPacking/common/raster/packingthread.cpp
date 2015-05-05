@@ -86,7 +86,7 @@ void PackingThread::run()
 				}
 				else curLength = qRound((1.0 + rinc)*(qreal)solver->getCurrentWidth());
 			}
-			solver->setContainerWidth(curLength, threadSolution);
+			solver->setContainerWidth(curLength, threadSolution, parameters);
 			success = false;
 			minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 		}

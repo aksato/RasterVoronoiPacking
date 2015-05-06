@@ -152,6 +152,18 @@ QStringList Polygon::getXML() {
     return commands;
 }
 
+qreal Polygon::getArea() {
+	qreal area = 0.0;
+	int i, j = size() - 1;
+
+	for (i = 0; i < size(); i++) {
+		area += (at(j).x() + at(i).x())*(at(j).y() - at(i).y());
+		j = i;
+	}
+
+	return area*.5;
+}
+
 QStringList Container::getXML() {
     QStringList commands;
 
@@ -602,3 +614,10 @@ bool PackingProblem::save(QString fileName) {
     return true;
 }
 
+qreal PackingProblem::getTotalItemsArea() {
+	qreal area = 0.0;
+	for (QList<std::shared_ptr<Piece>>::iterator it = pbegin(); it != pend(); it++) {
+		area += (*it)->getMultiplicity()*(*it)->getPolygon()->getArea();
+	}
+	return -area;
+}

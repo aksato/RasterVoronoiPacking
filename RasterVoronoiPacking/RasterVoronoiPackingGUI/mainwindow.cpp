@@ -27,7 +27,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionLoad_Zoomed_Problem, SIGNAL(triggered()), this, SLOT(loadZoomedPuzzle()));
     connect(ui->actionLoad_Solution, SIGNAL(triggered()), this, SLOT(loadSolution()));
     connect(ui->actionSave_Solution, SIGNAL(triggered()), this, SLOT(saveSolution()));
+	connect(ui->actionSave_Zoomed_Solution, SIGNAL(triggered()), this, SLOT(saveZoomedSolution()));
     connect(ui->actionExport_Solution_to_SVG, SIGNAL(triggered()), this, SLOT(exportSolutionToSvg()));
+	connect(ui->actionShow_density, SIGNAL(triggered()), this, SLOT(printDensity()));
     connect(ui->comboBox, SIGNAL(currentIndexChanged(int)), ui->graphicsView, SLOT(setSelectedItem(int)));
     connect(ui->graphicsView, SIGNAL(selectedItemChanged(int)), ui->comboBox, SLOT(setCurrentIndex(int)));
     connect(ui->spinBox, SIGNAL(valueChanged(int)), ui->graphicsView, SLOT(setSelectedItem(int)));
@@ -71,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution,int)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution,int)));
     connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
 	connect(&runThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
+	connect(&runThread, SIGNAL(minimumLenghtUpdated(int, int, qreal, uint)), this, SLOT(showExecutionMinLengthObtained(int, int, qreal, uint)));
 	connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
 
@@ -92,6 +95,18 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+qreal getContainerWidth(RASTERPREPROCESSING::PackingProblem &problem) {
+	std::shared_ptr<RASTERPREPROCESSING::Polygon> conainerPolygon = (*problem.ccbegin())->getPolygon();
+	qreal minY, maxY;
+	minY = conainerPolygon->at(0).y(); maxY = minY;
+	for (int i = 0; i < conainerPolygon->size(); i++) {
+		qreal curY = conainerPolygon->at(i).y();
+		if (curY < minY) minY = curY;
+		if (curY > maxY) maxY = curY;
+	}
+	return maxY - minY;
+}
+
 void MainWindow::loadPuzzle() {
 	// TOREMOVE
 
@@ -101,6 +116,10 @@ void MainWindow::loadPuzzle() {
     RASTERPREPROCESSING::PackingProblem problem;
     if(problem.load(fileName)) {
         rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
+		
+		// Density calculation
+		totalArea = problem.getTotalItemsArea();
+		containerWidth = getContainerWidth(problem);
 
 		// Get GPU memory requirements
 		bool loadGPU = false;
@@ -485,39 +504,41 @@ void MainWindow::showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterP
 							". Elapsed time: " + QString::number(elapsed) +
 							" secs. Solution length : " + QString::number((qreal)minLength / rasterProblem->getScale()) + ".");
 	showCurrentSolution(solution, minLength);
+	this->solution = solution;
 }
 
 void MainWindow::saveSolution() {
     QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
+	solution.save(fileName, this->rasterProblem, solver->getCurrentWidth() / this->rasterProblem->getScale(), false);
 
-	QFile file(fileName);
-	if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        qCritical() << "Error: Cannot open file"
-                    << ": " << qPrintable(file.errorString());
-        return;
-    }
+	//QFile file(fileName);
+	//if (!file.open(QFile::WriteOnly | QFile::Text)) {
+ //       qCritical() << "Error: Cannot open file"
+ //                   << ": " << qPrintable(file.errorString());
+ //       return;
+ //   }
 
-	QXmlStreamWriter stream(&file);
-	stream.setAutoFormatting(true);
-	stream.writeStartDocument();
-	stream.writeStartElement("solution");
-	for(int itemId = 0; itemId < this->rasterProblem->count(); itemId++) {
-		std::shared_ptr<RasterPackingItem> curItem = this->rasterProblem->getItem(itemId);
-		stream.writeStartElement("placement");
-		stream.writeAttribute("boardNumber", "1");
-		stream.writeAttribute("x", QString::number(this->solution.getPosition(itemId).x()/this->rasterProblem->getScale()));
-		stream.writeAttribute("y", QString::number(this->solution.getPosition(itemId).y()/this->rasterProblem->getScale()));
-		stream.writeAttribute("idBoard", this->rasterProblem->getContainerName());
-		stream.writeAttribute("idPiece", "piece" + QString::number(this->rasterProblem->getItemType(itemId))); // FIXME: Change to Name
-		stream.writeAttribute("angle", QString::number(this->rasterProblem->getItem(itemId)->getAngleValue(this->solution.getOrientation(itemId))));
-		stream.writeAttribute("mirror", "none");
-		stream.writeEndElement(); // placement
-	}
-	stream.writeTextElement("length", QString::number(solver->getCurrentWidth()/this->rasterProblem->getScale()));
-	stream.writeEndElement(); // solution
-	stream.writeEndDocument();
+	//QXmlStreamWriter stream(&file);
+	//stream.setAutoFormatting(true);
+	//stream.writeStartDocument();
+	//stream.writeStartElement("solution");
+	//for(int itemId = 0; itemId < this->rasterProblem->count(); itemId++) {
+	//	std::shared_ptr<RasterPackingItem> curItem = this->rasterProblem->getItem(itemId);
+	//	stream.writeStartElement("placement");
+	//	stream.writeAttribute("boardNumber", "1");
+	//	stream.writeAttribute("x", QString::number(this->solution.getPosition(itemId).x()/this->rasterProblem->getScale()));
+	//	stream.writeAttribute("y", QString::number(this->solution.getPosition(itemId).y()/this->rasterProblem->getScale()));
+	//	stream.writeAttribute("idBoard", this->rasterProblem->getContainerName());
+	//	stream.writeAttribute("idPiece", "piece" + QString::number(this->rasterProblem->getItemType(itemId))); // FIXME: Change to Name
+	//	stream.writeAttribute("angle", QString::number(this->rasterProblem->getItem(itemId)->getAngleValue(this->solution.getOrientation(itemId))));
+	//	stream.writeAttribute("mirror", "none");
+	//	stream.writeEndElement(); // placement
+	//}
+	//stream.writeTextElement("length", QString::number(solver->getCurrentWidth()/this->rasterProblem->getScale()));
+	//stream.writeEndElement(); // solution
+	//stream.writeEndDocument();
 
-	file.close();
+	//file.close();
 }
 
 void MainWindow::loadSolution() {
@@ -710,4 +731,24 @@ void MainWindow::glsWeightedlocalSearchCache() {
 	solver->performLocalSearch(solution, params);
 	ui->statusBar->showMessage("Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed() / 1000.0) + "seconds");
 	ui->graphicsView->setCurrentSolution(solution);
+}
+
+void MainWindow::printDensity() {
+	qDebug() << "Total area:" << totalArea;
+	qDebug() << "Container width:" << containerWidth;
+	qDebug() << "Container length:" << (qreal)solver->getCurrentWidth() / rasterProblem->getScale();
+	qDebug() << qSetRealNumberPrecision(2) << "Density" << qPrintable(QString::number( (100 * rasterProblem->getScale()*totalArea) / (containerWidth*(qreal)solver->getCurrentWidth()), 'f', 2)) << "%";
+
+	QMessageBox msgBox;
+	msgBox.setText("The density of the layout is " + QString::number((100 * rasterProblem->getScale()*totalArea) / (containerWidth*(qreal)solver->getCurrentWidth()), 'f', 2) + "%.");
+	msgBox.exec();
+}
+
+void MainWindow::showExecutionMinLengthObtained(int minLength, int totalItNum, qreal elapsed, uint seed) {
+	qDebug() << "New minimum length obtained: " << minLength / rasterProblem->getScale() << ". Elapsed time: " << elapsed << " secs";
+}
+
+void MainWindow::saveZoomedSolution() {
+	QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
+	solution.save(fileName, this->rasterZoomedProblem, solver->getCurrentWidth() / this->rasterProblem->getScale(), false);
 }

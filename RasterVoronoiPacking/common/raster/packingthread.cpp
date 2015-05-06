@@ -37,12 +37,13 @@ void PackingThread::run()
 	bool success = false;
 	int curLength = solver->getCurrentWidth();
 	int minSuccessfullLength = curLength;
+	qreal curRealLength = (qreal)minSuccessfullLength;
 	qreal rdec = 0.04; qreal rinc = 0.01;
     qreal minOverlap, curOverlap;
     RASTERVORONOIPACKING::RasterPackingSolution bestSolution = threadSolution;
     solver->resetWeights();
 	emit solutionGenerated(threadSolution, curLength);
-	int numLoops = 0;
+	int numLoops = 1;
 
 	minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 	itNum++; totalItNum++;
@@ -72,28 +73,33 @@ void PackingThread::run()
 		if (!parameters.isFixedLength()) {
 			// Reduce or expand container
 			if(success) {
+				numLoops = 1;
 				bestSolution = threadSolution; minSuccessfullLength = curLength;
-				curLength = qRound((1.0 - rdec)*(qreal)solver->getCurrentWidth());
+				curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
+				curLength = qRound(curRealLength);
 				emit minimumLenghtUpdated(minSuccessfullLength, totalItNum, myTimer.elapsed() / 1000.0, seed);
 			}
-			else {
-				if (qRound((1.0 + rinc)*(qreal)solver->getCurrentWidth()) >= minSuccessfullLength) {
-					if (numLoops > MAXLOOPSPERLENGTH) {
-						solver->generateRandomSolution(threadSolution, parameters);
-						numLoops = 0;
-					}
-					else numLoops++;
+			else if (numLoops >= MAXLOOPSPERLENGTH) {
+				numLoops = 1;
+				if (qRound(curRealLength = (1.0 + rinc)*curRealLength) >= minSuccessfullLength) {
+					//do curRealLength = (1.0 - rinc)*curRealLength; while (qRound(curRealLength) >= minSuccessfullLength);
+					curRealLength = minSuccessfullLength - 1;
+					if (curLength == qRound(curRealLength)) solver->generateRandomSolution(threadSolution, parameters);
+					curLength = qRound(curRealLength);
 				}
-				else curLength = qRound((1.0 + rinc)*(qreal)solver->getCurrentWidth());
+				else curLength = qRound(curRealLength);
 			}
+			else numLoops++;
+
 			solver->setContainerWidth(curLength, threadSolution, parameters);
+			//qDebug() << curLength/2.0 << curRealLength/2.0;
 			success = false;
 			minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 		}
 		else {
 			if (success) break;
 			else {
-				if (numLoops > MAXLOOPSPERLENGTH) { solver->generateRandomSolution(threadSolution, parameters); numLoops = 0; }
+				if (numLoops > MAXLOOPSPERLENGTH) { solver->generateRandomSolution(threadSolution, parameters); numLoops = 1; }
 				else numLoops++;
 			}
 		}
@@ -101,6 +107,7 @@ void PackingThread::run()
 		emit weightsChanged();
 	}
 	if (m_abort) {qDebug() << "Aborted!"; quit();}
+	solver->setContainerWidth(minSuccessfullLength, bestSolution, parameters);
 	emit finishedExecution(bestSolution, minSuccessfullLength, totalItNum, curOverlap, minOverlap, myTimer.elapsed() / 1000.0, seed);
 	quit();
 }

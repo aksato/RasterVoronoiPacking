@@ -61,11 +61,14 @@ private slots:
 	void showCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);
 	void showExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed);
 	void showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed, uint seed);
+	void showExecutionMinLengthObtained(int minLength, int totalItNum, qreal elapsed, uint seed);
 
     void saveSolution();
+	void saveZoomedSolution();
     void loadSolution();
     void exportSolutionToSvg();
 
+	void printDensity();
 	void printCacheInfo();
 	void printGlsWeightedCacheInfo();
 
@@ -84,6 +87,7 @@ private:
     PackingThread runThread;
 
     int accContainerShrink;
+	qreal totalArea; qreal containerWidth;
 
 };
 

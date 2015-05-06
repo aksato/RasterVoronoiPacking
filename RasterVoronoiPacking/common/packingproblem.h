@@ -25,6 +25,7 @@ namespace RASTERPREPROCESSING {
         QImage getRasterImage(QPoint &RP, qreal scale = 1.0);
         QImage getRasterImage8bit(QPoint &RP, qreal scale = 1.0);
         int *getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height);
+		qreal getArea();
 //        void fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale);
 
     private:
@@ -186,6 +187,7 @@ namespace RASTERPREPROCESSING {
 
         bool load(QString fileName);
         bool save(QString fileName);
+		qreal getTotalItemsArea();
 
         void setName(QString _name) {this->name = _name;}
         QString getName() {return this->name;}

@@ -37,7 +37,7 @@ qreal RunConfigurationsDialog::getLenght() {
 void RunConfigurationsDialog::setInitialLenght(qreal lenght, qreal step) {
     ui->doubleSpinBox->setValue(lenght);
     ui->doubleSpinBox->setMinimum(0.0);
-    ui->doubleSpinBox->setMaximum(lenght);
+    //ui->doubleSpinBox->setMaximum(lenght);
     ui->doubleSpinBox->setSingleStep(step);
 }
 

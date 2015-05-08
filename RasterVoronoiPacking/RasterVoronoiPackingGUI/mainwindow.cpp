@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumPosition()));
 	connect(ui->pushButton_21, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumPositionGPU()));
     connect(ui->pushButton_5, SIGNAL(clicked()), this, SLOT(createRandomLayout()));
+	connect(ui->pushButton_32, SIGNAL(clicked()), this, SLOT(createBottomLeftLayout()));
     connect(ui->pushButton_14, SIGNAL(clicked()), this, SLOT(changeContainerWidth()));
     connect(ui->pushButton_6, SIGNAL(clicked()), this, SLOT(showGlobalOverlap()));
     connect(ui->pushButton_7, SIGNAL(clicked()), this, SLOT(localSearch()));
@@ -78,6 +79,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
 
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
+	connect(ui->pushButton_33, SIGNAL(clicked()), this, SLOT(createZoomedBottomLeftLayout()));
     connect(ui->pushButton_16, SIGNAL(clicked()), this, SLOT(showZoomedMap()));
     connect(ui->pushButton_17, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumZoomedPosition()));
     connect(ui->pushButton_18, SIGNAL(clicked()), this, SLOT(showZoomedGlobalOverlap()));
@@ -180,7 +182,7 @@ void MainWindow::loadPuzzle() {
 		ui->pushButton_9->setEnabled(true); ui->pushButton_10->setEnabled(true); 
 		ui->pushButton_12->setEnabled(true); ui->pushButton_13->setEnabled(true); 
 		ui->pushButton_14->setEnabled(true); ui->pushButton_15->setEnabled(true);
-		ui->pushButton_27->setEnabled(true);
+		ui->pushButton_27->setEnabled(true); ui->pushButton_32->setEnabled(true);
 		
         ui->actionLoad_Zoomed_Problem->setEnabled(true);
 
@@ -211,6 +213,7 @@ void MainWindow::loadZoomedPuzzle() {
         ui->graphicsView->changeGridSize(rasterZoomedProblem->getScale());
         ui->doubleSpinBox->setSingleStep(1/rasterZoomedProblem->getScale());
         ui->doubleSpinBox_2->setSingleStep(1/rasterZoomedProblem->getScale());
+		ui->pushButton_33->setEnabled(true);
     }
     else {
        // Display error message
@@ -253,9 +256,19 @@ void MainWindow::generateCurrentTotalOverlapMap() {
 }
 
 void MainWindow::createRandomLayout() {
+	params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE);
     solver->generateRandomSolution(solution, params);
+	//if (params.isDoubleResolution()) ui->graphicsView->setCurrentSolution(solution, rasterZoomedProblem->getScale());
+    //else ui->graphicsView->setCurrentSolution(solution);
+	ui->graphicsView->setCurrentSolution(solution);
+}
+
+void MainWindow::createBottomLeftLayout() {
+	params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE);
+	solver->generateBottomLeftSolution(solution, params);
+	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
 	if (params.isDoubleResolution()) ui->graphicsView->setCurrentSolution(solution, rasterZoomedProblem->getScale());
-    else ui->graphicsView->setCurrentSolution(solution);
+	else ui->graphicsView->setCurrentSolution(solution);
 }
 
 void MainWindow::translateCurrentToMinimumPosition() {
@@ -424,7 +437,7 @@ void MainWindow::changeContainerWidth() {
     // FIXME: Create custom dialog
 	ui->graphicsView->getCurrentSolution(solution);
 	bool ok;
-    qreal lenght = QInputDialog::getDouble(this, "New container lenght", "Lenght:", (qreal)solver->getCurrentWidth()/ui->graphicsView->getScale(), 0, (qreal)this->rasterProblem->getContainerWidth()/ui->graphicsView->getScale(), 2, &ok);
+    qreal lenght = QInputDialog::getDouble(this, "New container lenght", "Lenght:", (qreal)solver->getCurrentWidth()/ui->graphicsView->getScale(), 0, (qreal)10*this->rasterProblem->getContainerWidth()/ui->graphicsView->getScale(), 2, &ok);
 	if (!ok) return;
     int scaledWidth = qRound(lenght*ui->graphicsView->getScale());
     solver->setContainerWidth(scaledWidth, solution, params);
@@ -751,4 +764,12 @@ void MainWindow::showExecutionMinLengthObtained(int minLength, int totalItNum, q
 void MainWindow::saveZoomedSolution() {
 	QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
 	solution.save(fileName, this->rasterZoomedProblem, solver->getCurrentWidth() / this->rasterProblem->getScale(), false);
+}
+
+void MainWindow::createZoomedBottomLeftLayout() {
+	params.setCacheMaps(false); params.setDoubleResolution(true); params.setGpuProcessing(false); params.setHeuristic(NONE);
+	solver->generateBottomLeftSolution(solution, params);
+	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+	if (params.isDoubleResolution()) ui->graphicsView->setCurrentSolution(solution, rasterZoomedProblem->getScale());
+	else ui->graphicsView->setCurrentSolution(solution);
 }

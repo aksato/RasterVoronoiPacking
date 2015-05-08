@@ -72,6 +72,71 @@ void RasterStripPackingSolver::generateRandomSolution(RasterPackingSolution &sol
     }
 }
 
+// --> Generate initial solution using the bottom left heuristic and resize the container accordingly
+void RasterStripPackingSolver::generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+	std::shared_ptr<RasterPackingProblem> problem = params.isDoubleResolution() ? zoomedProblem : originalProblem;
+
+	QVector<int> sequence;
+	for (int i = 0; i < problem->count(); i++) sequence.append(i);
+	std::random_shuffle(sequence.begin(), sequence.end());
+	int layoutLength = 0;
+	for (int k = 0; k < problem->count(); k++) {
+		int shuffledId = sequence[k];
+		int minMaxItemX;
+		// Find left bottom placement for item
+		for (unsigned int angle = 0; angle < problem->getItem(shuffledId)->getAngleCount(); angle++) {
+			// Get IFP bounding box
+			int  minIfpX, minIfpY, maxIfpX, maxIfpY;
+			getIfpBoundingBox(shuffledId, angle, minIfpX, minIfpY, maxIfpX, maxIfpY, problem);
+			QPoint curPos(minIfpX, minIfpY);
+			while (1) { // FIXME: Infinite loop?
+				qreal overlap = getItemPartialOverlap(sequence, k, curPos, angle, solution, problem);
+				if (qFuzzyCompare(1.0 + 0.0, 1.0 + overlap)) break;
+				// Get next position
+				curPos.setY(curPos.y() + 1); if (curPos.y() > maxIfpY) { curPos.setY(minIfpY); curPos.setX(curPos.x() + 1); }
+			}
+			// Check minimum X coordinate
+			int maxItemX = getItemMaxX(curPos.x(), angle, shuffledId, problem);
+			if (angle == 0 || maxItemX < minMaxItemX) {
+				minMaxItemX = maxItemX;
+				solution.setPosition(shuffledId, curPos); solution.setOrientation(shuffledId, angle);
+			}
+		}
+		if (minMaxItemX > layoutLength) layoutLength = minMaxItemX;
+	}
+	if (params.isDoubleResolution()) layoutLength = qCeil((layoutLength / zoomedProblem->getScale()) * originalProblem->getScale());
+	setContainerWidth(layoutLength, solution, params);
+}
+
+void RasterStripPackingSolver::getIfpBoundingBox(int itemId, int angle, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY, std::shared_ptr<RasterPackingProblem> problem) {
+	std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(-1, -1, problem->getItemType(itemId), angle);
+	bottomLeftX = -ifp->getOriginX();
+	bottomLeftY = -ifp->getOriginY();
+	topRightX = bottomLeftX + ifp->width() - 1;
+	topRightY = bottomLeftY + ifp->height() - 1;
+}
+
+// Determine item overlap for a subset of fixed items
+qreal RasterStripPackingSolver::getItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem) {
+	qreal overlap = 0;
+	int itemId = sequence[itemSequencePos];
+	for (int i = 0; i < itemSequencePos; i++) {
+		int curFixedItemId = sequence[i];
+		overlap += getDistanceValue(itemId, itemPos, itemAngle, curFixedItemId, solution.getPosition(curFixedItemId), solution.getOrientation(curFixedItemId), problem);
+	}
+	return overlap;
+}
+// FIXME: use discretization from nfp/ifp
+int RasterStripPackingSolver::getItemMaxX(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem) {
+	int itemMinX, itemMaxX, itemMinY, itemMaxY; problem->getItem(itemId)->getBoundingBox(itemMinX, itemMaxX, itemMinY, itemMaxY);
+	int realItemMaxX;
+	if (problem->getItem(itemId)->getAngleValue(angle) == 0) realItemMaxX = itemMaxX;
+	if (problem->getItem(itemId)->getAngleValue(angle) == 90) realItemMaxX = -itemMinY;
+	if (problem->getItem(itemId)->getAngleValue(angle) == 180) realItemMaxX = -itemMinX;
+	if (problem->getItem(itemId)->getAngleValue(angle) == 270) realItemMaxX = itemMaxY;
+	return posX + qRound((qreal)realItemMaxX*problem->getScale());
+
+}
 // --> Get layout overlap (sum of individual overlap values)
 qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
     qreal totalOverlap = 0;

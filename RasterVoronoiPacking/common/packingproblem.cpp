@@ -432,6 +432,13 @@ bool PackingProblem::loadEsicup(QString &fileName) {
              curPolygon->push_back(vertex);
          }
 
+		 // Add Bounding Box Information
+		 if (xml.name() == "xMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinX(xml.readElementText().toInt());
+		 if (xml.name() == "xMax" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMaxX(xml.readElementText().toInt());
+		 if (xml.name() == "yMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinY(xml.readElementText().toInt());
+		 if (xml.name() == "yMax" && xml.tokenType() == QXmlStreamReader::StartElement) 
+			 curPolygon->setBoundingBoxMaxY(xml.readElementText().toInt());
+
          // Process nofit polygon informations
          if(xml.name()=="nfp" && xml.tokenType() == QXmlStreamReader::StartElement) {
              curGeometricTool = std::shared_ptr<NoFitPolygon>(new NoFitPolygon);

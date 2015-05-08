@@ -4,6 +4,7 @@
 #include <QVector>
 #include "rasternofitpolygon.h"
 #include "rasterinnerfitpolygon.h"
+#include <QDebug>
 class QString;
 namespace RASTERPREPROCESSING {class PackingProblem; class RasterNoFitPolygon;}
 
@@ -26,10 +27,18 @@ namespace RASTERVORONOIPACKING {
         void addAngleValue(int angle) {this->angleValues.push_back(angle);}
         int getAngleValue(int id) {return this->angleValues.at(id);}
 
+		void setBoundingBox(int _minX, int _maxX, int _minY, int _maxY) {
+			this->minX = _minX; this->maxX = _maxX; this->minY = _minY; this->maxY = _maxY;
+		}
+		void getBoundingBox(int &_minX, int &_maxX, int &_minY, int &_maxY) {
+			_minX = this->minX; _maxX = this->maxX; _minY = this->minY; _maxY = this->maxY;
+		}
+
     private:
         unsigned int id;
         unsigned int pieceType;
         unsigned int angleCount;
+		int minX, maxX, minY, maxY;
 
         QString pieceName;
         QVector<int> angleValues;

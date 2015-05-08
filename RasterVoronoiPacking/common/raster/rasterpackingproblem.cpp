@@ -56,6 +56,7 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem, bo
             std::shared_ptr<RasterPackingItem> curItem = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount()));
             curItem->setPieceName((*it)->getName());
             for(QVector<unsigned int>::const_iterator it2 = (*it)->corbegin(); it2 != (*it)->corend(); it2++) curItem->addAngleValue(*it2);
+			int minX, maxX, minY, maxY; (*it)->getPolygon()->getBoundingBox(minX, maxX, minY, maxY); curItem->setBoundingBox(minX, maxX, minY, maxY);
 			items.append(curItem);
         }
 	if (loadGPU) {
@@ -109,7 +110,7 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem, bo
         // Create image. FIXME: Use data file instead?
         QImage curImage(curRasterNfp->getFileName());
         std::shared_ptr<RasterNoFitPolygon> curMountain(new RasterNoFitPolygon(curImage, curRasterNfp->getReferencePoint(), curRasterNfp->getMaxD()));
-        curMountain->setMatrix(curImage);
+        //curMountain->setMatrix(curImage);
 
         // Determine ids
         QPair<int,int> staticIds, orbitingIds;

@@ -27,11 +27,19 @@ namespace RASTERPREPROCESSING {
         int *getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height);
 		qreal getArea();
 //        void fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale);
+		void setBoundingBoxMinX(int _minX) { this->minX = _minX; }
+		void setBoundingBoxMaxX(int _maxX) { this->maxX = _maxX; }
+		void setBoundingBoxMinY(int _minY) { this->minY = _minY; }
+		void setBoundingBoxMaxY(int _maxY) { this->maxY = _maxY; }
+		void getBoundingBox(int &_minX, int &_maxX, int &_minY, int &_maxY) {
+			_minX = this->minX; _maxX = this->maxX; _minY = this->minY; _maxY = this->maxY;
+		}
 
     private:
         QVector<QPair<QPointF,QPointF>> degLines;
         QVector<QPointF> degNodes;
         QString name;
+		int minX, maxX, minY, maxY;
     };
 
     class PackingComponent {

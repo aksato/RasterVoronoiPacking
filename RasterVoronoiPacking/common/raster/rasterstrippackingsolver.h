@@ -26,6 +26,7 @@ namespace RASTERVORONOIPACKING {
 
 		// Basic Functions
 		void generateRandomSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		// --> Get layout overlap (sum of individual overlap values)
 		qreal getGlobalOverlap(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		// --> Local search
@@ -59,6 +60,10 @@ namespace RASTERVORONOIPACKING {
 		void getTotalOverlapMapSerialCacheNoWeight(std::shared_ptr<TotalOverlapMap> map, int itemId, int orientation, RasterPackingSolution &solution);
 		void getTotalOverlapMapSerialCacheWeight(std::shared_ptr<TotalOverlapMap> map, int itemId, int orientation, RasterPackingSolution &solution);
 		void updateItemCacheInfo(int itemId, QPoint oldPos, int oldAngle, RasterStripPackingParameters &params);
+
+		int getItemMaxX(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
+		qreal getItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem);
+		void getIfpBoundingBox(int itemId, int angle, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY, std::shared_ptr<RasterPackingProblem> problem);
 
 		// Debug only functions
 		// --> Get layout overlap with individual values (sum of individual overlap values)

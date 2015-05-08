@@ -35,6 +35,7 @@ private slots:
     void translateCurrentToMinimumPosition();
 	void translateCurrentToMinimumPositionGPU();
     void createRandomLayout();
+	void createBottomLeftLayout();
     void changeContainerWidth();
     void showGlobalOverlap();
     void localSearch();
@@ -51,6 +52,7 @@ private slots:
 	void glsWeightedlocalSearchGPU();
 	void glsWeightedlocalSearchCache();
 
+	void createZoomedBottomLeftLayout();
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();
     void showZoomedGlobalOverlap();

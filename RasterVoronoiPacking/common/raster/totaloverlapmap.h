@@ -44,7 +44,7 @@ namespace RASTERVORONOIPACKING {
     public:
         TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp);
         TotalOverlapMap(int width, int height);
-        virtual ~TotalOverlapMap() {}
+		virtual ~TotalOverlapMap() { delete[] data; }
 
         void init(uint _width, uint _height);
         void reset();
@@ -52,13 +52,19 @@ namespace RASTERVORONOIPACKING {
         void shrink(int pixels) {
             Q_ASSERT_X(width-pixels > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
             this->width = width-pixels;
+			if (pixels < 0) {
+				//qWarning() << "Expansion over limit not yet implemented!"; return;
+				delete[] data;
+				init(this->width, this->height);
+				return;
+			}
             std::fill(data, data+width*height, (float)0.0);
         }
         // Does not expand more than the initial container!
         void expand(int pixels) {
-            #ifdef QT_DEBUG
-                Q_ASSERT_X(width-pixels <= initialWidth, "TotalOverlapMap::expand", "Container larger than the inital lenght");
-            #endif
+            //#ifdef QT_DEBUG
+            //    Q_ASSERT_X(width-pixels <= initialWidth, "TotalOverlapMap::expand", "Container larger than the inital lenght");
+            //#endif
             shrink(-pixels);
         }
 

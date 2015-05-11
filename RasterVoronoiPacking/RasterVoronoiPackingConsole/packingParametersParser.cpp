@@ -19,7 +19,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
     const QCommandLineOption typeMethod("method", "Raster packing method choices: default, gls, zoom, zoomgls.", "type");
     parser.addOption(typeMethod);
-    const QCommandLineOption typeInitialSolution("initial", "Initial solution choices: random.", "type");
+    const QCommandLineOption typeInitialSolution("initial", "Initial solution choices: random, bottomleft.", "type");
     parser.addOption(typeInitialSolution);
     const QCommandLineOption valueMaxWorseSolutions("nmo", "Maximum number of non-best solutions.", "value");
     parser.addOption(valueMaxWorseSolutions);
@@ -106,11 +106,12 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
     if (parser.isSet(typeInitialSolution)) {
         const QString solutionType = parser.value(typeInitialSolution).toLower();
-        if(solutionType != "random") {
-            *errorMessage = "Invalid initial solution type! Avaible methods: 'random'.";
+		if (solutionType != "random" && solutionType != "bottomleft") {
+            *errorMessage = "Invalid initial solution type! Avaible methods: 'random, bottomleft'.";
             return CommandLineError;
         }
         if(solutionType == "random") params->initialSolutionType = Solution_Random;
+		if (solutionType == "bottomleft") params->initialSolutionType = Bottom_Left;
     }
     else params->initialSolutionType = Solution_Random;
 

@@ -16,8 +16,11 @@ public:
     ~PackingThread();
 
     void setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution);
-    void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {solver =_solver;}
-	void setParameters(RASTERVORONOIPACKING::RasterStripPackingParameters &_parameters) {parameters.Copy(_parameters);}
+    void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {
+		solver =_solver;
+		threadSolution = RASTERVORONOIPACKING::RasterPackingSolution(solver->getNumItems());
+	}
+	void setParameters(RASTERVORONOIPACKING::RasterStripPackingParameters &_parameters) { parameters.Copy(_parameters); }
 	//void setScale(qreal scale) { this->scale = scale; this->nonzoomscale = scale; }
 	//void setScale(qreal scale, qreal nonzoomscale) { this->scale = scale; this->nonzoomscale = nonzoomscale; }
 	uint getSeed() { return seed; }

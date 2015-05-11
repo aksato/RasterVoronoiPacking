@@ -86,19 +86,17 @@ void ConsolePackingLoader::run() {
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(problem));
 	if (algorithmParamsBackup.isDoubleResolution()) solver->setProblem(zoomProblem, true);
 
-	// Create initial solution
+	// Resize container to initial length
 	RASTERVORONOIPACKING::RasterPackingSolution solution = RASTERVORONOIPACKING::RasterPackingSolution(problem->count(), algorithmParamsBackup.isGpuProcessing());
 	qreal length;
 	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) {
 		length = algorithmParamsBackup.getInitialLenght();
-		int scaledWidth = qRound(length*problem->getScale());
-		solver->setContainerWidth(scaledWidth);
-		solver->generateRandomSolution(solution, algorithmParamsBackup);
+		solver->setContainerWidth(qRound(length*problem->getScale()));
 	}
-	else {
-		qCritical() << "Returning. Initial solution method unavailable:" << algorithmParamsBackup.getInitialSolMethod();
-		return;
-	}
+	//else {
+	//	qCritical() << "Returning. Initial solution method unavailable:" << algorithmParamsBackup.getInitialSolMethod();
+	//	return;
+	//}
 
 	// Configure packer object
 	std::shared_ptr<PackingThread> threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
@@ -109,7 +107,6 @@ void ConsolePackingLoader::run() {
 	connect(&*threadedPacker, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), SLOT(saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(&*threadedPacker, SIGNAL(finished()), SLOT(threadFinished()));
 
-	threadedPacker->setInitialSolution(solution);
 	threadedPacker->setParameters(algorithmParamsBackup);
 	threadedPacker->setSolver(solver);
 
@@ -117,7 +114,7 @@ void ConsolePackingLoader::run() {
 	qDebug() << "Solver configured. The following parameters were set:";
 	if (!algorithmParamsBackup.isDoubleResolution()) qDebug() << "Problem Scale:" << problem->getScale();
 	else qDebug() << "Problem Scale:" << zoomProblem->getScale() << ". Auxiliary problem scale:" << problem->getScale();
-	qDebug() << "Length:" << length;
+	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) qDebug() << "Length:" << length;
 	qDebug() << "Solver method:" << algorithmParamsBackup.getHeuristic();
 	qDebug() << "Inital solution:" << algorithmParamsBackup.getInitialSolMethod();
 	if (!algorithmParamsBackup.isFixedLength()) qDebug() << "Strip packing version";

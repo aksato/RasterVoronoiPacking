@@ -72,6 +72,9 @@ int main(int argc, char *argv[])
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::RANDOMFIXED);
 		algorithmParams.settInitialLenght(params.containerLenght);
 	}
+	else if (params.initialSolutionType == Bottom_Left){
+		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::BOTTOMLEFT);
+	}
 
 
 	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams);

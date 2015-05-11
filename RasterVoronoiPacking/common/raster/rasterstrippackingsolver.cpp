@@ -90,8 +90,10 @@ void RasterStripPackingSolver::generateBottomLeftSolution(RasterPackingSolution 
 			getIfpBoundingBox(shuffledId, angle, minIfpX, minIfpY, maxIfpX, maxIfpY, problem);
 			QPoint curPos(minIfpX, minIfpY);
 			while (1) { // FIXME: Infinite loop?
-				qreal overlap = getItemPartialOverlap(sequence, k, curPos, angle, solution, problem);
-				if (qFuzzyCompare(1.0 + 0.0, 1.0 + overlap)) break;
+				//qreal overlap = getItemPartialOverlap(sequence, k, curPos, angle, solution, problem);
+				//if (qFuzzyCompare(1.0 + 0.0, 1.0 + overlap)) break;
+				if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution, problem))
+					break;
 				// Get next position
 				curPos.setY(curPos.y() + 1); if (curPos.y() > maxIfpY) { curPos.setY(minIfpY); curPos.setX(curPos.x() + 1); }
 			}
@@ -126,6 +128,19 @@ qreal RasterStripPackingSolver::getItemPartialOverlap(QVector<int> sequence, int
 	}
 	return overlap;
 }
+
+// Detect if item is in overlapping position for a subset of fixed items
+bool RasterStripPackingSolver::detectItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem) {
+	if (itemSequencePos == 0) return false;
+	int itemId = sequence[itemSequencePos];
+	for (int i = 0; i < itemSequencePos; i++) {
+		int curFixedItemId = sequence[i];
+		if (detectOverlap(itemId, itemPos, itemAngle, curFixedItemId, solution.getPosition(curFixedItemId), solution.getOrientation(curFixedItemId), problem))
+			return true;
+	}
+	return false;
+}
+
 // FIXME: use discretization from nfp/ifp
 int RasterStripPackingSolver::getItemMaxX(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem) {
 	int itemMinX, itemMaxX, itemMinY, itemMaxY; problem->getItem(itemId)->getBoundingBox(itemMinX, itemMaxX, itemMinY, itemMaxY);
@@ -323,6 +338,28 @@ qreal RasterStripPackingSolver::getDistanceValue(int itemId1, QPoint pos1, int o
     if(feasible) return 0.0;
 
     return value1Static2Orbiting < value2Static1Orbiting ? value1Static2Orbiting : value2Static1Orbiting;
+}
+
+bool RasterStripPackingSolver::detectOverlap(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, std::shared_ptr<RasterPackingProblem> problem) {
+	std::shared_ptr<RasterNoFitPolygon> curNfp1Static2Orbiting, curNfp2Static1Orbiting;
+	qreal value1Static2Orbiting, value2Static1Orbiting;
+	bool feasible;
+
+	curNfp1Static2Orbiting = problem->getNfps()->getRasterNoFitPolygon(
+		originalProblem->getItemType(itemId1), orientation1,
+		originalProblem->getItemType(itemId2), orientation2);
+	value1Static2Orbiting = getNfpValue(pos1, pos2, curNfp1Static2Orbiting, feasible);
+	if (feasible) return false;
+
+	curNfp2Static1Orbiting = problem->getNfps()->getRasterNoFitPolygon(
+		originalProblem->getItemType(itemId2), orientation2,
+		originalProblem->getItemType(itemId1), orientation1);
+	value2Static1Orbiting = getNfpValue(pos2, pos1, curNfp2Static1Orbiting, feasible);
+	if (feasible) return false;
+
+	if (qFuzzyCompare(1.0 + value1Static2Orbiting, 1.0) || qFuzzyCompare(1.0 + value2Static1Orbiting, 1.0))
+		return false;
+	return true;
 }
 
 qreal RasterStripPackingSolver::getItemTotalOverlap(int itemId, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem) {

@@ -133,7 +133,7 @@ void MainWindow::loadPuzzle() {
 			qDebug() << problem.getInnerfitPolygonsCount() << "IFPs processed. Total IFP set size:" << problemIfpTotalMem << "bytes. (" << problemIfpTotalMem / 1024 / 1024 << "MB). Max size:" << problemIfpMaxMem << "bytes. (" << problemIfpMaxMem / 1024 / 1024 << "MB)."; // TOREMOVE
 			qDebug() << problem.getNofitPolygonsCount() << "nfps processed. Total nfp set size:" << problemNfpTotalMem << "bytes. (" << problemNfpTotalMem / 1024 / 1024 << "MB)."; // TOREMOVE
 
-			if (freeCUDAMem - problemIfpTotalMem - problemNfpTotalMem > 0) {
+			if (freeCUDAMem > problemIfpTotalMem + problemNfpTotalMem) {
 				size_t remainingCUDAMem = freeCUDAMem - problemIfpTotalMem - problemNfpTotalMem;
 				//qDebug() << "Complete GPU allocation possible. Estimated free space after allocation:" << remainingCUDAMem << "bytes. (" << remainingCUDAMem / 1024 / 1024 << "MB).";
 				if (QMessageBox::question(this, "Confirm CUDA allocation", "Complete GPU allocation possible. Estimated free space after allocation: " + QString::number(remainingCUDAMem / 1024 / 1024) + " MB. Do you want to allocate NFP memory?", QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes) {
@@ -265,10 +265,12 @@ void MainWindow::createRandomLayout() {
 
 void MainWindow::createBottomLeftLayout() {
 	params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE);
+	QTime myTimer; myTimer.start();
 	solver->generateBottomLeftSolution(solution, params);
+	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
-	if (params.isDoubleResolution()) ui->graphicsView->setCurrentSolution(solution, rasterZoomedProblem->getScale());
-	else ui->graphicsView->setCurrentSolution(solution);
+	ui->graphicsView->setCurrentSolution(solution);
+	ui->statusBar->showMessage("New bottom left solution created. Length: " + QString::number(solver->getCurrentWidth() / rasterProblem->getScale()) + ". Elapsed Time : " + QString::number(milliseconds) + " miliseconds");
 }
 
 void MainWindow::translateCurrentToMinimumPosition() {
@@ -403,33 +405,28 @@ void MainWindow::glsWeightedlocalSearch() {
 
 
 void MainWindow::executePacking() {
-    weightViewer.updateImage();
-    weightViewer.show();
+	weightViewer.updateImage();
+	weightViewer.show();
 
-    // Resize container
-    qreal lenght = runConfig.getLenght();
-    int scaledWidth = qRound(lenght*ui->graphicsView->getScale());
-    solver->setContainerWidth(scaledWidth);
-    ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
-
-    //if(runConfig.getMetaheuristic() == 2) solver->switchProblem(true);
-    if(runConfig.getInitialSolution() == 1)  solver->generateRandomSolution(solution, params);
-    else if(runConfig.getMetaheuristic() == 2) ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
-    else ui->graphicsView->getCurrentSolution(solution);
- //   //solver->switchProblem(false);
-    runThread.setInitialSolution(solution);
-	
 	params.setNmo(runConfig.getMaxWorse()); params.setTimeLimit(runConfig.getMaxSeconds());
-	params.setGpuProcessing(runConfig.getUseCUDA());  params.setCacheMaps(runConfig.getCacheMaps()); 
+	params.setGpuProcessing(runConfig.getUseCUDA());  params.setCacheMaps(runConfig.getCacheMaps());
 	params.setFixedLength(!runConfig.getStripPacking());
 	params.setDoubleResolution(runConfig.getMetaheuristic() == 2);
 	if (runConfig.getMetaheuristic() == 0) params.setHeuristic(NONE);
 	if (runConfig.getMetaheuristic() == 1 || runConfig.getMetaheuristic() == 2) params.setHeuristic(GLS);
-	//runThread.setParameters(runConfig.getMaxWorse(), runConfig.getMetaheuristic(), runConfig.getMaxSeconds(), runConfig.getUseCUDA(), runConfig.getCacheMaps(), runConfig.getStripPacking());
+	if (runConfig.getInitialSolution() == 0) params.setInitialSolMethod(KEPPSOLUTION);
+	if (runConfig.getInitialSolution() == 1) params.setInitialSolMethod(RANDOMFIXED);
+	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
 	runThread.setParameters(params);
-    runThread.setSolver(solver);
-    //if(runConfig.getMetaheuristic() == 0 || runConfig.getMetaheuristic() == 1) runThread.setScale(this->rasterProblem->getScale());
-    //else if(runConfig.getMetaheuristic() == 2) runThread.setScale(this->rasterZoomedProblem->getScale(), this->rasterProblem->getScale());
+	runThread.setSolver(solver);
+
+	// Resize container
+	if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
+		solver->setContainerWidth(qRound(runConfig.getLenght()*ui->graphicsView->getScale()));
+		runThread.setInitialSolution(solution);
+	}
+	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+
     runThread.start();
 }
 

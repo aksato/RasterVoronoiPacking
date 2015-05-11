@@ -2,7 +2,7 @@
 #define RASTERSTRIPPACKINGPARAMETERS_H
 
 namespace RASTERVORONOIPACKING {
-	enum ConstructivePlacement { RANDOMFIXED, BOTTOMLEFT};
+	enum ConstructivePlacement { KEPPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
 	enum Heuristic { NONE, GLS };
 
 	class RasterStripPackingParameters

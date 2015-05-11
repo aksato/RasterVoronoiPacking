@@ -10,7 +10,7 @@ PackingThread::PackingThread(QObject *parent) :
     //finishNow = false;
     seed = QDateTime::currentDateTime().toTime_t();// seed = 561; //TOREMOVE
     qDebug() << "Seed:" << seed;
-    qsrand(seed);
+    //qsrand(seed);
 }
 
 PackingThread::~PackingThread() {
@@ -30,6 +30,7 @@ void PackingThread::run()
     qDebug() << "Started";
 	m_abort = false;
     seed = this->seed;
+	qsrand(seed);
     QTime myTimer; myTimer.start();
     int itNum = 0;
     int totalItNum = 0;
@@ -42,9 +43,16 @@ void PackingThread::run()
     qreal minOverlap, curOverlap;
     RASTERVORONOIPACKING::RasterPackingSolution bestSolution = threadSolution;
     solver->resetWeights();
-	emit solutionGenerated(threadSolution, curLength);
 	int numLoops = 1;
 
+	// Generate initial solution
+	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) solver->generateRandomSolution(threadSolution, parameters);
+	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::BOTTOMLEFT)  {
+		solver->generateBottomLeftSolution(threadSolution, parameters);
+		curLength = solver->getCurrentWidth();
+		minSuccessfullLength = curLength;
+		emit minimumLenghtUpdated(minSuccessfullLength, 1, 0, seed);
+	}
 	minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 	itNum++; totalItNum++;
 	emit solutionGenerated(threadSolution, curLength);

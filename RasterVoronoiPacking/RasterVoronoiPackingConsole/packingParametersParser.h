@@ -5,7 +5,7 @@ class QCommandLineParser;
 class QString;
 
 enum RasterPackingMethods {Method_Default, Method_Gls, Method_Zoom, Method_ZoomGls};
-enum InitialSolutionGenerator {Solution_Random};
+enum InitialSolutionGenerator {Solution_Random, Bottom_Left};
 
 struct ConsolePackingArgs {
 	ConsolePackingArgs() {}

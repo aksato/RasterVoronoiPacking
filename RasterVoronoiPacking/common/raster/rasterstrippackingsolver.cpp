@@ -295,7 +295,18 @@ void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterPackingSo
 		QPoint curItemPos = solution.getPosition(itemId);
 		int maxPositionX = -curMap->getReferencePoint().x() + curMap->getWidth() - 1;
 		if (params.isDoubleResolution()) maxPositionX = qRound((qreal)maxPositionX / originalProblem->getScale() * zoomedProblem->getScale());
-		if (curItemPos.x() > maxPositionX) solution.setPosition(itemId, QPoint(maxPositionX, curItemPos.y()));
+		if (curItemPos.x() > maxPositionX) {
+			// Translate to minimum overlap position. Test all orientations!
+			qreal minValue; QPoint minPos; int minAngle = 0;
+			minPos = getMinimumOverlapPosition(itemId, 0, solution, minValue, params);
+			for (uint curAngle = 1; curAngle < originalProblem->getItem(itemId)->getAngleCount(); curAngle++) {
+				qreal curValue; QPoint curPos;
+				curPos = getMinimumOverlapPosition(itemId, curAngle, solution, curValue, params);
+				if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
+			}
+			solution.setOrientation(itemId, minAngle);
+			solution.setPosition(itemId, minPos);
+		}
 	}
 }
 

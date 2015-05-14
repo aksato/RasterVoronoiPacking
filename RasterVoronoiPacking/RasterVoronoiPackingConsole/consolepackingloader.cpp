@@ -160,8 +160,9 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		solution.setPosition(i, bestSolution.getPosition(i));
 		solution.setOrientation(i, bestSolution.getOrientation(i));
 	}
-	if (!algorithmParamsBackup.isDoubleResolution()) solution.save(outputXMLFile, problem, length, true, seed);
-	else solution.save(outputXMLFile, zoomProblem, length, true, seed);
+	qreal realLength = length / problem->getScale();
+	if (!algorithmParamsBackup.isDoubleResolution()) solution.save(outputXMLFile, problem, realLength, true, seed);
+	else solution.save(outputXMLFile, zoomProblem, realLength, true, seed);
 
 	// Print fixed container final result to file
 	if (algorithmParamsBackup.isFixedLength()) {

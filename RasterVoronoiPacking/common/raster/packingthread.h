@@ -12,7 +12,7 @@ class PackingThread : public QThread
 {
     Q_OBJECT
 public:
-    PackingThread(QObject *parent = 0);
+	PackingThread(QObject *parent = 0) {};
     ~PackingThread();
 
     void setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution);

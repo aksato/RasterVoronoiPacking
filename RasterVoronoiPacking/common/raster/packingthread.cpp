@@ -4,15 +4,6 @@
 
 #define MAXLOOPSPERLENGTH 5
 
-PackingThread::PackingThread(QObject *parent) :
-    QThread(parent)
-{
-    //finishNow = false;
-    seed = QDateTime::currentDateTime().toTime_t();// seed = 561; //TOREMOVE
-    qDebug() << "Seed:" << seed;
-    //qsrand(seed);
-}
-
 PackingThread::~PackingThread() {
     m_abort = true;
     wait();
@@ -27,9 +18,8 @@ void PackingThread::setInitialSolution(RASTERVORONOIPACKING::RasterPackingSoluti
 
 void PackingThread::run()
 {
-    qDebug() << "Started";
 	m_abort = false;
-    seed = this->seed;
+	seed = QDateTime::currentDateTime().toTime_t();
 	qsrand(seed);
     QTime myTimer; myTimer.start();
     int itNum = 0;
@@ -89,18 +79,21 @@ void PackingThread::run()
 			}
 			else if (numLoops >= MAXLOOPSPERLENGTH) {
 				numLoops = 1;
-				if (qRound(curRealLength = (1.0 + rinc)*curRealLength) >= minSuccessfullLength) {
-					//do curRealLength = (1.0 - rinc)*curRealLength; while (qRound(curRealLength) >= minSuccessfullLength);
-					curRealLength = minSuccessfullLength - 1;
+				if (qRound((1.0 + rinc)*curRealLength) >= minSuccessfullLength) {
+					curRealLength = (curRealLength + minSuccessfullLength) / 2;
+					if (qRound(curRealLength) == minSuccessfullLength)
+						curRealLength = minSuccessfullLength - 1;
 					if (curLength == qRound(curRealLength)) solver->generateRandomSolution(threadSolution, parameters);
 					curLength = qRound(curRealLength);
 				}
-				else curLength = qRound(curRealLength);
+				else {
+					curRealLength = (1.0 + rinc)*curRealLength;
+					curLength = qRound(curRealLength);
+				}
 			}
 			else numLoops++;
 
 			solver->setContainerWidth(curLength, threadSolution, parameters);
-			//qDebug() << curLength/2.0 << curRealLength/2.0;
 			success = false;
 			minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 		}

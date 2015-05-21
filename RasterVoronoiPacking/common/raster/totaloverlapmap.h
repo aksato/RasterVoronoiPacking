@@ -54,6 +54,7 @@ namespace RASTERVORONOIPACKING {
             this->width = width-pixels;
 			if (pixels < 0) {
 				//qWarning() << "Expansion over limit not yet implemented!"; return;
+				// FIXME: Expand GPU innerift polygon buffer!
 				delete[] data;
 				init(this->width, this->height);
 				return;
@@ -78,13 +79,13 @@ namespace RASTERVORONOIPACKING {
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight);
 
-        virtual QPoint getMinimum(float &minVal);
+		virtual QPoint getMinimum(float &minVal, int placementHeuristic = 1);
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes
         #endif
 
-		void setData(float *_data) { data = _data; }
+		void setData(float *_data) { delete[] data; data = _data; }
 
 		// TEST: Cache operations
 		void initCacheInfo(int nItems);

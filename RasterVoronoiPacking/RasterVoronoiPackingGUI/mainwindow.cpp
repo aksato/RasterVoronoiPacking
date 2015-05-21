@@ -422,7 +422,7 @@ void MainWindow::executePacking() {
 
 	// Resize container
 	if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
-		solver->setContainerWidth(qRound(runConfig.getLenght()*ui->graphicsView->getScale()));
+		solver->setContainerWidth(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
 		runThread.setInitialSolution(solution);
 	}
 	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
@@ -583,7 +583,8 @@ void MainWindow::loadSolution() {
 
         if(xml.name()=="length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
             int scaledWidth = qRound(xml.readElementText().toFloat()*this->rasterProblem->getScale());
-            solver->setContainerWidth(scaledWidth);
+			params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE);
+            solver->setContainerWidth(scaledWidth, params);
             ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
         }
 

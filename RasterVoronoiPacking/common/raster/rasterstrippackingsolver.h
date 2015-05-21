@@ -39,7 +39,7 @@ namespace RASTERVORONOIPACKING {
 
 		// Auxiliary functions
 		// --> Change container size
-		void setContainerWidth(int pixelWidth);
+		void setContainerWidth(int pixelWidth, RasterStripPackingParameters &params);
 		void setContainerWidth(int pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params);
 
 	private:
@@ -53,7 +53,7 @@ namespace RASTERVORONOIPACKING {
 		void performLocalSearchSingleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		void performLocalSearchDoubleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
-		QPoint getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
+		QPoint getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params, int placementHeuristic = 1);
 		QPoint getZoomedMinimumOverlapPosition(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMapSerial(int itemId, int orientation, RasterPackingSolution &solution, RasterStripPackingParameters &params); // Private
 		void getTotalOverlapMapSerialNoCacheNoWeight(std::shared_ptr<TotalOverlapMap> map, int itemId, int orientation, RasterPackingSolution &solution);

@@ -24,8 +24,9 @@ namespace CUDAPACKING {
 
 	// Problem pointers
 	CudaRasterNoFitPolygon **h_dpointerdpointers, **h_hpointerdpointers, **d_dpointerdpointer;
-	int *d_itemTypeMap;
+	int *d_itemTypeMap, *h_itemTypeMap;
 	float *d_overlapmap;
+	size_t d_overlapmapSize;
 	// Solution pointers
 	int *d_posx, *d_posy, *d_angles;
 	float *d_weights;
@@ -57,6 +58,7 @@ namespace CUDAPACKING {
 
 	void allocItemTypes(int numItems) {
 		gpuErrchk(cudaMalloc((void**)&d_itemTypeMap, numItems*sizeof(int)));
+		h_itemTypeMap = (int*)malloc(numItems*sizeof(int));
 	}
 
 	void alloDevicecSolutionPointers(int numItems) {
@@ -68,6 +70,7 @@ namespace CUDAPACKING {
 
 	void setItemType(int itemId, int typeId) {
 		gpuErrchk(cudaMemcpy(d_itemTypeMap + itemId, &typeId, sizeof(int), cudaMemcpyHostToDevice));
+		h_itemTypeMap[itemId] = typeId;
 	}
 
 	void allocHostNfpPointers(int numItems, int numOrientations) {
@@ -97,9 +100,36 @@ namespace CUDAPACKING {
 
 	void allocDeviceMaxIfp(size_t memSize) {
 		gpuErrchk(cudaMalloc((void**)&d_overlapmap, memSize));
+		d_overlapmapSize = memSize;
 	}
 
-	// GPU displaced sum of two matrix. TODO: Store nfp widths, heights and origins in shared memory.
+	bool reallocDeviceMaxIfp(size_t memSize) {
+		if (memSize > d_overlapmapSize) {
+			gpuErrchk(cudaFree(d_overlapmap));
+			gpuErrchk(cudaMalloc((void**)&d_overlapmap, memSize));
+			d_overlapmapSize = memSize;
+			return true;
+		}
+		return false;
+	}
+
+	// GPU displaced sum of two matrix with weights.
+	__global__ static void DisplacedSingleWeightedSumKernel(float *d_overlapmap, int omwidth, int omheight, int overlapmapx, int overlapmapy,
+														CudaRasterNoFitPolygon **nfpSet, int staticId, int orbitingId, 
+														int posx, int posy, float weight,
+														int rectBLx, int rectBLy, int rectTRx, int rectTRy) {
+		const int tidi = rectBLx + blockDim.x * blockIdx.x + threadIdx.x;
+		const int tidj = rectBLy + blockDim.y * blockIdx.y + threadIdx.y;
+
+		if (tidi <= rectTRx && tidj <= rectTRy) {
+			int nfpCoordx, nfpCoordy;
+			nfpCoordx = tidi - overlapmapx - posx + nfpSet[staticId][orbitingId].origin.x;
+			nfpCoordy = tidj - overlapmapy - posy + nfpSet[staticId][orbitingId].origin.y;
+			d_overlapmap[tidj*omwidth + tidi] += weight*(float)nfpSet[staticId][orbitingId].matrix[nfpCoordy*nfpSet[staticId][orbitingId].m_width + nfpCoordx];
+		}
+	}
+
+	// GPU displaced sum of the layout. TODO: Store nfp widths, heights and origins in shared memory.
 	__global__ static void DisplacedSumKernel(float *d_overlapmap, int omwidth, int omheight, int overlapmapx, int overlapmapy, int nAngles, CudaRasterNoFitPolygon **nfpSet, int nfpcount, int *itemType, int itemId, int itemAngle, int *posx, int *posy, int *angles)
 	{
 		const int tidi = blockDim.x * blockIdx.x + threadIdx.x;
@@ -121,7 +151,7 @@ namespace CUDAPACKING {
 		}
 	}
 
-	// GPU displaced sum of two matrix with weights. TODO: Store nfp widths, heights and origins in shared memory.
+	// GPU displaced sum of the layout with weights.
 	__global__ static void DisplacedWeightedSumKernel(float *d_overlapmap, int omwidth, int omheight, int overlapmapx, int overlapmapy, int nAngles, CudaRasterNoFitPolygon **nfpSet, int nfpcount, int *itemType, int itemId, int itemAngle, int *posx, int *posy, int *angles, float *weights)
 	{
 		extern __shared__ int smem0[];
@@ -254,6 +284,71 @@ namespace CUDAPACKING {
 		cudaMemcpy(h_overlapmap, d_overlapmap, overlapmap_width * overlapmap_height * sizeof(float), cudaMemcpyDeviceToHost);
 		return h_overlapmap;
 	}
+
+	bool getLimits(int relativeOriginx, int relativeOriginy, int vmWidth, int vmHeight, int overlapmap_width, int overlapmap_height, int &rectBLx, int &rectBLy, int &rectTRx, int &rectTRy) {
+		rectBLx = relativeOriginx < 0 ? 0 : relativeOriginx;
+		rectTRy = relativeOriginy + vmHeight > overlapmap_height ? overlapmap_height - 1 : relativeOriginy + vmHeight - 1;
+		rectTRx = relativeOriginx + vmWidth > overlapmap_width ? overlapmap_width - 1 : relativeOriginx + vmWidth - 1;
+		rectBLy = relativeOriginy < 0 ? 0 : relativeOriginy;
+
+		if (rectTRx< 0 || rectTRy < 0 ||
+			rectBLx > overlapmap_width || rectBLy > overlapmap_height) return false;
+		return true;
+	}
+
+	__global__ void initKernel(float * devPtr, const float val, const size_t nwords)
+	{
+		int tidx = threadIdx.x + blockDim.x * blockIdx.x;
+		int stride = blockDim.x * gridDim.x;
+
+		for (; tidx < nwords; tidx += stride)
+			devPtr[tidx] = val;
+	}
+
+	// Returns a pointer to an overlap map on host using an alternative method
+	float *getcuOverlapMap2(int curItem, int curItemAngle, int nItems, int numAngles, int overlapmap_width, int overlapmap_height, int overlapmapx, int overlapmapy, int *posx, int *posy, int *angles, float *weights, bool useGlsWeights) {
+		// Upload solution parameters to GPU
+		if (useGlsWeights) uploadSolutionParameters(posx, posy, angles, weights, nItems);
+		else uploadSolutionParameters(posx, posy, angles, nItems);
+		
+		// Initialize overlap map with zero values
+		dim3 blocks(1, 1, 1);
+		dim3 threadsperblock(BLOCK_SIZE, BLOCK_SIZE, 1);
+		blocks.x = ((overlapmap_width / BLOCK_SIZE) + (((overlapmap_width) % BLOCK_SIZE) == 0 ? 0 : 1));
+		blocks.y = ((overlapmap_height / BLOCK_SIZE) + (((overlapmap_height) % BLOCK_SIZE) == 0 ? 0 : 1));
+		initKernel << <blocks, threadsperblock >> >(d_overlapmap, 10.0, overlapmap_width*overlapmap_height);
+
+		// Determine overlap map on GPU
+		int itemId, staticId, orbitingId;
+		orbitingId = h_itemTypeMap[curItem] * numAngles + angles[curItem];
+		for (itemId = 0; itemId < nItems; itemId++) {
+			if (itemId == curItem) continue;
+			staticId = h_itemTypeMap[itemId] * numAngles + angles[itemId];
+			int relativeOriginx = overlapmapx + posx[itemId] - h_hpointerdpointers[staticId][orbitingId].origin.x;
+			int relativeOriginy = overlapmapy + posy[itemId] - h_hpointerdpointers[staticId][orbitingId].origin.y;
+			
+			// Determine the rectangular area of influence
+			int rectBLx, rectBLy, rectTRx, rectTRy;
+			if (!getLimits(relativeOriginx, relativeOriginy, h_hpointerdpointers[staticId][orbitingId].m_width, h_hpointerdpointers[staticId][orbitingId].m_height, overlapmap_width, overlapmap_height, rectBLx, rectBLy, rectTRx, rectTRy)) return NULL;
+			int rectW = rectTRx - rectBLx + 1; int rectH = rectTRy - rectBLy + 1;
+
+			// Determine block size
+			blocks.x = ((rectW / BLOCK_SIZE) + (((rectW) % BLOCK_SIZE) == 0 ? 0 : 1));
+			blocks.y = ((rectH / BLOCK_SIZE) + (((rectH) % BLOCK_SIZE) == 0 ? 0 : 1));
+
+			// Execute Kernel to determine the map
+			if (!useGlsWeights) weights[itemId] = 1.0;
+			DisplacedSingleWeightedSumKernel << <blocks, threadsperblock >> >(d_overlapmap, overlapmap_width, overlapmap_height, overlapmapx, overlapmapy,
+				d_dpointerdpointer, staticId, orbitingId,
+				posx[itemId], posy[itemId], weights[itemId],
+				rectBLx, rectBLy, rectTRx, rectTRy);
+		}
+		// Copy overlap map result to host
+		float *h_overlapmap = (float *)malloc(overlapmap_width*overlapmap_height*sizeof(float));
+		cudaMemcpy(h_overlapmap, d_overlapmap, overlapmap_width * overlapmap_height * sizeof(float), cudaMemcpyDeviceToHost);
+		return h_overlapmap;
+	}
+
 
 	// Create overlap map on device
 	void detOverlapMapOnDevice(float **d_valueVec, int **d_PosVec, float *d_map, int width, int height) {

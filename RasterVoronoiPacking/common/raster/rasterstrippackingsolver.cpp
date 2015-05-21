@@ -277,19 +277,21 @@ std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getRectTotalOverlapMa
 }
 
 // --> Change container size
-void RasterStripPackingSolver::setContainerWidth(int pixelWidth) {
+void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterStripPackingParameters &params) {
     int deltaPixels = this->currentWidth - pixelWidth;
     for(int itemId = 0; itemId < originalProblem->count(); itemId++)
         for(uint angle = 0; angle < originalProblem->getItem(itemId)->getAngleCount(); angle++) {
             std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
             curMap->shrink(deltaPixels);
+			size_t curMapMem = curMap->getWidth()*curMap->getHeight()*sizeof(qreal);
+			if (params.isGpuProcessing() && deltaPixels < 0) CUDAPACKING::reallocDeviceMaxIfp(curMapMem);
         }
 
     currentWidth = pixelWidth;
 }
 
 void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	setContainerWidth(pixelWidth);
+	setContainerWidth(pixelWidth, params);
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
 		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, solution.getOrientation(itemId));
 		QPoint curItemPos = solution.getPosition(itemId);
@@ -522,7 +524,7 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orien
 	return minRelativePos - map->getReferencePoint();
 }
 
-QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params) {
+QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params, int placementHeuristic) {
 	int minx, miny;
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
 	currrentPieceMap->reset();
@@ -548,7 +550,17 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int or
 	}
 
 	// --> Determine the overlap map	 and minimum overlap placement
-	value = CUDAPACKING::getcuMinimumOverlap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, minx, miny, params.getHeuristic() == GLS);
+	QPoint minPos;
+	if (placementHeuristic == 1) { // Determine minimum value and position completely on GPU (using BL placement heuristic)
+		value = CUDAPACKING::getcuMinimumOverlap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, minx, miny, params.getHeuristic() == GLS);
+		minPos = QPoint(minx, miny);
+	}
+	else if (placementHeuristic == 2) { // Determine overlap map on GPU and minimum value and position on CPU (using random placement heuristic)
+		float *overlapMapRawData = CUDAPACKING::getcuOverlapMap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, params.getHeuristic() == GLS);
+		currrentPieceMap->setData(overlapMapRawData);
+		float fvalue; QPoint minRelativePos = currrentPieceMap->getMinimum(fvalue, 2); value = fvalue;
+		minPos =  minRelativePos - currrentPieceMap->getReferencePoint();
+	}
 
 	// Free pointers
 	free(placementsx);
@@ -556,7 +568,7 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int or
 	free(angles);
 	free(weights);
 
-	return QPoint(minx, miny);
+	return minPos;
 }
 
 std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMapSerial(int itemId, int orientation, RasterPackingSolution &solution, RasterStripPackingParameters &params) {

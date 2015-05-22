@@ -281,7 +281,7 @@ void MainWindow::translateCurrentToMinimumPosition() {
 	QTime myTimer; myTimer.start();
     //std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapSerial(itemId, solution.getOrientation(itemId), solution, params);
-	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal);
+	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal, BOTTOMLEFT_POS);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
     ui->graphicsView->setCurrentSolution(solution);
@@ -329,7 +329,7 @@ void MainWindow::showGlobalOverlap() {
 
 void MainWindow::localSearch() {
     ui->graphicsView->getCurrentSolution(solution);
-	params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE);
+	params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE); params.setPlacementCriteria(BOTTOMLEFT_POS);
     QTime myTimer; myTimer.start();
     //solver->performLocalSearch(solution, false, true);
 	solver->performLocalSearch(solution, params);
@@ -378,7 +378,7 @@ void MainWindow::translateCurrentToGlsWeightedMinimumPosition() {
 	QTime myTimer; myTimer.start();
 	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, true);
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapSerial(itemId, solution.getOrientation(itemId), solution, params);
-	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal);
+	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal, BOTTOMLEFT_POS);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
 	ui->graphicsView->setCurrentSolution(solution);
@@ -414,7 +414,7 @@ void MainWindow::executePacking() {
 	params.setDoubleResolution(runConfig.getMetaheuristic() == 2);
 	if (runConfig.getMetaheuristic() == 0) params.setHeuristic(NONE);
 	if (runConfig.getMetaheuristic() == 1 || runConfig.getMetaheuristic() == 2) params.setHeuristic(GLS);
-	if (runConfig.getInitialSolution() == 0) params.setInitialSolMethod(KEPPSOLUTION);
+	if (runConfig.getInitialSolution() == 0) params.setInitialSolMethod(KEEPSOLUTION);
 	if (runConfig.getInitialSolution() == 1) params.setInitialSolMethod(RANDOMFIXED);
 	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
 	runThread.setParameters(params);
@@ -458,7 +458,7 @@ void MainWindow::translateCurrentToMinimumZoomedPosition() {
     ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
     int itemId = ui->graphicsView->getCurrentItemId();
     std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = solver->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution, true);
-    solution.setPosition(itemId, solver->getMinimumOverlapPosition(zoomMap, minVal));
+	solution.setPosition(itemId, solver->getMinimumOverlapPosition(zoomMap, minVal, BOTTOMLEFT_POS));
     ui->graphicsView->setCurrentSolution(solution, this->rasterZoomedProblem->getScale());
     QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
     zoomedMapViewer.setImage(zoomImage);

@@ -230,9 +230,9 @@ void RasterStripPackingSolver::resetWeights() {
 }
 
 // --> Get absolute minimum overlap position
-QPoint RasterStripPackingSolver::getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value) {
+QPoint RasterStripPackingSolver::getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value, PositionChoice placementHeuristic) {
 	float fvalue = value;
-	QPoint minRelativePos = map->getMinimum(fvalue);
+	QPoint minRelativePos = map->getMinimum(fvalue, placementHeuristic);
     return minRelativePos - map->getReferencePoint();
 }
 
@@ -455,7 +455,7 @@ void RasterStripPackingSolver::performLocalSearchSingleResolution(RasterPackingS
 	std::random_shuffle(sequence.begin(), sequence.end());
 	for (int i = 0; i < originalProblem->count(); i++) {
 		int shuffledId = sequence[i];
-		if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->originalProblem))) continue;
+		//if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->originalProblem))) continue; //FIXME?
 		qreal minValue; QPoint minPos; int minAngle = 0;
 		minPos = getMinimumOverlapPosition(shuffledId, minAngle, solution, minValue, params);
 		for (uint curAngle = 1; curAngle < originalProblem->getItem(shuffledId)->getAngleCount(); curAngle++) {
@@ -483,7 +483,7 @@ void RasterStripPackingSolver::performLocalSearchDoubleResolution(RasterPackingS
 	for(int i =0; i < originalProblem->count(); i++) {
 		getScaledSolution(solution, roughSolution, 1.0/zoomFactor);
 		int shuffledId = sequence[i];
-		if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->zoomedProblem))) continue;
+		//if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->zoomedProblem))) continue; //FIXME?
 		qreal minValue; QPoint minPos; int minAngle = 0;
 		minPos = getMinimumOverlapPosition(shuffledId, minAngle, roughSolution, minValue, params);
 		minPos = getZoomedMinimumOverlapPosition(shuffledId, minAngle, zoomFactor*minPos, zoomSquareSize, zoomSquareSize, solution, minValue, params);
@@ -519,12 +519,12 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orien
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapMapSerial(itemId, orientation, solution, params);
 	//float fvalue = value;
 	float fvalue;
-	QPoint minRelativePos = map->getMinimum(fvalue);
+	QPoint minRelativePos = map->getMinimum(fvalue, params.getPlacementCriteria());
 	value = fvalue;
 	return minRelativePos - map->getReferencePoint();
 }
 
-QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params, int placementHeuristic) {
+QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params) {
 	int minx, miny;
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
 	currrentPieceMap->reset();
@@ -551,14 +551,14 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPositionGPU(int itemId, int or
 
 	// --> Determine the overlap map	 and minimum overlap placement
 	QPoint minPos;
-	if (placementHeuristic == 1) { // Determine minimum value and position completely on GPU (using BL placement heuristic)
+	if (params.getPlacementCriteria() == BOTTOMLEFT_POS) { // FIXME: GPU minimum search is not really bottom left but fixed random
 		value = CUDAPACKING::getcuMinimumOverlap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, minx, miny, params.getHeuristic() == GLS);
 		minPos = QPoint(minx, miny);
 	}
-	else if (placementHeuristic == 2) { // Determine overlap map on GPU and minimum value and position on CPU (using random placement heuristic)
+	else { // Determine overlap map on GPU and minimum value and position on CPU (using random placement heuristic)
 		float *overlapMapRawData = CUDAPACKING::getcuOverlapMap(itemId, orientation, originalProblem->count(), 4, ifpWidth, ifpHeight, ifpX, ifpY, placementsx, placementsy, angles, weights, params.getHeuristic() == GLS);
 		currrentPieceMap->setData(overlapMapRawData);
-		float fvalue; QPoint minRelativePos = currrentPieceMap->getMinimum(fvalue, 2); value = fvalue;
+		float fvalue; QPoint minRelativePos = currrentPieceMap->getMinimum(fvalue, params.getPlacementCriteria()); value = fvalue;
 		minPos =  minRelativePos - currrentPieceMap->getReferencePoint();
 	}
 

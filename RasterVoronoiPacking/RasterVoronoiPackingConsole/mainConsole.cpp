@@ -70,12 +70,17 @@ int main(int argc, char *argv[])
 	algorithmParams.setTimeLimit(params.timeLimitValue); algorithmParams.setNmo(params.maxWorseSolutionsValue);
 	if (params.initialSolutionType == Solution_Random) {
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::RANDOMFIXED);
-		algorithmParams.settInitialLenght(params.containerLenght);
+		algorithmParams.setInitialLenght(params.containerLenght);
 	}
 	else if (params.initialSolutionType == Bottom_Left){
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::BOTTOMLEFT);
 	}
-
+	switch (params.placementType) {
+		case Pos_BottomLeft: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::BOTTOMLEFT_POS); break;
+		case Pos_Random: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::RANDOM_POS); break;
+		case Pos_Limits: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::LIMITS_POS); break;
+		case Pos_Contour: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::CONTOUR_POS); break;
+	}
 
 	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams);
 	else packingLoader.setParameters(params.inputFilePath, params.zoomedInputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams);

@@ -2,6 +2,7 @@
 #define TOTALOVERLAPMAP_H
 
 #include "rasternofitpolygon.h"
+#include "rasterstrippackingparameters.h"
 #include <QDebug>
 
 namespace RASTERVORONOIPACKING {
@@ -79,7 +80,7 @@ namespace RASTERVORONOIPACKING {
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight);
 
-		virtual QPoint getMinimum(float &minVal, int placementHeuristic = 1);
+		virtual QPoint getMinimum(float &minVal, PositionChoice placementHeuristic = BOTTOMLEFT_POS);
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes

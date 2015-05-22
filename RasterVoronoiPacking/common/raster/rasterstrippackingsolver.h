@@ -53,7 +53,7 @@ namespace RASTERVORONOIPACKING {
 		void performLocalSearchSingleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		void performLocalSearchDoubleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
-		QPoint getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params, int placementHeuristic = 1);
+		QPoint getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
 		QPoint getZoomedMinimumOverlapPosition(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMapSerial(int itemId, int orientation, RasterPackingSolution &solution, RasterStripPackingParameters &params); // Private
 		void getTotalOverlapMapSerialNoCacheNoWeight(std::shared_ptr<TotalOverlapMap> map, int itemId, int orientation, RasterPackingSolution &solution);
@@ -75,7 +75,7 @@ namespace RASTERVORONOIPACKING {
 		// --> Return total overlap map for a given item
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMapGPU(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
 		// --> Get absolute minimum overlap position
-		QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value);
+		QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value, PositionChoice placementHeuristic);
 
 		//std::shared_ptr<RasterPackingProblem> currentProblem;
 		std::shared_ptr<RasterPackingProblem> originalProblem;

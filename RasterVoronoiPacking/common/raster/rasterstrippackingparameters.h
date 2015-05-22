@@ -2,8 +2,9 @@
 #define RASTERSTRIPPACKINGPARAMETERS_H
 
 namespace RASTERVORONOIPACKING {
-	enum ConstructivePlacement { KEPPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
+	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
 	enum Heuristic { NONE, GLS };
+	enum PositionChoice { BOTTOMLEFT_POS, RANDOM_POS, LIMITS_POS, CONTOUR_POS};
 
 	class RasterStripPackingParameters
 	{
@@ -37,8 +38,11 @@ namespace RASTERVORONOIPACKING {
 		void setInitialSolMethod(ConstructivePlacement _initialSolMethod) { this->initialSolMethod = _initialSolMethod; };
 		ConstructivePlacement getInitialSolMethod() { return this->initialSolMethod; }
 
-		void settInitialLenght(qreal _initialLenght) { this->initialLenght = _initialLenght; setInitialSolMethod(RANDOMFIXED); } // FIXME: Should the initial solution method be set automatically?
+		void setInitialLenght(qreal _initialLenght) { this->initialLenght = _initialLenght; setInitialSolMethod(RANDOMFIXED); } // FIXME: Should the initial solution method be set automatically?
 		qreal getInitialLenght() { return this->initialLenght; }
+
+		void setPlacementCriteria(PositionChoice _placementCriteria) { this->placementCriteria = _placementCriteria; }
+		PositionChoice getPlacementCriteria() { return this->placementCriteria; }
 
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
@@ -49,13 +53,15 @@ namespace RASTERVORONOIPACKING {
 			setCacheMaps(source.isCacheMaps());
 			setFixedLength(source.isFixedLength());
 			setInitialSolMethod(source.getInitialSolMethod());
-			if (getInitialSolMethod() == RANDOMFIXED) settInitialLenght(source.getInitialLenght());
+			if (getInitialSolMethod() == RANDOMFIXED) setInitialLenght(source.getInitialLenght());
+			setPlacementCriteria(source.getPlacementCriteria());
 		}
 
 	private:
 		int Nmo, maxSeconds;
 		Heuristic heuristicType;
 		ConstructivePlacement initialSolMethod;
+		PositionChoice placementCriteria; // FIXME: Debug
 		qreal initialLenght; // Only used with RANDOMFIXED initial solution
 		bool doubleResolution, gpuProcessing, cacheMaps, fixedLength;
 	};

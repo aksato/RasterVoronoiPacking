@@ -351,7 +351,7 @@ namespace CUDAPACKING {
 
 
 	// Create overlap map on device
-	void detOverlapMapOnDevice(float **d_valueVec, int **d_PosVec, float *d_map, int width, int height) {
+	void findMinimumOnDevice(float **d_valueVec, int **d_PosVec, float *d_map, int width, int height) {
 		// Execute Kernel to determine the minimum position
 		dim3 blocks2(1, 1, 1);
 		dim3 threadsperblock2(REDUCTION_BLOCK_SIZE, 1, 1);
@@ -378,7 +378,7 @@ namespace CUDAPACKING {
 
 		// Execute Kernel to determine the minimum position
 		float *d_temp_output; int *d_temp_pos;
-		detOverlapMapOnDevice(&d_temp_output, &d_temp_pos, d_overlapmap, overlapmap_width, overlapmap_height);
+		findMinimumOnDevice(&d_temp_output, &d_temp_pos, d_overlapmap, overlapmap_width, overlapmap_height);
 
 		// Copy result to host
 		float minVal; int linearPosition; 

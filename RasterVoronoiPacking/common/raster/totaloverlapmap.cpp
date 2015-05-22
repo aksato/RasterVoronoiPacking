@@ -105,7 +105,7 @@ void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint
 
 //}
 
-QPoint TotalOverlapMap::getMinimum(float &minVal, int placementHeuristic) {
+QPoint TotalOverlapMap::getMinimum(float &minVal, PositionChoice placementHeuristic) {
 	QVector<QPoint> minPointSet;
     float *curPt = data;
     minVal = *curPt;
@@ -122,9 +122,74 @@ QPoint TotalOverlapMap::getMinimum(float &minVal, int placementHeuristic) {
 			}
 		}
 	}
-	int index;
-	if (placementHeuristic == 1) index = 0;
-	else if(placementHeuristic == 2) index = rand() % minPointSet.size();
+
+	// Heuristics to choose between equally overlaped positions
+	int index = 0;
+	switch(placementHeuristic) {
+		case BOTTOMLEFT_POS:
+		{
+		   index = 0;
+		}
+		break;
+
+		case RANDOM_POS: 
+		{
+			index = rand() % minPointSet.size();
+		}
+		break;
+
+		case LIMITS_POS:
+		{
+			int blIndex, lbIndex, tlIndex, ltIndex;
+			int brIndex, rbIndex, trIndex, rtIndex;
+			blIndex = 0; lbIndex = 0; tlIndex = 0; ltIndex = 0;
+			brIndex = 0; rbIndex = 0; trIndex = 0; rtIndex = 0;
+			for (int i = 1; i < minPointSet.size(); i++) {
+				QPoint curPoint = minPointSet[i];
+				if (curPoint.y() < minPointSet[blIndex].y() || (curPoint.y() == minPointSet[blIndex].y() && curPoint.x() < minPointSet[blIndex].x())) blIndex = i;
+				if (curPoint.x() < minPointSet[lbIndex].x() || (curPoint.x() == minPointSet[lbIndex].x() && curPoint.y() < minPointSet[lbIndex].y())) lbIndex = i;
+				if (curPoint.y() > minPointSet[tlIndex].y() || (curPoint.y() == minPointSet[tlIndex].y() && curPoint.x() < minPointSet[tlIndex].x())) tlIndex = i;
+				if (curPoint.x() < minPointSet[ltIndex].x() || (curPoint.x() == minPointSet[ltIndex].x() && curPoint.y() > minPointSet[ltIndex].y())) ltIndex = i;
+
+				if (curPoint.y() < minPointSet[brIndex].y() || (curPoint.y() == minPointSet[brIndex].y() && curPoint.x() > minPointSet[brIndex].x())) brIndex = i;
+				if (curPoint.x() > minPointSet[rbIndex].x() || (curPoint.x() == minPointSet[rbIndex].x() && curPoint.y() < minPointSet[rbIndex].y())) rbIndex = i;
+				if (curPoint.y() > minPointSet[trIndex].y() || (curPoint.y() == minPointSet[trIndex].y() && curPoint.x() > minPointSet[trIndex].x())) trIndex = i;
+				if (curPoint.x() > minPointSet[rtIndex].x() || (curPoint.x() == minPointSet[rtIndex].x() && curPoint.y() > minPointSet[rtIndex].y())) rtIndex = i;
+			}
+			int d8 = rand() % 8;
+			if (d8 == 0) index = blIndex;
+			else if (d8 == 1) index = lbIndex;
+			else if (d8 == 2) index = tlIndex;
+			else if (d8 == 3) index = ltIndex;
+			else if (d8 == 4) index = brIndex;
+			else if (d8 == 5) index = rbIndex;
+			else if (d8 == 6) index = trIndex;
+			else if (d8 == 7) index = rtIndex;
+		}
+		break;
+
+		case CONTOUR_POS:
+		{
+			QVector<int> contourPtsIndex;
+			for (int i = 0; i < minPointSet.size(); i++) {
+				QPoint curPoint = minPointSet[i];
+				// Check if it is in the contour
+				if (curPoint.x() == 0 || curPoint.x() == width - 1 || curPoint.y() == 0 || curPoint.y() == height - 1) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() - 1, curPoint.y() - 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x(), curPoint.y() - 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() + 1, curPoint.y() - 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() - 1, curPoint.y()), 1.0 + minVal)) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() + 1, curPoint.y()), 1.0 + minVal)) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() - 1, curPoint.y() + 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x(), curPoint.y() + 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
+				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() + 1, curPoint.y() + 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
+			}
+			//for (int i = 0; i < contourPtsIndex.size(); i++) qDebug() << minPointSet[contourPtsIndex[i]];
+			index = contourPtsIndex[rand() % contourPtsIndex.size()];
+		}
+		break;
+	}
+
 	return minPointSet[index];
 }
 

@@ -33,6 +33,9 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(boolGpuProcessing);
 	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value");
 	parser.addOption(valueNumThreads);
+	const QCommandLineOption placementMethod("placement", "Criteria for choosing positions when there are multiple minimum values (debug). Choices: bottomleft, random, limits and contour.", "type");
+	parser.addOption(placementMethod);
+
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -179,6 +182,19 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	else {
 		params->numThreads = 1;
 	}
+
+	if (parser.isSet(placementMethod)) {
+		const QString methodType = parser.value(placementMethod).toLower();
+		if (methodType != "bottomleft" && methodType != "random" && methodType != "limits" && methodType != "contour") {
+			*errorMessage = "Invalid method type! Avaible methods: 'bottomleft', 'random', 'limits' and 'contour'.";
+			return CommandLineError;
+		}
+		if (methodType == "bottomleft") params->placementType = Pos_BottomLeft;
+		if (methodType == "random") params->placementType = Pos_Random;
+		if (methodType == "limits") params->placementType = Pos_Limits;
+		if (methodType == "contour") params->placementType = Pos_Contour;
+	}
+	else params->placementType = Pos_BottomLeft;
 
     return CommandLineOk;
 }

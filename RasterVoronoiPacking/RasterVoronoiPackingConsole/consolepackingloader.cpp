@@ -91,7 +91,7 @@ void ConsolePackingLoader::run() {
 	qreal length;
 	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) {
 		length = algorithmParamsBackup.getInitialLenght();
-		solver->setContainerWidth(qRound(length*problem->getScale()));
+		solver->setContainerWidth(qRound(length*problem->getScale()), algorithmParamsBackup);
 	}
 	//else {
 	//	qCritical() << "Returning. Initial solution method unavailable:" << algorithmParamsBackup.getInitialSolMethod();
@@ -135,17 +135,20 @@ void ConsolePackingLoader::printExecutionStatus(int curLength, int totalItNum, i
 		". It: " << totalItNum << " (" << worseSolutionsCount << "). Min overlap: " << minOverlap / zoomProblem->getScale() << ". Time: " << elapsed << " s.";
 }
 
-void ConsolePackingLoader::saveMinimumResult(int minLength, int totalItNum, qreal elapsed, uint threadSeed) {
-	std::cout << "\n" << "New minimum length obtained: " << minLength / problem->getScale() << ". Elapsed time: " << elapsed << " secs. Seed = " << threadSeed << "\n";
-
+void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elapsed, uint threadSeed) {
 	QFile file(outputTXTFile);
 	if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << outputTXTFile << ": " << qPrintable(file.errorString());
 	QTextStream out(&file);
-	if(!algorithmParamsBackup.isDoubleResolution())
-		out << problem->getScale() << " - " << minLength / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
+	if (!algorithmParamsBackup.isDoubleResolution())
+		out << problem->getScale() << " - " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
 	else
-		out << problem->getScale() << " " << zoomProblem->getScale() << " " << minLength / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
+		out << problem->getScale() << " " << zoomProblem->getScale() << " " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
 	file.close();
+}
+
+void ConsolePackingLoader::saveMinimumResult(int minLength, int totalItNum, qreal elapsed, uint threadSeed) {
+	std::cout << "\n" << "New minimum length obtained: " << minLength / problem->getScale() << ". Elapsed time: " << elapsed << " secs. Seed = " << threadSeed << "\n";
+	writeNewLength(minLength, totalItNum, elapsed, threadSeed);
 }
 
 void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, int length, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, uint seed) {
@@ -153,6 +156,7 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << totalTime;
 	else 
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << length / problem->getScale() << ". Elapsed time:" << totalTime;
+	writeNewLength(length, totalIt, totalTime, seed);
 
 	// Save Layout in XML file
 	RASTERVORONOIPACKING::RasterPackingSolution solution(bestSolution.getNumItems());

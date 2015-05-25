@@ -31,7 +31,7 @@ protected:
 signals:
 	// Basic signals
 	void statusUpdated(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed);
-	void minimumLenghtUpdated(int minLength, int totalItNum, qreal elapsed, uint seed);
+	void minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint seed);
 	void finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed, uint seed);
 	// GUI signals
 	void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);

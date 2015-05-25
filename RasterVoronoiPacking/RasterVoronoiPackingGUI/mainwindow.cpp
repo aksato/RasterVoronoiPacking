@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution,int)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution,int)));
     connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
 	connect(&runThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	connect(&runThread, SIGNAL(minimumLenghtUpdated(int, int, qreal, uint)), this, SLOT(showExecutionMinLengthObtained(int, int, qreal, uint)));
+	connect(&runThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
 	connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
 
@@ -755,7 +755,7 @@ void MainWindow::printDensity() {
 	msgBox.exec();
 }
 
-void MainWindow::showExecutionMinLengthObtained(int minLength, int totalItNum, qreal elapsed, uint seed) {
+void MainWindow::showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint seed) {
 	qDebug() << "New minimum length obtained: " << minLength / rasterProblem->getScale() << ". Elapsed time: " << elapsed << " secs";
 }
 

@@ -102,8 +102,8 @@ void ConsolePackingLoader::run() {
 	std::shared_ptr<PackingThread> threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
 	threadVector.push_back(threadedPacker);
 	connect(&*threadedPacker, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(printExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	connect(&*threadedPacker, SIGNAL(minimumLenghtUpdated(int,int,qreal,uint)), SLOT(saveMinimumResult(int,int,qreal,uint)));
 	qRegisterMetaType<RASTERVORONOIPACKING::RasterPackingSolution>("RASTERVORONOIPACKING::RasterPackingSolution");
+	connect(&*threadedPacker, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), SLOT(saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
 	connect(&*threadedPacker, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), SLOT(saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(&*threadedPacker, SIGNAL(finished()), SLOT(threadFinished()));
 
@@ -117,6 +117,7 @@ void ConsolePackingLoader::run() {
 	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) qDebug() << "Length:" << length;
 	qDebug() << "Solver method:" << algorithmParamsBackup.getHeuristic();
 	qDebug() << "Inital solution:" << algorithmParamsBackup.getInitialSolMethod();
+	qDebug() << "Minimum overlap placement heuristic:" << algorithmParamsBackup.getPlacementCriteria();
 	if (!algorithmParamsBackup.isFixedLength()) qDebug() << "Strip packing version";
 	if (algorithmParamsBackup.isGpuProcessing()) qDebug() << "Using GPU to process maps";
 	qDebug() << "Solver parameters: Nmo =" << algorithmParamsBackup.getNmo() << "; Time Limit:" << algorithmParamsBackup.getTimeLimit();
@@ -146,9 +147,22 @@ void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elap
 	file.close();
 }
 
-void ConsolePackingLoader::saveMinimumResult(int minLength, int totalItNum, qreal elapsed, uint threadSeed) {
+void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, uint seed) {
+	// Save Layout in XML file
+	RASTERVORONOIPACKING::RasterPackingSolution newSolution(solution.getNumItems());
+	for (int i = 0; i < solution.getNumItems(); i++) {
+		newSolution.setPosition(i, solution.getPosition(i));
+		newSolution.setOrientation(i, solution.getOrientation(i));
+	}
+	qreal realLength = length / problem->getScale();
+	if (!algorithmParamsBackup.isDoubleResolution()) newSolution.save(outputXMLFile, problem, realLength, true, seed);
+	else newSolution.save(outputXMLFile, zoomProblem, realLength, true, seed);
+}
+
+void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint threadSeed) {
 	std::cout << "\n" << "New minimum length obtained: " << minLength / problem->getScale() << ". Elapsed time: " << elapsed << " secs. Seed = " << threadSeed << "\n";
 	writeNewLength(minLength, totalItNum, elapsed, threadSeed);
+	saveXMLSolution(solution, minLength, threadSeed);
 }
 
 void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, int length, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, uint seed) {
@@ -157,16 +171,6 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	else 
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << length / problem->getScale() << ". Elapsed time:" << totalTime;
 	writeNewLength(length, totalIt, totalTime, seed);
-
-	// Save Layout in XML file
-	RASTERVORONOIPACKING::RasterPackingSolution solution(bestSolution.getNumItems());
-	for (int i = 0; i < bestSolution.getNumItems(); i++) {
-		solution.setPosition(i, bestSolution.getPosition(i));
-		solution.setOrientation(i, bestSolution.getOrientation(i));
-	}
-	qreal realLength = length / problem->getScale();
-	if (!algorithmParamsBackup.isDoubleResolution()) solution.save(outputXMLFile, problem, realLength, true, seed);
-	else solution.save(outputXMLFile, zoomProblem, realLength, true, seed);
 
 	// Print fixed container final result to file
 	if (algorithmParamsBackup.isFixedLength()) {

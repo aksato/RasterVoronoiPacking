@@ -29,7 +29,7 @@ public:
 
 public slots :
 	void printExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed);
-	void saveMinimumResult(int minLength, int totalItNum, qreal elapsed, uint threadSeed);
+	void saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint threadSeed);
 	void saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, int length, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, uint seed);
 	void threadFinished();
 
@@ -39,6 +39,7 @@ signals:
 private:
 	bool loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, bool &loadGPU);
 	void writeNewLength(int length, int totalItNum, qreal elapsed, uint threadSeed);
+	void saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, uint seed);
 	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParamsBackup;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, zoomProblem;
 	QString outputTXTFile, outputXMLFile;

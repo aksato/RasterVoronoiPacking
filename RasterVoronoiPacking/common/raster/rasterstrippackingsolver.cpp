@@ -455,7 +455,7 @@ void RasterStripPackingSolver::performLocalSearchSingleResolution(RasterPackingS
 	std::random_shuffle(sequence.begin(), sequence.end());
 	for (int i = 0; i < originalProblem->count(); i++) {
 		int shuffledId = sequence[i];
-		//if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->originalProblem))) continue; //FIXME?
+		if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->originalProblem))) continue;
 		qreal minValue; QPoint minPos; int minAngle = 0;
 		minPos = getMinimumOverlapPosition(shuffledId, minAngle, solution, minValue, params);
 		for (uint curAngle = 1; curAngle < originalProblem->getItem(shuffledId)->getAngleCount(); curAngle++) {
@@ -483,7 +483,7 @@ void RasterStripPackingSolver::performLocalSearchDoubleResolution(RasterPackingS
 	for(int i =0; i < originalProblem->count(); i++) {
 		getScaledSolution(solution, roughSolution, 1.0/zoomFactor);
 		int shuffledId = sequence[i];
-		//if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->zoomedProblem))) continue; //FIXME?
+		if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->zoomedProblem))) continue;
 		qreal minValue; QPoint minPos; int minAngle = 0;
 		minPos = getMinimumOverlapPosition(shuffledId, minAngle, roughSolution, minValue, params);
 		minPos = getZoomedMinimumOverlapPosition(shuffledId, minAngle, zoomFactor*minPos, zoomSquareSize, zoomSquareSize, solution, minValue, params);

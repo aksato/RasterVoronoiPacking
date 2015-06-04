@@ -10,7 +10,7 @@
 #include<QImage>
 
 namespace POLYBOOLEAN {
-    class PAREA;
+    struct PAREA;
 }
 
 typedef QVector<QPointF> PolygonF;

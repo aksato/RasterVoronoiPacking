@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QMap>
 #include <QFileInfo>
+#include <QtMath>
 #include "polybool/polybool.h"
 #include "annealing/cPolygon.h"
 #include "annealing/cShape.h"
@@ -304,6 +305,43 @@ int *Polygon::getRasterImageVector(QPoint &RP, qreal scale, int &width, int &hei
     }
 
     return S;
+}
+
+int *Polygon::getRasterBoundingBoxImageVector(QPoint &RP, qreal scale, qreal epsilon, int &width, int &height) {
+	qreal xMin, xMax, yMin, yMax;
+
+	const_iterator it = cbegin();
+	xMin = (*it).x(); xMax = (*it).x();
+	yMin = (*it).y(); yMax = (*it).y();
+	for (int i = 0; i < size(); i++) {
+		qreal x = at(i).x();
+		qreal y = at(i).y();
+
+		if (x < xMin) xMin = x;
+		if (x > xMax) xMax = x;
+		if (y < yMin) yMin = y;
+		if (y > yMax) yMax = y;
+	}
+	xMin = scale*xMin; xMax = scale*xMax;
+	yMin = scale*yMin; yMax = scale*yMax;
+	int xMinInt, yMinInt, xMaxInt, yMaxInt;
+	if (abs(xMin - qRound(xMin)) < epsilon) xMinInt = qRound(xMin);
+	else xMinInt = qCeil(xMin);
+	if (abs(yMin - qRound(yMin)) < epsilon) yMinInt = qRound(yMin);
+	else yMinInt = qCeil(yMin);
+	//polygon.translate(-xMin, -yMin);
+	if (abs(xMax - qRound(xMax)) < epsilon) xMaxInt = qRound(xMax);
+	else xMaxInt = qFloor(xMax);
+	if (abs(yMax - qRound(yMax)) < epsilon) yMaxInt = qRound(yMax);
+	else yMaxInt = qFloor(yMax);
+
+	RP.setX(-xMinInt); RP.setY(-yMinInt);
+	width = xMaxInt - xMinInt + 1;
+	height = yMaxInt - yMinInt + 1;
+	int *S = new int[width*height];
+	std::fill_n(S, width*height, 0);
+
+	return S;
 }
 
 QImage Polygon::getRasterImage8bit(QPoint &RP, qreal scale) {

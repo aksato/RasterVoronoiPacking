@@ -29,6 +29,7 @@ namespace RASTERPACKING {
         QImage getRasterImage(QPoint &RP, qreal scale = 1.0);
         QImage getRasterImage8bit(QPoint &RP, qreal scale = 1.0);
         int *getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height);
+		int *getRasterBoundingBoxImageVector(QPoint &RP, qreal scale, qreal epsilon, int &width, int &height);
         void fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale);
 
     private:

@@ -26,7 +26,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
     parser.addOption(nameHeaderFile);
     const QCommandLineOption nameOptionsFile("options-file", "Read options from a text file.", "fileName");
     parser.addOption(nameOptionsFile);
-
+	const QCommandLineOption valueInnerFitEps("ifp-eps", "Epsilon used for inner-fit polygon rasterization.", "epsValue");
+	parser.addOption(valueInnerFitEps);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -120,6 +121,18 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
     }
     else params->headerFile = "";
 
+	if (parser.isSet(valueInnerFitEps)) {
+		const QString ifpEps = parser.value(valueInnerFitEps);
+		bool ok;
+		const float eps = ifpEps.toFloat(&ok);
+		if (ok && eps > 0) params->innerFitEpsilon = eps;
+		else {
+			*errorMessage = "Bad epsilon value.";
+			return CommandLineError;
+		}
+	}
+	else params->innerFitEpsilon = -1.0;
+
     const QStringList positionalArguments = parser.positionalArguments();
     if (positionalArguments.isEmpty() || positionalArguments.size() == 1) {
         *errorMessage = "Arguments missing: 'source' or 'destination' or both.";
@@ -198,7 +211,7 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
         if (line.at(0).toLower().trimmed() == "raster-output") {
             const QString rasterOutput = line.at(1).toLower().trimmed();
             if(rasterOutput != "true" && rasterOutput != "false") {
-                *errorMessage = "Raster outrput must be set to either 'true' or 'false'.";
+                *errorMessage = "Raster output must be set to either 'true' or 'false'.";
                 return CommandLineError;
             }
             else if(rasterOutput == "true") params->saveRaster = true;
@@ -218,6 +231,16 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
             const QString headerFile = line.at(1).trimmed();
             params->headerFile = headerFile;
         }
+
+		if (line.at(0).toLower().trimmed() == "ifp-eps") { // FIXME: Assign default value?
+			const QString ifpEps = line.at(1);
+			const float eps = ifpEps.toFloat(&ok);
+			if (ok && eps > 0) params->innerFitEpsilon = eps;
+			else {
+				*errorMessage = "Bad epsilon value.";
+				return CommandLineError;
+			}
+		}
     }
 
     return CommandLineOk;

@@ -18,6 +18,7 @@ struct PreProcessorParameters {
     QString outputFormat;
     QString headerFile;
     QString optionsFile;
+	qreal innerFitEpsilon; // Epsilon for ifp rasterization
 };
 
 enum CommandLineParseResult

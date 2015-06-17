@@ -28,6 +28,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
     parser.addOption(nameOptionsFile);
 	const QCommandLineOption valueInnerFitEps("ifp-eps", "Epsilon used for inner-fit polygon rasterization.", "epsValue");
 	parser.addOption(valueInnerFitEps);
+	const QCommandLineOption boolNoOverlap("nooverlap", "Creates nofit polygons with contour (guarantees no overlap).");
+	parser.addOption(boolNoOverlap);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -132,6 +134,9 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 		}
 	}
 	else params->innerFitEpsilon = -1.0;
+
+	if (parser.isSet(boolNoOverlap)) params->noOverlap = true;
+	else  params->noOverlap = false;
 
     const QStringList positionalArguments = parser.positionalArguments();
     if (positionalArguments.isEmpty() || positionalArguments.size() == 1) {
@@ -238,6 +243,19 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 			if (ok && eps > 0) params->innerFitEpsilon = eps;
 			else {
 				*errorMessage = "Bad epsilon value.";
+				return CommandLineError;
+			}
+		}
+
+		if (line.at(0).toLower().trimmed() == "nooverlap") { // FIXME: Assign default value?
+			const QString isNoOverlap = line.at(1);
+			const int yesorno = isNoOverlap.toInt(&ok);
+			if (ok && yesorno == 0 || yesorno == 1) {
+				if (yesorno == 0) params->noOverlap = false;
+				else params->noOverlap = true;
+			}
+			else {
+				*errorMessage = "Bad no overlap value.";
 				return CommandLineError;
 			}
 		}

@@ -307,6 +307,106 @@ int *Polygon::getRasterImageVector(QPoint &RP, qreal scale, int &width, int &hei
     return S;
 }
 
+int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height) {
+	QPolygonF polygon;
+	qreal xMin, xMax, yMin, yMax;
+
+	const_iterator it = cbegin();
+	xMin = scale*(*it).x(); xMax = scale*(*it).x();
+	yMin = scale*(*it).y(); yMax = scale*(*it).y();
+	for (int i = 0; i < size(); i++) {
+		qreal x = scale*at(i).x();
+		qreal y = scale*at(i).y();
+
+		if (x < xMin) xMin = x;
+		if (x > xMax) xMax = x;
+		if (y < yMin) yMin = y;
+		if (y > yMax) yMax = y;
+
+		polygon << QPointF(x, y);
+	}
+	RP.setX(-qRound(xMin)); RP.setY(-qRound(yMin));
+	polygon.translate(-xMin, -yMin);
+
+	width = qRound(xMax - xMin) + 1;
+	height = qRound(yMax - yMin) + 1;
+	int *S = new int[width*height];
+	std::fill_n(S, width*height, 1);
+
+	int curScanline = width;
+	for (int pixelY = 1; pixelY < height - 1; pixelY++) {
+
+		//  Build a list of nodes.
+		QVector<int> nodeX;
+		QVector<qreal> qNodeX;
+		int j = polygon.size() - 1;
+		for (int i = 0; i < polygon.size(); i++) {
+			qreal polyYi = polygon[i].y();
+			qreal polyXi = polygon[i].x();
+			qreal polyYj = polygon[j].y();
+			qreal polyXj = polygon[j].x();
+
+			if ((polyYi<(double)pixelY && polyYj >= (double)pixelY) || (polyYj<(double)pixelY && polyYi >= (double)pixelY)) {
+				nodeX.push_back((int)(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi)));
+				qNodeX.push_back(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi));
+			}
+			j = i;
+		}
+
+		// Sort
+		qSort(nodeX); qSort(qNodeX);
+
+
+		//  Fill the pixels between node pairs.
+		for (int i = 0; i<nodeX.size(); i += 2) {
+			int line = curScanline;
+			line += nodeX[i] + 1;
+			int initCoord, endCoord;
+
+			int roundInitQNodeX = qRound(qNodeX[i]);
+			int roundEndQNodeX = qRound(qNodeX[i+1]);
+			if (qFuzzyCompare(roundInitQNodeX + 1.0, qNodeX[i] + 1.0) || roundInitQNodeX - qNodeX[i] < 0) initCoord = roundInitQNodeX + 1; else initCoord = roundInitQNodeX;
+			if (qFuzzyCompare(roundEndQNodeX + 1.0, qNodeX[i + 1] + 1.0) || roundEndQNodeX - qNodeX[i + 1] > 0) endCoord = roundEndQNodeX; else endCoord = roundEndQNodeX + 1;
+			//if (qFuzzyCompare(nodeX[i] + 1.0, qNodeX[i] + 1.0))	qDebug() << "Same node" << nodeX[i] << qNodeX[i];
+			//else qDebug() << "Different node" << nodeX[i] << qNodeX[i];
+			//for (j = nodeX[i] + 1; j < nodeX[i + 1]; j++, line += 1)
+			//initCoord = roundInitQNodeX; endCoord = roundEndQNodeX + 1;
+			for (j = initCoord; j < endCoord; j++, line += 1)
+				S[line] = 0;
+		}
+
+		curScanline += width;
+	}
+
+
+	// FIXME: Delete horizontal lines
+	QPolygonF::const_iterator itj;
+	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
+		if (iti + 1 == polygon.cend()) itj = polygon.cbegin();
+		else itj = iti + 1;
+		if ((int)(*iti).y() == (int)(*itj).y()) {
+			int left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
+			int right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
+			for (int i = left; i <= right; i++) {
+				S[(int)(*iti).y()*width + i] = 1;
+			}
+		}
+	}
+
+	// FIXME: Test
+	for (QVector<QPair<QPointF, QPointF>>::const_iterator it = this->degLines.cbegin(); it != this->degLines.cend(); it++) {
+		QPointF p1 = scale*(*it).first; p1 -= QPointF(xMin, yMin);
+		QPointF p2 = scale*(*it).second; p2 -= QPointF(xMin, yMin);
+		BresenhamVec(qRound(p1.x()), qRound(p1.y()), qRound(p2.x()), qRound(p2.y()), S, width);
+	}
+	for (QVector<QPointF>::const_iterator it = this->degNodes.cbegin(); it != this->degNodes.cend(); it++) {
+		QPointF p1 = scale*(*it); p1 -= QPointF(xMin, yMin);
+		S[(int)p1.y()*width + (int)p1.x()] = 1;
+	}
+
+	return S;
+}
+
 int *Polygon::getRasterBoundingBoxImageVector(QPoint &RP, qreal scale, qreal epsilon, int &width, int &height) {
 	qreal xMin, xMax, yMin, yMax;
 

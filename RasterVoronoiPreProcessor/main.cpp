@@ -166,7 +166,12 @@ int main(int argc, char *argv[])
 
         // --> Rasterize polygon
         int width, height;
-        int *rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height);
+        //int *rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height);
+		int *rasterCurPolygonVec;
+		if(!params.noOverlap)
+			rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height);
+		else
+			rasterCurPolygonVec = curPolygon->getRasterImageVectorWithContour(referencePoint, params.rasterScaleFactor, width, height);
         if(params.saveRaster) {
             QImage rasterCurPolygon = getImageFromVec(rasterCurPolygonVec, width, height);
             rasterCurPolygon.save(params.outputDir + "/r" + curPolygon->getName() + ".png");

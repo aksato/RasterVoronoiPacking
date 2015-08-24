@@ -11,7 +11,7 @@ namespace RASTERVORONOIPACKING {
 	public:
 		RasterStripPackingParameters() :
 			Nmo(200), maxSeconds(600), heuristicType(GLS), doubleResolution(false),
-			gpuProcessing(false), cacheMaps(false), fixedLength(false)
+			gpuProcessing(false), cacheMaps(false), fixedLength(false), maxIterations(0)
 		{} // Default parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
@@ -19,6 +19,9 @@ namespace RASTERVORONOIPACKING {
 
 		void setTimeLimit(int _maxSeconds) { this->maxSeconds = _maxSeconds; }
 		int getTimeLimit() { return this->maxSeconds; }
+
+		void setIterationsLimit(int _maxIterations) { this->maxIterations = _maxIterations; }
+		int getIterationsLimit() { return this->maxIterations; }
 
 		void setHeuristic(Heuristic _heuristicType) { this->heuristicType = _heuristicType; }
 		Heuristic getHeuristic() { return this->heuristicType; }
@@ -47,6 +50,7 @@ namespace RASTERVORONOIPACKING {
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
 			setTimeLimit(source.getTimeLimit());
+			setIterationsLimit(source.getIterationsLimit());
 			setHeuristic(source.getHeuristic());
 			setDoubleResolution(source.isDoubleResolution());
 			setGpuProcessing(source.isGpuProcessing());
@@ -58,7 +62,7 @@ namespace RASTERVORONOIPACKING {
 		}
 
 	private:
-		int Nmo, maxSeconds;
+		int Nmo, maxSeconds, maxIterations;
 		Heuristic heuristicType;
 		ConstructivePlacement initialSolMethod;
 		PositionChoice placementCriteria; // FIXME: Debug

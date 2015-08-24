@@ -25,6 +25,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.addOption(valueMaxWorseSolutions);
     const QCommandLineOption valueTimeLimit("duration", "Time limit in seconds.", "value");
     parser.addOption(valueTimeLimit);
+	const QCommandLineOption valueIterationsLimit("maxits", "Maximum number of iterations.", "value");
+	parser.addOption(valueIterationsLimit);
     const QCommandLineOption valueLenght("length", "Container lenght.", "value");
     parser.addOption(valueLenght);
 	const QCommandLineOption boolStripPacking("strippacking", "Strip packing version.");
@@ -147,6 +149,20 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
         qWarning() << "Warning: Time limit not found, set to default (600s).";
         params->timeLimitValue = 600;
     }
+
+	if (parser.isSet(valueIterationsLimit)) {
+		const QString secsString = parser.value(valueIterationsLimit);
+		bool ok;
+		const int itLimit = secsString.toInt(&ok);
+		if (ok && itLimit > 0) params->iterationsLimitValue = itLimit;
+		else {
+			*errorMessage = "Bad iteration limit value (must be expressed in seconds).";
+			return CommandLineError;
+		}
+	}
+	else {
+		params->iterationsLimitValue = 0;
+	}
 
     if (parser.isSet(valueLenght)) {
         const QString lengthString = parser.value(valueLenght);

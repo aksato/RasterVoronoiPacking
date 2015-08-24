@@ -21,6 +21,7 @@ struct ConsolePackingArgs {
 	MultiplePlacementChoice placementType;
     int maxWorseSolutionsValue;
     int timeLimitValue;
+	int iterationsLimitValue;
     qreal containerLenght;
 
     bool originalContainerLenght;

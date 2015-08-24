@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 	algorithmParams.setFixedLength(!params.stripPacking);
 	algorithmParams.setGpuProcessing(params.gpuProcessing);
 	algorithmParams.setTimeLimit(params.timeLimitValue); algorithmParams.setNmo(params.maxWorseSolutionsValue);
+	algorithmParams.setIterationsLimit(params.iterationsLimitValue);
 	if (params.initialSolutionType == Solution_Random) {
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::RANDOMFIXED);
 		algorithmParams.setInitialLenght(params.containerLenght);

@@ -1,4 +1,5 @@
 #include "packingthread.h"
+#include <limits>
 #include <QDebug>
 #include <QTime>
 
@@ -29,7 +30,8 @@ void PackingThread::run()
 	int minSuccessfullLength = curLength;
 	qreal curRealLength = (qreal)minSuccessfullLength;
 	qreal rdec = 0.04; qreal rinc = 0.01;
-    qreal minOverlap, curOverlap;
+	qreal minOverlap = std::numeric_limits<qreal>::max();
+	qreal curOverlap = minOverlap;
     RASTERVORONOIPACKING::RasterPackingSolution bestSolution = threadSolution;
     solver->resetWeights();
 	int numLoops = 1;
@@ -55,9 +57,9 @@ void PackingThread::run()
 	itNum++; totalItNum++;
 	emit solutionGenerated(threadSolution, curLength);
 
-	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && !m_abort) {
+	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 		if (m_abort) break;
-		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) /1000.0 > 0 && !m_abort) {
+		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 			if(m_abort) break;
 			solver->performLocalSearch(threadSolution, parameters);
 			if (parameters.getHeuristic() == RASTERVORONOIPACKING::GLS)  solver->updateWeights(threadSolution, parameters);
@@ -69,7 +71,7 @@ void PackingThread::run()
 				worseSolutionsCount = 0;
 			}
 			else worseSolutionsCount++;
-			if(itNum % 50 == 0) {
+			if(itNum % 10 == 0) {
 				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit()*1000-QDateTime::currentDateTime().msecsTo(finalTime))/1000.0);
 				emit solutionGenerated(threadSolution, curLength);
 				emit weightsChanged();

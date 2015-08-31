@@ -186,6 +186,8 @@ void MainWindow::loadPuzzle() {
 		
         ui->actionLoad_Zoomed_Problem->setEnabled(true);
 
+		ui->actionShow_density->setEnabled(true);
+
         weightViewer.setWeights(solver->getGlsWeights(), solution.getNumItems());
         runConfig.setInitialLenght((qreal)rasterProblem->getContainerWidth()/ui->graphicsView->getScale(), 1.0/ui->graphicsView->getScale());
     }
@@ -563,32 +565,57 @@ void MainWindow::loadSolution() {
 
     QXmlStreamReader xml;
 
+	// Searches for minimum length solution
     xml.setDevice(&file);
-    int itemId = 0;
+	int mostCompactSolId = 0;
+	qreal minLength = -1;
+	int id = 0;
+	while (!xml.atEnd()) {
+		xml.readNext();
+		if (xml.name() == "length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
+			qreal curLength = xml.readElementText().toFloat();
+			if (minLength < 0 || curLength < minLength) {
+				minLength = curLength;
+				mostCompactSolId = id;
+			}
+			id++;
+		}
+	}
+
+	file.close();
+	file.open(QFile::ReadOnly | QFile::Text);
+	xml.setDevice(&file);
+	int itemId = 0;
+	id = -1;
     while (!xml.atEnd()) {
         xml.readNext();
 
-        if(xml.name()=="placement" && xml.tokenType() == QXmlStreamReader::StartElement) {
-            int posX = qRound(this->rasterProblem->getScale()*xml.attributes().value("x").toFloat());
-            int posY = qRound(this->rasterProblem->getScale()*xml.attributes().value("y").toFloat());
-            solution.setPosition(itemId, QPoint(posX,posY));
-            unsigned int angleId = 0;
-            for(; angleId < this->rasterProblem->getItem(itemId)->getAngleCount(); angleId++)
-                if(this->rasterProblem->getItem(itemId)->getAngleValue(angleId) == xml.attributes().value("angle").toInt())
-                    break;
-            solution.setOrientation(itemId, angleId);
-//            qDebug() << itemId << xml.attributes().value("x").toFloat() << xml.attributes().value("y").toFloat() << xml.attributes().value("angle").toInt();
-            itemId++;
-        }
+		if (xml.name() == "solution" && xml.tokenType() == QXmlStreamReader::StartElement) {
+			id++;
+		}
 
-        if(xml.name()=="length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
-            int scaledWidth = qRound(xml.readElementText().toFloat()*this->rasterProblem->getScale());
-			params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE);
-            solver->setContainerWidth(scaledWidth, params);
-            ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
-        }
+		if (id == mostCompactSolId) {
+			if (xml.name() == "placement" && xml.tokenType() == QXmlStreamReader::StartElement) {
+				int posX = qRound(this->rasterProblem->getScale()*xml.attributes().value("x").toFloat());
+				int posY = qRound(this->rasterProblem->getScale()*xml.attributes().value("y").toFloat());
+				solution.setPosition(itemId, QPoint(posX, posY));
+				unsigned int angleId = 0;
+				for (; angleId < this->rasterProblem->getItem(itemId)->getAngleCount(); angleId++)
+				if (this->rasterProblem->getItem(itemId)->getAngleValue(angleId) == xml.attributes().value("angle").toInt())
+					break;
+				solution.setOrientation(itemId, angleId);
+				itemId++;
+			}
 
-        if(xml.name()=="solution" && xml.tokenType() == QXmlStreamReader::EndElement) break;
+			if (xml.name() == "length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
+				int scaledWidth = qRound(xml.readElementText().toFloat()*this->rasterProblem->getScale());
+				params.setCacheMaps(false); params.setDoubleResolution(false); params.setGpuProcessing(false); params.setHeuristic(NONE);
+				solver->setContainerWidth(scaledWidth, params);
+				ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+			}
+
+			if (xml.name() == "solution" && xml.tokenType() == QXmlStreamReader::EndElement) break;
+		}
     }
     file.close();
 

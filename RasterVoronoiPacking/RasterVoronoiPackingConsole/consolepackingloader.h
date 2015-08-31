@@ -45,6 +45,7 @@ private:
 	QString outputTXTFile, outputXMLFile;
 	int numProcesses;
 	QVector<std::shared_ptr<PackingThread>> threadVector;
+	QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>> solutionsCompilation;
 };
 
 #endif // CONSOLEPACKINGLOADER_H

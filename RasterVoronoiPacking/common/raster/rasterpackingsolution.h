@@ -3,7 +3,7 @@
 
 #include <QVector>
 #include <QPoint>
-#include <QDebug>
+#include <QXmlStreamWriter>
 #include <memory>
 
 namespace RASTERVORONOIPACKING {
@@ -36,6 +36,7 @@ namespace RASTERVORONOIPACKING {
         void setOrientation(int id, int newOrientation) {placements[id].setOrientation(newOrientation);}
         int getOrientation(int id) const {return placements[id].getOrientation();}
         bool save(QString fileName, std::shared_ptr<RasterPackingProblem> problem, qreal length, bool printSeed, uint seed = 0);
+		bool save(QXmlStreamWriter &stream, std::shared_ptr<RasterPackingProblem> problem, qreal length, bool printSeed, uint seed = 0);
 
     private:
         QVector<RasterItemPlacement> placements;

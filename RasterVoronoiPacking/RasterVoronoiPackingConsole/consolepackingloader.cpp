@@ -4,6 +4,7 @@
 #include "packingproblem.h"
 #include "cuda/gpuinfo.h"
 #include <QDir>
+#include <QXmlStreamWriter>
 #include <iostream>
 #include <iomanip>
 
@@ -148,15 +149,13 @@ void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elap
 }
 
 void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, uint seed) {
-	// Save Layout in XML file
-	RASTERVORONOIPACKING::RasterPackingSolution newSolution(solution.getNumItems());
-	for (int i = 0; i < solution.getNumItems(); i++) {
-		newSolution.setPosition(i, solution.getPosition(i));
-		newSolution.setOrientation(i, solution.getOrientation(i));
-	}
 	qreal realLength = length / problem->getScale();
-	if (!algorithmParamsBackup.isDoubleResolution()) newSolution.save(outputXMLFile, problem, realLength, true, seed);
-	else newSolution.save(outputXMLFile, zoomProblem, realLength, true, seed);
+	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> newSolution(new RASTERVORONOIPACKING::RasterPackingSolution(solution.getNumItems()));
+	for (int i = 0; i < solution.getNumItems(); i++) {
+		newSolution->setPosition(i, solution.getPosition(i));
+		newSolution->setOrientation(i, solution.getOrientation(i));
+	}
+	solutionsCompilation.push_back(QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>(newSolution, realLength));
 }
 
 void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint threadSeed) {
@@ -181,6 +180,28 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 			out << problem->getScale() << " - " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
 		else
 			out << problem->getScale() << " " << zoomProblem->getScale() << " " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
+		file.close();
+	}
+
+	// Print solutions collection xml file
+	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> saveProblem;
+	if (!algorithmParamsBackup.isDoubleResolution()) saveProblem = problem;
+	else saveProblem = zoomProblem;
+
+	QFile file(outputXMLFile);
+	if (!file.open(QIODevice::WriteOnly))
+		qCritical() << "Error: Cannot create output file" << outputXMLFile << ": " << qPrintable(file.errorString());
+	else {
+		QXmlStreamWriter stream;
+		stream.setDevice(&file);
+		stream.setAutoFormatting(true);
+		stream.writeStartDocument();
+		stream.writeStartElement("layouts");
+		for (QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>>::iterator it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
+			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> curSolution = (*it).first;
+			curSolution->save(stream, saveProblem, (*it).second, true, seed);
+		}
+		stream.writeEndElement(); // layouts
 		file.close();
 	}
 }

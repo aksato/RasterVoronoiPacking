@@ -15,6 +15,7 @@
 #include "annealing/cShapeInlines.h"
 #include "annealing/problemInstance.h"
 
+#define RASTER_EPS 0.0001
 using namespace RASTERPACKING;
 
 bool IsAtLeft(QPointF &v1, QPointF &v2)
@@ -325,11 +326,11 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 
 		polygon << QPointF(x, y);
 	}
-	RP.setX(-qRound(xMin)); RP.setY(-qRound(yMin));
-	polygon.translate(-xMin, -yMin);
+	RP.setX(-qFloor(xMin)); RP.setY(-qFloor(yMin));
+	polygon.translate(RP.x(), RP.y());
 
-	width = qRound(xMax - xMin) + 1;
-	height = qRound(yMax - yMin) + 1;
+	width = qCeil(xMax) + RP.x() + 1;
+	height = qCeil(yMax) + RP.y() + 1;
 	int *S = new int[width*height];
 	std::fill_n(S, width*height, 1);
 
@@ -365,12 +366,8 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 
 			int roundInitQNodeX = qRound(qNodeX[i]);
 			int roundEndQNodeX = qRound(qNodeX[i+1]);
-			if (qFuzzyCompare(roundInitQNodeX + 1.0, qNodeX[i] + 1.0) || roundInitQNodeX - qNodeX[i] < 0) initCoord = roundInitQNodeX + 1; else initCoord = roundInitQNodeX;
-			if (qFuzzyCompare(roundEndQNodeX + 1.0, qNodeX[i + 1] + 1.0) || roundEndQNodeX - qNodeX[i + 1] > 0) endCoord = roundEndQNodeX; else endCoord = roundEndQNodeX + 1;
-			//if (qFuzzyCompare(nodeX[i] + 1.0, qNodeX[i] + 1.0))	qDebug() << "Same node" << nodeX[i] << qNodeX[i];
-			//else qDebug() << "Different node" << nodeX[i] << qNodeX[i];
-			//for (j = nodeX[i] + 1; j < nodeX[i + 1]; j++, line += 1)
-			//initCoord = roundInitQNodeX; endCoord = roundEndQNodeX + 1;
+			if (abs(roundInitQNodeX - qNodeX[i]) < RASTER_EPS || roundInitQNodeX - qNodeX[i] < 0) initCoord = roundInitQNodeX + 1; else initCoord = roundInitQNodeX;
+			if (abs(roundEndQNodeX - qNodeX[i + 1]) < RASTER_EPS || roundEndQNodeX - qNodeX[i + 1] > 0) endCoord = roundEndQNodeX; else endCoord = roundEndQNodeX + 1;
 			for (j = initCoord; j < endCoord; j++, line += 1)
 				S[line] = 0;
 		}
@@ -384,7 +381,7 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
 		if (iti + 1 == polygon.cend()) itj = polygon.cbegin();
 		else itj = iti + 1;
-		if ((int)(*iti).y() == (int)(*itj).y()) {
+		if (abs((*iti).y() - (*itj).y()) < RASTER_EPS && abs((*iti).y() - (int)(*iti).y()) < RASTER_EPS) {
 			int left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
 			int right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
 			for (int i = left; i <= right; i++) {

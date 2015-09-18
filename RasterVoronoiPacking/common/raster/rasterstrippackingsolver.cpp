@@ -298,13 +298,31 @@ void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterPackingSo
 		int maxPositionX = -curMap->getReferencePoint().x() + curMap->getWidth() - 1;
 		if (params.isDoubleResolution()) maxPositionX = qRound((qreal)maxPositionX / originalProblem->getScale() * zoomedProblem->getScale());
 		if (curItemPos.x() > maxPositionX) {
+			// FIXME: Repeated code
 			// Translate to minimum overlap position. Test all orientations!
 			qreal minValue; QPoint minPos; int minAngle = 0;
-			minPos = getMinimumOverlapPosition(itemId, 0, solution, minValue, params);
-			for (uint curAngle = 1; curAngle < originalProblem->getItem(itemId)->getAngleCount(); curAngle++) {
-				qreal curValue; QPoint curPos;
-				curPos = getMinimumOverlapPosition(itemId, curAngle, solution, curValue, params);
-				if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
+			if (!params.isDoubleResolution()) {
+				minPos = getMinimumOverlapPosition(itemId, minAngle, solution, minValue, params);
+				for (uint curAngle = 1; curAngle < originalProblem->getItem(itemId)->getAngleCount(); curAngle++) {
+					qreal curValue; QPoint curPos;
+					curPos = getMinimumOverlapPosition(itemId, curAngle, solution, curValue, params);
+					if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
+				}
+			}
+			else { // Perform double resolution search
+				RasterPackingSolution roughSolution;
+				qreal zoomFactor = this->zoomedProblem->getScale() / this->originalProblem->getScale();
+				int zoomSquareSize = ZOOMNEIGHBORHOOD*qRound(this->zoomedProblem->getScale() / this->originalProblem->getScale());
+				getScaledSolution(solution, roughSolution, 1.0 / zoomFactor);
+
+				minPos = getMinimumOverlapPosition(itemId, minAngle, roughSolution, minValue, params);
+				minPos = getZoomedMinimumOverlapPosition(itemId, minAngle, zoomFactor*minPos, zoomSquareSize, zoomSquareSize, solution, minValue, params);
+				for (uint curAngle = 1; curAngle < originalProblem->getItem(itemId)->getAngleCount(); curAngle++) {
+					qreal curValue; QPoint curPos;
+					curPos = getMinimumOverlapPosition(itemId, curAngle, roughSolution, curValue, params);
+					curPos = getZoomedMinimumOverlapPosition(itemId, curAngle, zoomFactor*curPos, zoomSquareSize, zoomSquareSize, solution, curValue, params);
+					if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
+				}
 			}
 			solution.setOrientation(itemId, minAngle);
 			solution.setPosition(itemId, minPos);

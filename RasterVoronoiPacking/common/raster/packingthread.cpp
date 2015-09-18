@@ -4,6 +4,7 @@
 #include <QTime>
 
 #define MAXLOOPSPERLENGTH 5
+#define UPDATEINTERVAL 2
 
 PackingThread::~PackingThread() {
     m_abort = true;
@@ -57,6 +58,7 @@ void PackingThread::run()
 	itNum++; totalItNum++;
 	emit solutionGenerated(threadSolution, curLength);
 
+	qreal nextUpdateTime = QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 - UPDATEINTERVAL;
 	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 		if (m_abort) break;
 		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
@@ -71,7 +73,9 @@ void PackingThread::run()
 				worseSolutionsCount = 0;
 			}
 			else worseSolutionsCount++;
-			if(itNum % 10 == 0) {
+			//if(itNum % 10 == 0) {
+			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
+				nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
 				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit()*1000-QDateTime::currentDateTime().msecsTo(finalTime))/1000.0);
 				emit solutionGenerated(threadSolution, curLength);
 				emit weightsChanged();

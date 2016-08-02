@@ -10,6 +10,7 @@ include_directories(../common)
 
 find_package(Qt5Widgets)
 find_package(Qt5Gui)
+find_package(Qt5Svg)
 find_package(CUDA QUIET REQUIRED)
 
 # Pass options to NVCC
@@ -56,6 +57,6 @@ set(HEADERS
 
 cuda_add_executable(RasterVoronoiPackingConsole ${SRC} ${HEADERS})
 
-qt5_use_modules(RasterVoronoiPackingConsole Core Gui)
+target_link_libraries(RasterVoronoiPackingConsole Qt5::Core Qt5::Gui Qt5::Svg)
 
 set_target_properties(RasterVoronoiPackingConsole PROPERTIES COMPILE_DEFINITIONS "CONSOLE")

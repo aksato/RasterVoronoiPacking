@@ -52,7 +52,7 @@ namespace RASTERVORONOIPACKING {
         ~RasterPackingProblem() {}
 
     public:
-        bool load(RASTERPREPROCESSING::PackingProblem &problem, bool loadGPU = false);
+        bool load(RASTERPREPROCESSING::PackingProblem &problem);
         std::shared_ptr<RasterPackingItem> getItem(int id) {return items[id];}
 
         std::shared_ptr<RasterNoFitPolygonSet> getIfps() {return innerFitPolygons;}

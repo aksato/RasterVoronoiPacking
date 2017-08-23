@@ -26,7 +26,6 @@ struct ConsolePackingArgs {
 
     bool originalContainerLenght;
 	bool stripPacking;
-	bool gpuProcessing;
 
 	int numThreads;
 };

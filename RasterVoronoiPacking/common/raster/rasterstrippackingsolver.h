@@ -52,7 +52,6 @@ namespace RASTERVORONOIPACKING {
 		void performLocalSearchSingleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		void performLocalSearchDoubleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
-		QPoint getMinimumOverlapPositionGPU(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
 		QPoint getZoomedMinimumOverlapPosition(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMapSerial(int itemId, int orientation, RasterPackingSolution &solution, RasterStripPackingParameters &params); // Private
 		void getTotalOverlapMapSerialNoWeight(std::shared_ptr<TotalOverlapMap> map, int itemId, int orientation, RasterPackingSolution &solution);
@@ -67,8 +66,6 @@ namespace RASTERVORONOIPACKING {
 		// --> Get layout overlap with individual values (sum of individual overlap values)
 		std::shared_ptr<GlsWeightSet> getGlsWeights() { return glsWeights; }
 		qreal getGlobalOverlap(RasterPackingSolution &solution, QVector<qreal> &individualOverlaps, RasterStripPackingParameters &params);
-		// --> Return total overlap map for a given item
-		std::shared_ptr<TotalOverlapMap> getTotalOverlapMapGPU(int itemId, int orientation, RasterPackingSolution &solution, bool useGlsWeights = false);
 		// --> Get absolute minimum overlap position
 		QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value, PositionChoice placementHeuristic);
 

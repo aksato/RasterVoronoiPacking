@@ -31,8 +31,6 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.addOption(valueLenght);
 	const QCommandLineOption boolStripPacking("strippacking", "Strip packing version.");
 	parser.addOption(boolStripPacking);
-	const QCommandLineOption boolGpuProcessing("gpu", "Use GPU to process overlap maps.");
-	parser.addOption(boolGpuProcessing);
 	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value");
 	parser.addOption(valueNumThreads);
 	const QCommandLineOption placementMethod("placement", "Criteria for choosing positions when there are multiple minimum values (debug). Choices: bottomleft, random, limits and contour.", "type");
@@ -181,9 +179,6 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
 	if (parser.isSet(boolStripPacking)) params->stripPacking = true;
 	else  params->stripPacking = false;
-
-	if (parser.isSet(boolGpuProcessing)) params->gpuProcessing = true;
-	else params->gpuProcessing = false;
 
 	if (parser.isSet(valueNumThreads)) {
 		const QString threadsString = parser.value(valueNumThreads);

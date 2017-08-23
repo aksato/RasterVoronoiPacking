@@ -1,6 +1,5 @@
 #include "rasterpackingsolution.h"
 #include "rasterpackingproblem.h"
-#include "../cuda/gpuinfo.h"
 #include <QXmlStreamWriter>
 #include <QFile>
 
@@ -10,11 +9,10 @@ RasterPackingSolution::RasterPackingSolution()
 {
 }
 
-RasterPackingSolution::RasterPackingSolution(int numItems, bool loadGPU)
+RasterPackingSolution::RasterPackingSolution(int numItems)
 {
     for(int i = 0; i < numItems; i++)
         placements.append(RasterItemPlacement());
-	if (loadGPU) CUDAPACKING::alloDevicecSolutionPointers(numItems);
 }
 
 QDebug operator<<(QDebug dbg, const RasterPackingSolution &c)

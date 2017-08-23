@@ -6,7 +6,6 @@
 #include "raster/rasterstrippackingsolver.h"
 #include "raster/rasterstrippackingparameters.h"
 #include "raster/packingthread.h"
-#include "cuda/gpuinfo.h"
 #include "packingParametersParser.h"
 #include "consolepackingloader.h"
 #include <QDebug>
@@ -66,7 +65,6 @@ int main(int argc, char *argv[])
 	case Method_ZoomGls: algorithmParams.setHeuristic(RASTERVORONOIPACKING::GLS); algorithmParams.setDoubleResolution(true); break;
 	}
 	algorithmParams.setFixedLength(!params.stripPacking);
-	algorithmParams.setGpuProcessing(params.gpuProcessing);
 	algorithmParams.setTimeLimit(params.timeLimitValue); algorithmParams.setNmo(params.maxWorseSolutionsValue);
 	algorithmParams.setIterationsLimit(params.iterationsLimitValue);
 	if (params.initialSolutionType == Solution_Random) {

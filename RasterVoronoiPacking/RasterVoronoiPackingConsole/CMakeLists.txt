@@ -11,14 +11,9 @@ include_directories(../common)
 find_package(Qt5Widgets)
 find_package(Qt5Gui)
 find_package(Qt5Svg)
-find_package(CUDA QUIET REQUIRED)
-
-# Pass options to NVCC
-# set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -gencode arch=compute_22,code=sm_22)
 
 set(CMAKE_AUTOMOC ON)
 
-find_package(CXX11)
 IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_CXX_FLAGS "-std=c++11")
 endif()
@@ -36,7 +31,6 @@ set(SRC
 	../common/raster/rasterinnerfitpolygon.cpp
 	../common/raster/packingthread.cpp
 	../common/raster/glsweightset.cpp
-	../common/cuda/gpuinfo.cu
 	)
 	
 set(HEADERS
@@ -52,10 +46,9 @@ set(HEADERS
 	../common/raster/rasterinnerfitpolygon.h
 	../common/raster/packingthread.h
 	../common/raster/glsweightset.h
-	../common/cuda/gpuinfo.h
 	)
 
-cuda_add_executable(RasterVoronoiPackingConsole ${SRC} ${HEADERS})
+add_executable(RasterVoronoiPackingConsole ${SRC} ${HEADERS})
 
 target_link_libraries(RasterVoronoiPackingConsole Qt5::Core Qt5::Gui Qt5::Svg)
 

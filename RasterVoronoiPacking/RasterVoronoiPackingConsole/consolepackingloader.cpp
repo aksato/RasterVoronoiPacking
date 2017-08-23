@@ -2,7 +2,6 @@
 #include "raster/rasterpackingproblem.h"
 #include "raster/rasterpackingsolution.h"
 #include "packingproblem.h"
-#include "cuda/gpuinfo.h"
 #include <QDir>
 #include <QXmlStreamWriter>
 #include <iostream>
@@ -12,24 +11,13 @@ ConsolePackingLoader::ConsolePackingLoader(QObject *parent) {
 	numProcesses = 0;
 }
 
-bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, bool &loadGPU) {
+bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem) {
 	RASTERPREPROCESSING::PackingProblem preProblem;
 	if (!preProblem.load(inputFilePath)) {
 		qCritical("Could not open file '%s'!", qPrintable(inputFilePath));
 		return false;
 	}
-
-	// GPU problem loading
-	if (loadGPU) {
-		GpuMemoryRequirements gpuMemReq;
-		int numGPUs;  size_t freeCUDAMem, totalCUDAmem;
-
-		RASTERVORONOIPACKING::RasterPackingProblem::getProblemGPUMemRequirements(preProblem, gpuMemReq.totalIfpMemory, gpuMemReq.maxSingleIfpMemory, gpuMemReq.totalNfpMemory);
-		if (CUDAPACKING::getTotalMemory(numGPUs, freeCUDAMem, totalCUDAmem) && freeCUDAMem - gpuMemReq.totalIfpMemory - gpuMemReq.totalNfpMemory > 0) CUDAPACKING::allocDeviceMaxIfp(gpuMemReq.maxSingleIfpMemory);
-		else loadGPU = false;
-	}
-
-	problem->load(preProblem, loadGPU);
+	problem->load(preProblem);
 	return true;
 }
 
@@ -50,7 +38,7 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTX
 	QString originalPath = QDir::currentPath();
 	QDir::setCurrent(QFileInfo(inputFilePath).absolutePath());
 	problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-	bool loadGPU = algorithmParams.isGpuProcessing(); loadInputFile(inputFilePath, problem, loadGPU); algorithmParams.setGpuProcessing(loadGPU);
+	loadInputFile(inputFilePath, problem);
 	QDir::setCurrent(originalPath);
 	qDebug() << "Problem file read successfully";
 }
@@ -74,10 +62,10 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString zoomedIn
 	QString originalPath = QDir::currentPath();
 	QDir::setCurrent(QFileInfo(inputFilePath).absolutePath());
 	problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-	bool loadGPU = algorithmParams.isGpuProcessing(); loadInputFile(inputFilePath, problem, loadGPU); algorithmParams.setGpuProcessing(loadGPU);
+	loadInputFile(inputFilePath, problem);
 	QDir::setCurrent(QFileInfo(zoomedInputFilePath).absolutePath());
 	zoomProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-	loadGPU = false;  loadInputFile(zoomedInputFilePath, zoomProblem, loadGPU);
+	loadInputFile(zoomedInputFilePath, zoomProblem);
 	QDir::setCurrent(originalPath);
 	qDebug() << "Problem file read successfully";
 }
@@ -88,7 +76,7 @@ void ConsolePackingLoader::run() {
 	if (algorithmParamsBackup.isDoubleResolution()) solver->setProblem(zoomProblem, true);
 
 	// Resize container to initial length
-	RASTERVORONOIPACKING::RasterPackingSolution solution = RASTERVORONOIPACKING::RasterPackingSolution(problem->count(), algorithmParamsBackup.isGpuProcessing());
+	RASTERVORONOIPACKING::RasterPackingSolution solution = RASTERVORONOIPACKING::RasterPackingSolution(problem->count());
 	qreal length;
 	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) {
 		length = algorithmParamsBackup.getInitialLenght();
@@ -120,7 +108,6 @@ void ConsolePackingLoader::run() {
 	qDebug() << "Inital solution:" << algorithmParamsBackup.getInitialSolMethod();
 	qDebug() << "Minimum overlap placement heuristic:" << algorithmParamsBackup.getPlacementCriteria();
 	if (!algorithmParamsBackup.isFixedLength()) qDebug() << "Strip packing version";
-	if (algorithmParamsBackup.isGpuProcessing()) qDebug() << "Using GPU to process maps";
 	qDebug() << "Solver parameters: Nmo =" << algorithmParamsBackup.getNmo() << "; Time Limit:" << algorithmParamsBackup.getTimeLimit();
 
 	numProcesses++;

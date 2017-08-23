@@ -30,23 +30,17 @@ private slots:
     void updatePositionValues(QPointF pos);
     void printCurrentSolution();
     void generateCurrentTotalOverlapMap();
-	void generateCurrentTotalOverlapMapGPU();
     void translateCurrentToMinimumPosition();
-	void translateCurrentToMinimumPositionGPU();
     void createRandomLayout();
 	void createBottomLeftLayout();
     void changeContainerWidth();
     void showGlobalOverlap();
     void localSearch();
-	void localSearchGPU();
     void generateCurrentTotalGlsWeightedOverlapMap();
-	void generateCurrentTotalGlsWeightedOverlapMapGPU();
     void updateGlsWeightedOverlapMap();
     void resetGlsWeightedOverlapMap();
     void translateCurrentToGlsWeightedMinimumPosition();
-	void translateCurrentToGlsWeightedMinimumPositionGPU();
     void glsWeightedlocalSearch();
-	void glsWeightedlocalSearchGPU();
 
 	void createZoomedBottomLeftLayout();
     void showZoomedMap();

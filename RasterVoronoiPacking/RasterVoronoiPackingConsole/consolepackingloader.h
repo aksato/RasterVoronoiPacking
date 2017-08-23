@@ -37,7 +37,7 @@ signals:
 	void quitApp();
 
 private:
-	bool loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, bool &loadGPU);
+	bool loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem);
 	void writeNewLength(int length, int totalItNum, qreal elapsed, uint threadSeed);
 	void saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, uint seed);
 	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParamsBackup;

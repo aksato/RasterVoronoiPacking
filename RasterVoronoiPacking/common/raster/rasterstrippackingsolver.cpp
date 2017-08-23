@@ -290,7 +290,23 @@ void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterStripPack
     currentWidth = pixelWidth;
 }
 
-void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+void RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+	// Check if size is smaller than smallest item width
+	int deltaPixels = this->currentWidth - pixelWidth;
+	for (int itemId = 0; itemId < originalProblem->count(); itemId++)
+		for (uint angle = 0; angle < originalProblem->getItem(itemId)->getAngleCount(); angle++) {
+			std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
+			if (curMap->getWidth() <= deltaPixels)
+				if (curMap->getWidth() > 1) {
+					pixelWidth = curMap->getWidth() - 1;
+					deltaPixels = this->currentWidth - pixelWidth;
+				}
+				else {
+					pixelWidth = this->currentWidth;
+					return;
+				}
+		}
+	// Resize container
 	setContainerWidth(pixelWidth, params);
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
 		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, solution.getOrientation(itemId));

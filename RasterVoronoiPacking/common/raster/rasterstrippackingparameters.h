@@ -11,7 +11,7 @@ namespace RASTERVORONOIPACKING {
 	public:
 		RasterStripPackingParameters() :
 			Nmo(200), maxSeconds(600), heuristicType(GLS), doubleResolution(false),
-			gpuProcessing(false), cacheMaps(false), fixedLength(false), maxIterations(0)
+			gpuProcessing(false), fixedLength(false), maxIterations(0)
 		{} // Default parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
@@ -32,9 +32,6 @@ namespace RASTERVORONOIPACKING {
 		void setGpuProcessing(bool val) { this->gpuProcessing = val; }
 		bool isGpuProcessing() { return this->gpuProcessing; }
 
-		void setCacheMaps(bool val) { this->cacheMaps = val; }
-		bool isCacheMaps() { return this->cacheMaps; }
-
 		void setFixedLength(bool val) { this->fixedLength = val; }
 		bool isFixedLength() { return this->fixedLength; }
 
@@ -54,7 +51,6 @@ namespace RASTERVORONOIPACKING {
 			setHeuristic(source.getHeuristic());
 			setDoubleResolution(source.isDoubleResolution());
 			setGpuProcessing(source.isGpuProcessing());
-			setCacheMaps(source.isCacheMaps());
 			setFixedLength(source.isFixedLength());
 			setInitialSolMethod(source.getInitialSolMethod());
 			if (getInitialSolMethod() == RANDOMFIXED) setInitialLenght(source.getInitialLenght());
@@ -67,7 +63,7 @@ namespace RASTERVORONOIPACKING {
 		ConstructivePlacement initialSolMethod;
 		PositionChoice placementCriteria; // FIXME: Debug
 		qreal initialLenght; // Only used with RANDOMFIXED initial solution
-		bool doubleResolution, gpuProcessing, cacheMaps, fixedLength;
+		bool doubleResolution, gpuProcessing, fixedLength;
 	};
 }
 

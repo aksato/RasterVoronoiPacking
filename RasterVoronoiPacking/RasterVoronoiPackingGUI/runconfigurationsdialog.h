@@ -21,7 +21,6 @@ public:
     int getMaxSeconds();
     qreal getLenght();
 	bool getUseCUDA();
-	bool getCacheMaps();
 	bool getStripPacking();
 
     void setInitialLenght(qreal lenght, qreal step);

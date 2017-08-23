@@ -45,10 +45,6 @@ bool RunConfigurationsDialog::getUseCUDA() {
 	return ui->checkBox_2->isChecked();
 }
 
-bool RunConfigurationsDialog::getCacheMaps(){
-	return ui->checkBox_3->isChecked();
-}
-
 bool RunConfigurationsDialog::getStripPacking() {
 	return ui->checkBox->isChecked();
 }

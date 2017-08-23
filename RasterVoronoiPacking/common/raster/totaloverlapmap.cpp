@@ -193,23 +193,6 @@ QPoint TotalOverlapMap::getMinimum(float &minVal, PositionChoice placementHeuris
 	return minPointSet[index];
 }
 
-void TotalOverlapMap::initCacheInfo(int nItems) {
-	if(cacheInfo.count() > 0) cacheInfo.clear();
-	for (int i = 0; i < nItems; i++) 
-		cacheInfo.push_back(std::shared_ptr<CachePlacementInfo>(new CachePlacementInfo));
-	resetCacheInfo(true);
-}
-
-void TotalOverlapMap::resetCacheInfo(bool changedValue) {
-	std::for_each(cacheInfo.begin(), cacheInfo.end(), [&changedValue](std::shared_ptr<CachePlacementInfo> cacheItem){cacheItem->setPlacementChange(changedValue); }); // Fix me. Use a tool to force recalculation of maps
-}
-
-int TotalOverlapMap::getCacheCount() {
-	int ans = 0;
-	std::for_each(cacheInfo.begin(), cacheInfo.end(), [&ans](std::shared_ptr<CachePlacementInfo> cacheItem){if (cacheItem->changedPlacement()) ans++; });
-	return ans;
-}
-
 #ifndef CONSOLE
     QImage TotalOverlapMap::getImage() {
         float maxD = 0;

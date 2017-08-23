@@ -308,6 +308,20 @@ int *Polygon::getRasterImageVector(QPoint &RP, qreal scale, int &width, int &hei
     return S;
 }
 
+bool compareEpsilon(qreal v1, qreal v2, qreal eps) {
+	return qAbs(v2 - v1) < eps;
+}
+
+bool lessThanEqualEpsilon(qreal v1, qreal v2, qreal eps) {
+	if(qAbs(v2 - v1) < eps) return true;
+	else return v1 < v2;
+}
+
+bool greaterThanEqualEpsilon(qreal v1, qreal v2, qreal eps) {
+	if (qAbs(v2 - v1) < eps) return true;
+	else return v1 > v2;
+
+}
 int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height) {
 	QPolygonF polygon;
 	qreal xMin, xMax, yMin, yMax;
@@ -334,47 +348,46 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 	int *S = new int[width*height];
 	std::fill_n(S, width*height, 1);
 
-	int curScanline = width;
-	for (int pixelY = 1; pixelY < height - 1; pixelY++) {
-
-		//  Build a list of nodes.
-		QVector<int> nodeX;
-		QVector<qreal> qNodeX;
+	int curScanline = 0;
+	for (int pixelY = 0; pixelY < height; pixelY++) {
+		//  Build a list of intersection nodes.
+		QVector<qreal> nodeX;
 		int j = polygon.size() - 1;
 		for (int i = 0; i < polygon.size(); i++) {
-			qreal polyYi = polygon[i].y();
-			qreal polyXi = polygon[i].x();
-			qreal polyYj = polygon[j].y();
-			qreal polyXj = polygon[j].x();
+			qreal polyXi = polygon[i].x(); qreal polyYi = polygon[i].y();
+			qreal polyXj = polygon[j].x(); qreal polyYj = polygon[j].y();
 
-			if ((polyYi<(double)pixelY && polyYj >= (double)pixelY) || (polyYj<(double)pixelY && polyYi >= (double)pixelY)) {
-				nodeX.push_back((int)(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi)));
-				qNodeX.push_back(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi));
+			// Check if lines are horizontal
+			if (compareEpsilon(polyYi, polyYj, RASTER_EPS)) {
+				j = i; continue;
 			}
+
+			qreal curY = (qreal)pixelY;
+			if (
+				(polyYi < curY && greaterThanEqualEpsilon(polyYj, curY, RASTER_EPS)) ||
+				(polyYj < curY && greaterThanEqualEpsilon(polyYi, curY, RASTER_EPS))
+				) 
+				nodeX.push_back(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi));
 			j = i;
 		}
 
-		// Sort
-		qSort(nodeX); qSort(qNodeX);
-
+		// Sort intersection points
+		qSort(nodeX);
 
 		//  Fill the pixels between node pairs.
 		for (int i = 0; i<nodeX.size(); i += 2) {
 			int line = curScanline;
-			line += nodeX[i] + 1;
+			
 			int initCoord, endCoord;
-
-			int roundInitQNodeX = qRound(qNodeX[i]);
-			int roundEndQNodeX = qRound(qNodeX[i+1]);
-			if (abs(roundInitQNodeX - qNodeX[i]) < RASTER_EPS || roundInitQNodeX - qNodeX[i] < 0) initCoord = roundInitQNodeX + 1; else initCoord = roundInitQNodeX;
-			if (abs(roundEndQNodeX - qNodeX[i + 1]) < RASTER_EPS || roundEndQNodeX - qNodeX[i + 1] > 0) endCoord = roundEndQNodeX; else endCoord = roundEndQNodeX + 1;
-			for (j = initCoord; j < endCoord; j++, line += 1)
+			initCoord = compareEpsilon(nodeX[i], qRound(nodeX[i]), RASTER_EPS) ? qRound(nodeX[i]) + 1 : qCeil(nodeX[i]);
+			endCoord = compareEpsilon(nodeX[i+1], qRound(nodeX[i+1]), RASTER_EPS) ? qRound(nodeX[i+1]) - 1 : qFloor(nodeX[i+1]);
+			line += initCoord;
+			for (j = initCoord; j <= endCoord; j++, line += 1)
 				S[line] = 0;
 		}
 
 		curScanline += width;
 	}
-
 
 	// FIXME: Delete horizontal lines
 	QPolygonF::const_iterator itj;
@@ -382,15 +395,19 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 		if (iti + 1 == polygon.cend()) itj = polygon.cbegin();
 		else itj = iti + 1;
 		if (abs((*iti).y() - (*itj).y()) < RASTER_EPS && abs((*iti).y() - (int)(*iti).y()) < RASTER_EPS) {
-			int left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
-			int right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
-			for (int i = left; i <= right; i++) {
-				S[(int)(*iti).y()*width + i] = 1;
+			qreal left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
+			qreal right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
+			int initCoord, endCoord;
+			initCoord = compareEpsilon(left, qRound(left), RASTER_EPS) ? qRound(left) + 1 : qCeil(left);
+			endCoord = compareEpsilon(right, qRound(right), RASTER_EPS) ? qRound(right) - 1 : qFloor(right);
+			int line = (int)(*iti).y()*width + initCoord;
+			for (int i = initCoord; i <= endCoord; i++, line += 1) {
+				S[line] = 1;
 			}
 		}
 	}
 
-	// FIXME: Test
+	// FIXME: Use scan line to detect degenerated edges and nodes
 	for (QVector<QPair<QPointF, QPointF>>::const_iterator it = this->degLines.cbegin(); it != this->degLines.cend(); it++) {
 		QPointF p1 = scale*(*it).first; p1 -= QPointF(xMin, yMin);
 		QPointF p2 = scale*(*it).second; p2 -= QPointF(xMin, yMin);

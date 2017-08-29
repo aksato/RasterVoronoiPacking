@@ -321,9 +321,9 @@ void PackingViewer::setCurrentSolution(const RasterPackingSolution &solution) {
 //    curMap->setVisible(false);
 }
 
-void PackingViewer::showTotalOverlapMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> newMap) {
+void PackingViewer::showTotalOverlapMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> newMap, qreal scale) {
     // FIXME: Sometimes gives segmentation fault. Why???
-    curMap->setPixmap(QPixmap::fromImage(newMap->getImage().copy()));
-    curMap->setPos((1/rasterScale)*QPointF(-newMap->getReferencePoint().x()-0.5,-newMap->getReferencePoint().y()-0.5));
+	curMap->setPixmap(QPixmap::fromImage(newMap->getImage().copy()).scaled(QSize(scale*newMap->getWidth(), scale*newMap->getHeight())));
+	curMap->setPos((scale / rasterScale)*QPointF(-newMap->getReferencePoint().x() - 0.5, -newMap->getReferencePoint().y() - 0.5));
     curMap->setVisible(true);
 }

@@ -362,12 +362,12 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_33">
+           <widget class="QPushButton" name="pushButton_18">
             <property name="enabled">
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Bottom Left</string>
+             <string>Display Search Overlap Map</string>
             </property>
            </widget>
           </item>
@@ -392,32 +392,12 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_18">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Global Overlap</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="pushButton_20">
             <property name="enabled">
              <bool>false</bool>
             </property>
             <property name="text">
              <string>Local Search</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_19">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Update Weights</string>
             </property>
            </widget>
           </item>

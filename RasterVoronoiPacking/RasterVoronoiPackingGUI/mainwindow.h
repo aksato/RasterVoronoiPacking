@@ -4,6 +4,8 @@
 #include "raster/rasterpackingproblem.h"
 #include "raster/rasterpackingsolution.h"
 #include "raster/rasterstrippackingsolver.h"
+#include "raster/rasterstrippackingsolvergls.h"
+#include "raster/rasterstrippackingsolverdoublegls.h"
 #include "raster/packingthread.h"
 #include "glsweightviewerdialog.h"
 #include "zoomedmapviewdialog.h"
@@ -42,11 +44,9 @@ private slots:
     void translateCurrentToGlsWeightedMinimumPosition();
     void glsWeightedlocalSearch();
 
-	void createZoomedBottomLeftLayout();
+	void generateCurrentTotalSearchOverlapMap();
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();
-    void showZoomedGlobalOverlap();
-    void updateZoomedGlsWeights();
     void zoomedlocalSearch();
 
     void executePacking();
@@ -69,6 +69,8 @@ private:
     std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;
     RASTERVORONOIPACKING::RasterPackingSolution solution;
     std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS> solverGls;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS> solverDoubleGls;
 	RASTERVORONOIPACKING::RasterStripPackingParameters params;
 
     ZoomedMapViewDialog zoomedMapViewer;
@@ -78,7 +80,6 @@ private:
 
     int accContainerShrink;
 	qreal totalArea; qreal containerWidth;
-
 };
 
 #endif // MAINWINDOW_H

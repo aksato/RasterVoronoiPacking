@@ -47,14 +47,24 @@ int main(int argc, char *argv[])
 		Q_UNREACHABLE();
 	}
 
-	// Transform source and destination paths to absolute
+	// Transform source path to absolute
 	QFileInfo inputFileInfo(params.inputFilePath);
 	params.inputFilePath = inputFileInfo.absoluteFilePath();
-
-	// Check if source and destination paths exist
+	// Check if source paths exist
 	if (!QFile(params.inputFilePath).exists()) {
 		qCritical() << "Input file not found.";
 		return 1;
+	}
+
+	if (!params.zoomedInputFilePath.isEmpty()) {
+		// Transform zoomed source path to absolute
+		QFileInfo zoomedInputFileInfo(params.zoomedInputFilePath);
+		params.zoomedInputFilePath = zoomedInputFileInfo.absoluteFilePath();
+		// Check if zoomed source path exist
+		if (!QFile(params.zoomedInputFilePath).exists()) {
+			qCritical() << "Zoomed input file not found.";
+			return 1;
+		}
 	}
 
 	// Configure parameters

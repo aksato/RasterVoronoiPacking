@@ -32,6 +32,11 @@ TotalOverlapMap::TotalOverlapMap(int width, int height) {
     init(width, height);
 }
 
+TotalOverlapMap::TotalOverlapMap(QRect &boundingBox) {
+	init(boundingBox.width(), boundingBox.height());
+	reference = -boundingBox.topLeft();
+}
+
 void TotalOverlapMap::init(uint _width, uint _height) {
     this->width = _width;
     this->height = _height;

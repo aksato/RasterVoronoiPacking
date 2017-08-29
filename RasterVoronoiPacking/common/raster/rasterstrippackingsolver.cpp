@@ -5,28 +5,7 @@ using namespace RASTERVORONOIPACKING;
 
 #define ZOOMNEIGHBORHOOD 3
 
-// TOREMOVE
-QString printSequenceWithChanges(QVector<int> seq, QVector<int> seqChanges) {
-	QString ans;
-	QTextStream deb(&ans);
-	//QDebug deb = qDebug();
-	deb << "{";
-	//deb.nospace();
-	foreach(int id, seq) {
-		if (std::find(seqChanges.begin(), seqChanges.end(), id) != seqChanges.end()) deb << id << "'";
-		else deb << id;
-		if (id != seq[seq.count()-1]) deb << ", ";
-	}
-	QChar ch1, ch2; deb >> ch1 >> ch2;
-	deb << "}";
-	return ans;
-}
-
-void RasterStripPackingSolver::setProblem(std::shared_ptr<RasterPackingProblem> _problem, bool isZoomedProblem) {
-    if(isZoomedProblem) {
-        this->zoomedProblem = _problem;
-        return;
-    }
+void RasterStripPackingSolver::setProblem(std::shared_ptr<RasterPackingProblem> _problem) {
     this->originalProblem = _problem;
     //this->currentProblem = this->originalProblem;
 
@@ -37,17 +16,22 @@ void RasterStripPackingSolver::setProblem(std::shared_ptr<RasterPackingProblem> 
             // FIXME: Delete innerift polygons as they are used to release memomry
         }
     }
-
-    glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(originalProblem->count()));
-
     currentWidth = this->originalProblem->getContainerWidth();
     initialWidth = currentWidth;
 }
 
+void RasterStripPackingSolver::determineMinimumOriginalIfpWidth(std::shared_ptr<RasterPackingProblem> _problem) {
+	this->minimumOriginalIfpWidth = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(0), 0)->width();
+	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
+		for (uint angle = 0; angle < originalProblem->getItem(itemId)->getAngleCount(); angle++) {
+			int curWidth = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(itemId), angle)->width();
+			if (curWidth < minimumOriginalIfpWidth) minimumOriginalIfpWidth = curWidth;
+		}
+	}
+}
+
 // Basic Functions
 void RasterStripPackingSolver::generateRandomSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	std::shared_ptr<RasterPackingProblem> problem = params.isDoubleResolution() ? zoomedProblem : originalProblem;
-
     for(int i =0; i < originalProblem->count(); i++)  {
         // Shuffle angle
         int totalAngles = originalProblem->getItem(i)->getAngleCount();
@@ -58,8 +42,8 @@ void RasterStripPackingSolver::generateRandomSolution(RasterPackingSolution &sol
         }
 
         // Shuffle position
-		std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(i), rnd_angle);
-		int newIfpWidth = ifp->width() - qRound(problem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
+		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(i), rnd_angle);
+		int newIfpWidth = ifp->width() - qRound(originalProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
         int minX = -ifp->getOriginX(); int minY = -ifp->getOriginY();
         int maxX = minX + newIfpWidth - 1;
         int maxY = minY + ifp->height() - 1;
@@ -72,31 +56,28 @@ void RasterStripPackingSolver::generateRandomSolution(RasterPackingSolution &sol
 
 // --> Generate initial solution using the bottom left heuristic and resize the container accordingly
 void RasterStripPackingSolver::generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	std::shared_ptr<RasterPackingProblem> problem = params.isDoubleResolution() ? zoomedProblem : originalProblem;
-
 	QVector<int> sequence;
-	for (int i = 0; i < problem->count(); i++) sequence.append(i);
+	for (int i = 0; i < originalProblem->count(); i++) sequence.append(i);
 	std::random_shuffle(sequence.begin(), sequence.end());
 	int layoutLength = 0;
-	for (int k = 0; k < problem->count(); k++) {
+	for (int k = 0; k < originalProblem->count(); k++) {
 		int shuffledId = sequence[k];
 		int minMaxItemX;
 		// Find left bottom placement for item
-		for (unsigned int angle = 0; angle < problem->getItem(shuffledId)->getAngleCount(); angle++) {
+		for (unsigned int angle = 0; angle < originalProblem->getItem(shuffledId)->getAngleCount(); angle++) {
 			// Get IFP bounding box
 			int  minIfpX, minIfpY, maxIfpX, maxIfpY;
-			getIfpBoundingBox(shuffledId, angle, minIfpX, minIfpY, maxIfpX, maxIfpY, problem);
+			getIfpBoundingBox(shuffledId, angle, minIfpX, minIfpY, maxIfpX, maxIfpY, originalProblem);
 			QPoint curPos(minIfpX, minIfpY);
 			while (1) { // FIXME: Infinite loop?
-				//qreal overlap = getItemPartialOverlap(sequence, k, curPos, angle, solution, problem);
 				//if (qFuzzyCompare(1.0 + 0.0, 1.0 + overlap)) break;
-				if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution, problem))
+				if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution, originalProblem))
 					break;
 				// Get next position
 				curPos.setY(curPos.y() + 1); if (curPos.y() > maxIfpY) { curPos.setY(minIfpY); curPos.setX(curPos.x() + 1); }
 			}
 			// Check minimum X coordinate
-			int maxItemX = getItemMaxX(curPos.x(), angle, shuffledId, problem);
+			int maxItemX = getItemMaxX(curPos.x(), angle, shuffledId, originalProblem);
 			if (angle == 0 || maxItemX < minMaxItemX) {
 				minMaxItemX = maxItemX;
 				solution.setPosition(shuffledId, curPos); solution.setOrientation(shuffledId, angle);
@@ -104,27 +85,15 @@ void RasterStripPackingSolver::generateBottomLeftSolution(RasterPackingSolution 
 		}
 		if (minMaxItemX > layoutLength) layoutLength = minMaxItemX;
 	}
-	if (params.isDoubleResolution()) layoutLength = qCeil((layoutLength / zoomedProblem->getScale()) * originalProblem->getScale());
 	setContainerWidth(layoutLength, solution, params);
 }
 
-void RasterStripPackingSolver::getIfpBoundingBox(int itemId, int angle, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY, std::shared_ptr<RasterPackingProblem> problem) {
+void RASTERVORONOIPACKING::getIfpBoundingBox(int itemId, int angle, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY, std::shared_ptr<RasterPackingProblem> problem) {
 	std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(-1, -1, problem->getItemType(itemId), angle);
 	bottomLeftX = -ifp->getOriginX();
 	bottomLeftY = -ifp->getOriginY();
 	topRightX = bottomLeftX + ifp->width() - 1;
 	topRightY = bottomLeftY + ifp->height() - 1;
-}
-
-// Determine item overlap for a subset of fixed items
-qreal RasterStripPackingSolver::getItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem) {
-	qreal overlap = 0;
-	int itemId = sequence[itemSequencePos];
-	for (int i = 0; i < itemSequencePos; i++) {
-		int curFixedItemId = sequence[i];
-		overlap += getDistanceValue(itemId, itemPos, itemAngle, curFixedItemId, solution.getPosition(curFixedItemId), solution.getOrientation(curFixedItemId), problem);
-	}
-	return overlap;
 }
 
 // Detect if item is in overlapping position for a subset of fixed items
@@ -150,53 +119,14 @@ int RasterStripPackingSolver::getItemMaxX(int posX, int angle, int itemId, std::
 	return posX + qRound((qreal)realItemMaxX*problem->getScale());
 
 }
+
 // --> Get layout overlap (sum of individual overlap values)
 qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
     qreal totalOverlap = 0;
-	std::shared_ptr<RasterPackingProblem> problem = params.isDoubleResolution() ? zoomedProblem : originalProblem;
     for(int itemId = 0; itemId < originalProblem->count(); itemId++) {
-		totalOverlap += getItemTotalOverlap(itemId, solution, problem);
+		totalOverlap += getItemTotalOverlap(itemId, solution, originalProblem);
     }
     return totalOverlap;
-}
-
-void getScaledSolution(RasterPackingSolution &originalSolution, RasterPackingSolution &newSolution, qreal scaleFactor) {
-    newSolution = RasterPackingSolution(originalSolution.getNumItems());
-    for(int i = 0; i < originalSolution.getNumItems(); i++) {
-        newSolution.setOrientation(i, originalSolution.getOrientation(i));
-        QPoint finePos = QPoint(qRound((qreal)originalSolution.getPosition(i).x() * scaleFactor), qRound((qreal)originalSolution.getPosition(i).y() * scaleFactor));
-        newSolution.setPosition(i, finePos);
-    }
-}
-
-void RasterStripPackingSolver::updateWeights(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	QVector<WeightIncrement> solutionOverlapValues;
-	qreal maxOValue = 0;
-
-	std::shared_ptr<RasterPackingProblem> problem = params.isDoubleResolution() ? zoomedProblem : originalProblem;
-
-	// Determine pair overlap values
-	for (int itemId1 = 0; itemId1 < originalProblem->count(); itemId1++)
-	for (int itemId2 = 0; itemId2 < originalProblem->count(); itemId2++) {
-		if (itemId1 == itemId2) continue;
-		qreal curOValue = getDistanceValue(itemId1, solution.getPosition(itemId1), solution.getOrientation(itemId1),
-			itemId2, solution.getPosition(itemId2), solution.getOrientation(itemId2), problem);
-		if (curOValue != 0) {
-			solutionOverlapValues.append(WeightIncrement(itemId1, itemId2, (qreal)curOValue));
-			if (curOValue > maxOValue) maxOValue = curOValue;
-		}
-	}
-
-	// Divide vector by maximum
-	std::for_each(solutionOverlapValues.begin(), solutionOverlapValues.end(), [&maxOValue](WeightIncrement &curW){curW.value = curW.value / maxOValue; });
-
-	// Add to the current weight map
-	glsWeights->updateWeights(solutionOverlapValues);
-}
-
-//  TODO: Update cache information!
-void RasterStripPackingSolver::resetWeights() {
-    glsWeights->reset(originalProblem->count());
 }
 
 // --> Get absolute minimum overlap position
@@ -206,48 +136,8 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPosition(std::shared_ptr<Total
     return minRelativePos - map->getReferencePoint();
 }
 
-// TEST
-qreal RasterStripPackingSolver::getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem, bool useGlsWeights) {
-    qreal totalOverlap = 0;
-    if(!useGlsWeights)
-        for(int i =0; i < originalProblem->count(); i++) {
-            if(i == itemId) continue;
-			totalOverlap += getDistanceValue(itemId, pos, orientation, i, solution.getPosition(i), solution.getOrientation(i), problem);
-        }
-    else
-        for(int i =0; i < originalProblem->count(); i++) {
-            if(i == itemId) continue;
-			totalOverlap += glsWeights->getWeight(itemId, i)*getDistanceValue(itemId, pos, orientation, i, solution.getPosition(i), solution.getOrientation(i), problem);
-        }
-//    qDebug() << pos << totalOverlap;
-    return totalOverlap;
-}
-
-// --> Retrieve a rectangular area of the total overlap map
-std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, bool useGlsWeights) {
-    // FIXME: Check if zoomed area is inside the innerfit polygon
-    std::shared_ptr<RasterNoFitPolygon> curIfp = this->zoomedProblem->getIfps()->getRasterNoFitPolygon(-1,-1,this->originalProblem->getItemType(itemId),orientation);
-    int newIfpWidth = curIfp->width() - qRound(this->zoomedProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
-    int bottomleftX = pos.x() -  width/2 < -curIfp->getOriginX() ? -curIfp->getOriginX() : pos.x() -  width/2;
-    int bottomleftY = pos.y() - height/2 < -curIfp->getOriginY() ? -curIfp->getOriginY() : pos.y() - height/2;
-    int topRightX   = pos.x() +  width/2 > -curIfp->getOriginX() + newIfpWidth - 1 ? -curIfp->getOriginX() + newIfpWidth - 1: pos.x() +  width/2;
-    int topRightY   = pos.y() +  height/2 > -curIfp->getOriginY() + curIfp->height() - 1 ? -curIfp->getOriginY() + curIfp->height() - 1: pos.y() +  height/2;
-    width = topRightX - bottomleftX + 1;
-    height = topRightY - bottomleftY + 1;
-    std::shared_ptr<TotalOverlapMap> curZoomedMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(width, height));
-    curZoomedMap->setReferencePoint(-QPoint(bottomleftX, bottomleftY));
-
-    //switchProblem(true);
-    for(int j = bottomleftY; j <= topRightY; j++)
-        for(int i = bottomleftX; i <= topRightX; i++)
-            curZoomedMap->setValue(QPoint(i, j), getTotalOverlapMapSingleValue(itemId, orientation, QPoint(i,j), solution, this->zoomedProblem, useGlsWeights));
-    //switchProblem(false);
-
-    return curZoomedMap;
-}
-
 // --> Change container size
-void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterStripPackingParameters &params) {
+void RasterStripPackingSolver::updateMapsLength(int pixelWidth, RasterStripPackingParameters &params) {
     int deltaPixels = this->currentWidth - pixelWidth;
     for(int itemId = 0; itemId < originalProblem->count(); itemId++)
         for(uint angle = 0; angle < originalProblem->getItem(itemId)->getAngleCount(); angle++) {
@@ -259,60 +149,25 @@ void RasterStripPackingSolver::setContainerWidth(int pixelWidth, RasterStripPack
     currentWidth = pixelWidth;
 }
 
-void RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+bool RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
 	// Check if size is smaller than smallest item width
-	int deltaPixels = this->currentWidth - pixelWidth;
-	for (int itemId = 0; itemId < originalProblem->count(); itemId++)
-		for (uint angle = 0; angle < originalProblem->getItem(itemId)->getAngleCount(); angle++) {
-			std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
-			if (curMap->getWidth() <= deltaPixels)
-				if (curMap->getWidth() > 1) {
-					pixelWidth = curMap->getWidth() - 1;
-					deltaPixels = this->currentWidth - pixelWidth;
-				}
-				else {
-					pixelWidth = this->currentWidth;
-					return;
-				}
-		}
-	// Resize container
-	setContainerWidth(pixelWidth, params);
-	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
-		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, solution.getOrientation(itemId));
-		QPoint curItemPos = solution.getPosition(itemId);
-		int maxPositionX = -curMap->getReferencePoint().x() + curMap->getWidth() - 1;
-		if (params.isDoubleResolution()) maxPositionX = qRound((qreal)maxPositionX / originalProblem->getScale() * zoomedProblem->getScale());
-		if (curItemPos.x() > maxPositionX) {
-			// FIXME: Repeated code
-			// Translate to minimum overlap position. Test all orientations!
-			qreal minValue; QPoint minPos; int minAngle = 0;
-			if (!params.isDoubleResolution()) {
-				minPos = getMinimumOverlapPosition(itemId, minAngle, solution, minValue, params);
-				for (uint curAngle = 1; curAngle < originalProblem->getItem(itemId)->getAngleCount(); curAngle++) {
-					qreal curValue; QPoint curPos;
-					curPos = getMinimumOverlapPosition(itemId, curAngle, solution, curValue, params);
-					if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
-				}
-			}
-			else { // Perform double resolution search
-				RasterPackingSolution roughSolution;
-				qreal zoomFactor = this->zoomedProblem->getScale() / this->originalProblem->getScale();
-				int zoomSquareSize = ZOOMNEIGHBORHOOD*qRound(this->zoomedProblem->getScale() / this->originalProblem->getScale());
-				getScaledSolution(solution, roughSolution, 1.0 / zoomFactor);
+	if (minimumOriginalIfpWidth <= this->initialWidth - pixelWidth) { pixelWidth = this->currentWidth; return false; }
 
-				minPos = getMinimumOverlapPosition(itemId, minAngle, roughSolution, minValue, params);
-				minPos = getZoomedMinimumOverlapPosition(itemId, minAngle, zoomFactor*minPos, zoomSquareSize, zoomSquareSize, solution, minValue, params);
-				for (uint curAngle = 1; curAngle < originalProblem->getItem(itemId)->getAngleCount(); curAngle++) {
-					qreal curValue; QPoint curPos;
-					curPos = getMinimumOverlapPosition(itemId, curAngle, roughSolution, curValue, params);
-					curPos = getZoomedMinimumOverlapPosition(itemId, curAngle, zoomFactor*curPos, zoomSquareSize, zoomSquareSize, solution, curValue, params);
-					if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
-				}
-			}
-			solution.setOrientation(itemId, minAngle);
-			solution.setPosition(itemId, minPos);
+	// Resize container
+	updateMapsLength(pixelWidth, params);
+
+	// Detect extruding items and move them horizontally back inside the container
+	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
+		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(itemId), solution.getOrientation(itemId));
+		int maxPositionX = -ifp->getOriginX() + ifp->width() - (this->initialWidth - this->currentWidth) - 1;
+		QPoint curItemPos = solution.getPosition(itemId);
+		if (curItemPos.x() > maxPositionX) {
+			curItemPos.setX(maxPositionX);
+			solution.setPosition(itemId, curItemPos);
 		}
 	}
+
+	return true;
 }
 
 // --> Get nfp distance value: pos1 is static item and pos2 is orbiting item
@@ -390,9 +245,8 @@ qreal RasterStripPackingSolver::getItemTotalOverlap(int itemId, RasterPackingSol
 
 qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution, QVector<qreal> &individualOverlaps, RasterStripPackingParameters &params) {
     qreal totalOverlap = 0;
-	std::shared_ptr<RasterPackingProblem> problem = params.isDoubleResolution() ? zoomedProblem : originalProblem;
     for(int itemId = 0; itemId < originalProblem->count(); itemId++) {
-		qreal itemOverlap = getItemTotalOverlap(itemId, solution, problem);
+		qreal itemOverlap = getItemTotalOverlap(itemId, solution, originalProblem);
         individualOverlaps.append(itemOverlap);
         totalOverlap += itemOverlap;
     }
@@ -400,11 +254,10 @@ qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution
 }
 
 void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	if (!params.isDoubleResolution()) performLocalSearchSingleResolution(solution, params);
-	else performLocalSearchDoubleResolution(solution, params);
-}
 
-void RasterStripPackingSolver::performLocalSearchSingleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+	bool error = false;
+
+
 	QVector<int> sequence;
 	for (int i = 0; i < originalProblem->count(); i++) sequence.append(i);
 	std::random_shuffle(sequence.begin(), sequence.end());
@@ -420,49 +273,19 @@ void RasterStripPackingSolver::performLocalSearchSingleResolution(RasterPackingS
 		}
 		solution.setOrientation(shuffledId, minAngle);
 		solution.setPosition(shuffledId, minPos);
-	}
-}
 
-void RasterStripPackingSolver::performLocalSearchDoubleResolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	// Solution must be given in finer scale
-	RasterPackingSolution roughSolution;
-	qreal zoomFactor = this->zoomedProblem->getScale()/this->originalProblem->getScale();
-	int zoomSquareSize = ZOOMNEIGHBORHOOD*qRound(this->zoomedProblem->getScale() / this->originalProblem->getScale());
-	
-	QVector<int> sequence;
-	for(int i = 0; i < originalProblem->count() ; i++) sequence.append(i);
-	std::random_shuffle(sequence.begin(), sequence.end());
-	
-	for(int i =0; i < originalProblem->count(); i++) {
-		getScaledSolution(solution, roughSolution, 1.0/zoomFactor);
-		int shuffledId = sequence[i];
-		if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution, this->zoomedProblem))) continue;
-		qreal minValue; QPoint minPos; int minAngle = 0;
-		minPos = getMinimumOverlapPosition(shuffledId, minAngle, roughSolution, minValue, params);
-		minPos = getZoomedMinimumOverlapPosition(shuffledId, minAngle, zoomFactor*minPos, zoomSquareSize, zoomSquareSize, solution, minValue, params);
-		for(uint curAngle = 1; curAngle < originalProblem->getItem(shuffledId)->getAngleCount(); curAngle++) {
-			qreal curValue; QPoint curPos;
-			curPos = getMinimumOverlapPosition(shuffledId, curAngle, roughSolution, curValue, params);
-			curPos = getZoomedMinimumOverlapPosition(shuffledId, curAngle, zoomFactor*curPos, zoomSquareSize, zoomSquareSize, solution, curValue, params);
-			if(curValue < minValue) {minValue = curValue; minPos = curPos; minAngle = curAngle;}
-		}
-		solution.setOrientation(shuffledId, minAngle);
-		solution.setPosition(shuffledId, minPos);
+		// Check if item is inside the ifp
+		QRect ifpRect = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(shuffledId), minAngle)->boundingBox();
+		int curWidth = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(shuffledId), minAngle)->width() - (this->initialWidth - this->currentWidth);
+		ifpRect.setWidth(curWidth);
+		if (!ifpRect.contains(minPos)) error = true;
 	}
-}
-
-QPoint RasterStripPackingSolver::getZoomedMinimumOverlapPosition(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params) {
-	std::shared_ptr<TotalOverlapMap> map = getRectTotalOverlapMap(itemId, orientation, pos, width, height, solution, params.getHeuristic() == GLS);
-	//float fvalue = value;
-	float fvalue;
-	QPoint minRelativePos = map->getMinimum(fvalue);
-	value = fvalue;
-	return minRelativePos - map->getReferencePoint();
+	if (error) qDebug() << "HEEEEY THATS MY FISH!";
 }
 
 // --> Get absolute minimum overlap position
 QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params) {
-	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapMapSerial(itemId, orientation, solution, params);
+	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapMap(itemId, orientation, solution, params);
 	//float fvalue = value;
 	float fvalue;
 	QPoint minRelativePos = map->getMinimum(fvalue, params.getPlacementCriteria());
@@ -470,25 +293,21 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orien
 	return minRelativePos - map->getReferencePoint();
 }
 
-std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMapSerial(int itemId, int orientation, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+qreal RasterStripPackingSolver::getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem) {
+	qreal totalOverlap = 0;
+	for (int i = 0; i < originalProblem->count(); i++) {
+		if (i == itemId) continue;
+		totalOverlap += getDistanceValue(itemId, pos, orientation, i, solution.getPosition(i), solution.getOrientation(i), problem);
+	}
+	return totalOverlap;
+}
+
+std::shared_ptr<TotalOverlapMap> RasterStripPackingSolver::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
-	if (params.getHeuristic() == NONE)  getTotalOverlapMapSerialNoWeight(currrentPieceMap, itemId, orientation, solution);
-	if (params.getHeuristic() == GLS)  getTotalOverlapMapSerialWeight(currrentPieceMap, itemId, orientation, solution);
+	currrentPieceMap->reset();
+	for (int i = 0; i < originalProblem->count(); i++) {
+		if (i == itemId) continue;
+		currrentPieceMap->addVoronoi(originalProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation), solution.getPosition(i));
+	}
 	return currrentPieceMap;
-}
-
-void RasterStripPackingSolver::getTotalOverlapMapSerialNoWeight(std::shared_ptr<TotalOverlapMap> map, int itemId, int orientation, RasterPackingSolution &solution) {
-	map->reset();
-	for (int i = 0; i < originalProblem->count(); i++) {
-		if (i == itemId) continue;
-		map->addVoronoi(originalProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation), solution.getPosition(i));
-	}
-}
-
-void RasterStripPackingSolver::getTotalOverlapMapSerialWeight(std::shared_ptr<TotalOverlapMap> map, int itemId, int orientation, RasterPackingSolution &solution) {
-	map->reset();
-	for (int i = 0; i < originalProblem->count(); i++) {
-		if (i == itemId) continue;
-		map->addVoronoi(originalProblem->getNfps()->getRasterNoFitPolygon(originalProblem->getItemType(i), solution.getOrientation(i), originalProblem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i));
-	}
 }

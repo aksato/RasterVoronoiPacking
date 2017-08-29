@@ -66,11 +66,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
 
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
-	connect(ui->pushButton_33, SIGNAL(clicked()), this, SLOT(createZoomedBottomLeftLayout()));
+	connect(ui->pushButton_18, SIGNAL(clicked()), this, SLOT(generateCurrentTotalSearchOverlapMap()));
     connect(ui->pushButton_16, SIGNAL(clicked()), this, SLOT(showZoomedMap()));
     connect(ui->pushButton_17, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumZoomedPosition()));
-    connect(ui->pushButton_18, SIGNAL(clicked()), this, SLOT(showZoomedGlobalOverlap()));
-    connect(ui->pushButton_19, SIGNAL(clicked()), this, SLOT(updateZoomedGlsWeights()));
     connect(ui->pushButton_20, SIGNAL(clicked()), this, SLOT(zoomedlocalSearch()));
 
     ui->comboBox->setVisible(false);
@@ -116,6 +114,7 @@ void MainWindow::loadPuzzle() {
 		solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
 
         solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
+		solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
 
         ui->graphicsView->setEnabled(true);
         ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
@@ -142,7 +141,7 @@ void MainWindow::loadPuzzle() {
 
 		ui->actionShow_density->setEnabled(true);
 
-        weightViewer.setWeights(solver->getGlsWeights(), solution.getNumItems());
+		weightViewer.setWeights(solverGls->getGlsWeights(), solution.getNumItems());
         runConfig.setInitialLenght((qreal)rasterProblem->getContainerWidth()/ui->graphicsView->getScale(), 1.0/ui->graphicsView->getScale());
     }
     else {
@@ -159,17 +158,15 @@ void MainWindow::loadZoomedPuzzle() {
     if(problem.load(fileName)) {
         rasterZoomedProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
         rasterZoomedProblem->load(problem);
-        solver->setProblem(rasterZoomedProblem, true);
+        
+		solverDoubleGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(rasterProblem, rasterZoomedProblem));
+		resetGlsWeightedOverlapMap();
+		solverDoubleGls->updateMapsLength(solver->getCurrentWidth(), params);
 
         ui->pushButton_16->setEnabled(true);
         ui->pushButton_17->setEnabled(true);
         ui->pushButton_18->setEnabled(true);
-        ui->pushButton_19->setEnabled(true);
         ui->pushButton_20->setEnabled(true);
-        ui->graphicsView->changeGridSize(rasterZoomedProblem->getScale());
-        ui->doubleSpinBox->setSingleStep(1/rasterZoomedProblem->getScale());
-        ui->doubleSpinBox_2->setSingleStep(1/rasterZoomedProblem->getScale());
-		ui->pushButton_33->setEnabled(true);
     }
     else {
        // Display error message
@@ -204,8 +201,7 @@ void MainWindow::generateCurrentTotalOverlapMap() {
     int itemId = ui->graphicsView->getCurrentItemId();
 	params.setDoubleResolution(false); params.setHeuristic(NONE);
 	QTime myTimer; myTimer.start();
-	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapSerial(itemId, solution.getOrientation(itemId), solution, params);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, params);
 	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
@@ -214,8 +210,6 @@ void MainWindow::generateCurrentTotalOverlapMap() {
 void MainWindow::createRandomLayout() {
 	params.setDoubleResolution(false); params.setHeuristic(NONE);
     solver->generateRandomSolution(solution, params);
-	//if (params.isDoubleResolution()) ui->graphicsView->setCurrentSolution(solution, rasterZoomedProblem->getScale());
-    //else ui->graphicsView->setCurrentSolution(solution);
 	ui->graphicsView->setCurrentSolution(solution);
 }
 
@@ -223,6 +217,8 @@ void MainWindow::createBottomLeftLayout() {
 	params.setDoubleResolution(false); params.setHeuristic(NONE);
 	QTime myTimer; myTimer.start();
 	solver->generateBottomLeftSolution(solution, params);
+	solverGls->updateMapsLength(solver->getCurrentWidth(), params);
+	if (solverDoubleGls) solverDoubleGls->updateMapsLength(solver->getCurrentWidth(), params);
 	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
 	ui->graphicsView->setCurrentSolution(solution);
@@ -235,8 +231,7 @@ void MainWindow::translateCurrentToMinimumPosition() {
     int itemId = ui->graphicsView->getCurrentItemId();
 	params.setDoubleResolution(false); params.setHeuristic(NONE);
 	QTime myTimer; myTimer.start();
-    //std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, false);
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapSerial(itemId, solution.getOrientation(itemId), solution, params);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, params);
 	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal, BOTTOMLEFT_POS);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
@@ -287,19 +282,17 @@ void MainWindow::localSearch() {
     ui->graphicsView->getCurrentSolution(solution);
 	params.setDoubleResolution(false); params.setHeuristic(NONE); params.setPlacementCriteria(BOTTOMLEFT_POS);
     QTime myTimer; myTimer.start();
-    //solver->performLocalSearch(solution, false, true);
 	solver->performLocalSearch(solution, params);
     ui->statusBar->showMessage( "Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed()/1000.0) + "seconds");
     ui->graphicsView->setCurrentSolution(solution);
 }
 
 void MainWindow::generateCurrentTotalGlsWeightedOverlapMap() {
-    ui->graphicsView->getCurrentSolution(solution);
-    int itemId = ui->graphicsView->getCurrentItemId();
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
 	params.setDoubleResolution(false); params.setHeuristic(GLS);
 	QTime myTimer; myTimer.start();
-	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, true);
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapSerial(itemId, solution.getOrientation(itemId), solution, params);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solverGls->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, params);
 	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	weightViewer.updateImage();
@@ -309,27 +302,28 @@ void MainWindow::generateCurrentTotalGlsWeightedOverlapMap() {
 
 void MainWindow::updateGlsWeightedOverlapMap() {
     ui->graphicsView->getCurrentSolution(solution);
-    solver->updateWeights(solution, params);
+    solverGls->updateWeights(solution, params);
+	if (solverDoubleGls) solverDoubleGls->updateWeights(solution, params);
     ui->statusBar->showMessage("Weights updated.");
     weightViewer.updateImage();
     weightViewer.show();
 }
 
 void MainWindow::resetGlsWeightedOverlapMap() {
-    solver->resetWeights();
+    solverGls->resetWeights();
+	if (solverDoubleGls) solverDoubleGls->resetWeights();
     ui->statusBar->showMessage("Weights reseted.");
     weightViewer.updateImage();
     weightViewer.show();
 }
 
 void MainWindow::translateCurrentToGlsWeightedMinimumPosition() {
-    qreal minVal;
-    ui->graphicsView->getCurrentSolution(solution);
-    int itemId = ui->graphicsView->getCurrentItemId();
+	qreal minVal;
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
 	params.setDoubleResolution(false); params.setHeuristic(GLS);
 	QTime myTimer; myTimer.start();
-	//std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, true);
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->getTotalOverlapMapSerial(itemId, solution.getOrientation(itemId), solution, params);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solverGls->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution, params);
 	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal, BOTTOMLEFT_POS);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
@@ -344,8 +338,7 @@ void MainWindow::glsWeightedlocalSearch() {
     ui->graphicsView->getCurrentSolution(solution);
 	params.setDoubleResolution(false); params.setHeuristic(GLS);
     QTime myTimer; myTimer.start();
-    //solver->performLocalSearch(solution, true, true);
-	solver->performLocalSearch(solution, params);
+	solverGls->performLocalSearch(solution, params);
     ui->statusBar->showMessage( "Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed()/1000.0) + "seconds");
     ui->graphicsView->setCurrentSolution(solution);
     weightViewer.updateImage();
@@ -366,11 +359,16 @@ void MainWindow::executePacking() {
 	if (runConfig.getInitialSolution() == 1) params.setInitialSolMethod(RANDOMFIXED);
 	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
 	runThread.setParameters(params);
-	runThread.setSolver(solver);
+	if (params.getHeuristic() == GLS) 
+		if(!params.isDoubleResolution()) runThread.setSolver(solverGls);
+		else runThread.setSolver(solverDoubleGls);
+	else runThread.setSolver(solver);
 
 	// Resize container
 	if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
-		solver->setContainerWidth(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+		solver->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+		solverGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+		if (solverDoubleGls) solverDoubleGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
 		runThread.setInitialSolution(solution);
 	}
 	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
@@ -386,66 +384,68 @@ void MainWindow::changeContainerWidth() {
 	if (!ok) return;
     int scaledWidth = qRound(lenght*ui->graphicsView->getScale());
     solver->setContainerWidth(scaledWidth, solution, params);
+	solverGls->setContainerWidth(scaledWidth, solution, params);
+	if (solverDoubleGls) solverDoubleGls->setContainerWidth(scaledWidth, solution, params);
     ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
 	ui->graphicsView->setCurrentSolution(solution);
 }
 
 void MainWindow::showZoomedMap() {
-    int zoomSquareSize = 3*qRound(this->rasterZoomedProblem->getScale()/this->rasterProblem->getScale());
-    ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
+	int zoomSquareSize = 3 * qRound(this->rasterProblem->getScale() / this->rasterZoomedProblem->getScale());
+    ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
-    std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = solver->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution, true);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = solverDoubleGls->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution);
     QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
     zoomedMapViewer.setImage(zoomImage);
     zoomedMapViewer.show();
 }
 
 void MainWindow::translateCurrentToMinimumZoomedPosition() {
-    qreal minVal;
-    int zoomSquareSize = 3*qRound(this->rasterZoomedProblem->getScale()/this->rasterProblem->getScale());
-    ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
+	int zoomSquareSize = 3 * qRound(this->rasterProblem->getScale() / this->rasterZoomedProblem->getScale());
+	ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
-    std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = solver->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution, true);
-	solution.setPosition(itemId, solver->getMinimumOverlapPosition(zoomMap, minVal, BOTTOMLEFT_POS));
-    ui->graphicsView->setCurrentSolution(solution, this->rasterZoomedProblem->getScale());
+
+	qreal minValue; QPoint minPos; int minAngle = 0;
+	minPos = solverDoubleGls->getMinimumOverlapPosition(itemId, minAngle, solution, minValue, params);
+	for (uint curAngle = 1; curAngle < this->rasterProblem->getItem(itemId)->getAngleCount(); curAngle++) {
+		qreal curValue; QPoint curPos;
+		curPos = solverDoubleGls->getMinimumOverlapPosition(itemId, curAngle, solution, curValue, params);
+		if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
+	}
+	solution.setOrientation(itemId, minAngle);
+	solution.setPosition(itemId, minPos);
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = solverDoubleGls->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution);
+
+    ui->graphicsView->setCurrentSolution(solution);
     QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
     zoomedMapViewer.setImage(zoomImage);
     zoomedMapViewer.show();
 }
 
-void MainWindow::showZoomedGlobalOverlap() {
-    ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
-    QVector<qreal> overlaps;
-	params.setDoubleResolution(true); params.setHeuristic(GLS);
-    qreal globalOverlap = solver->getGlobalOverlap(solution,overlaps, params);
-    createOverlapMessageBox(globalOverlap, overlaps, this->rasterZoomedProblem->getScale());
-}
-
-void MainWindow::updateZoomedGlsWeights() {
-    ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
-	params.setDoubleResolution(true); params.setHeuristic(GLS);
-    solver->updateWeights(solution, params);
-    ui->statusBar->showMessage("Weights updated.");
-    weightViewer.updateImage();
-    weightViewer.show();
+void MainWindow::generateCurrentTotalSearchOverlapMap() {
+	ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solverDoubleGls->getTotalOverlapSearchMap(itemId, solution.getOrientation(itemId), solution, params);
+	int milliseconds = myTimer.elapsed();
+	ui->graphicsView->showTotalOverlapMap(curMap, qRound(this->rasterProblem->getScale() / this->rasterZoomedProblem->getScale()));
+	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
 
 void MainWindow::zoomedlocalSearch() {
-    ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
+	ui->graphicsView->getCurrentSolution(solution);
 	params.setDoubleResolution(true); params.setHeuristic(GLS);
     QTime myTimer; myTimer.start();
-    //solver->performTwoLevelLocalSearch(solution, true);
-	solver->performLocalSearch(solution, params);
+	solverDoubleGls->performLocalSearch(solution, params);
     ui->statusBar->showMessage( "Local search concluded. Elapsed Time: " + QString::number(myTimer.elapsed()/1000.0) + "seconds");
-    ui->graphicsView->setCurrentSolution(solution, this->rasterZoomedProblem->getScale());
+	ui->graphicsView->setCurrentSolution(solution);
     weightViewer.updateImage();
     weightViewer.show();
 }
 
 void MainWindow::showCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length) {
 	ui->graphicsView->recreateContainerGraphics(length);
-	qreal zoomscale = params.isDoubleResolution() ? rasterZoomedProblem->getScale() : rasterProblem->getScale();
-	ui->graphicsView->setCurrentSolution(solution, zoomscale);
+	ui->graphicsView->setCurrentSolution(solution);
 }
 
 void MainWindow::showExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed) {
@@ -461,42 +461,13 @@ void MainWindow::showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterP
 							". Minimum overlap: " + QString::number(minOverlap / zoomscale) +
 							". Elapsed time: " + QString::number(elapsed) +
 							" secs. Solution length : " + QString::number((qreal)minLength / rasterProblem->getScale()) + ".");
-	showCurrentSolution(solution, minLength);
 	this->solution = solution;
+	showCurrentSolution(solution, minLength);
 }
 
 void MainWindow::saveSolution() {
     QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
 	solution.save(fileName, this->rasterProblem, solver->getCurrentWidth() / this->rasterProblem->getScale(), false);
-
-	//QFile file(fileName);
-	//if (!file.open(QFile::WriteOnly | QFile::Text)) {
- //       qCritical() << "Error: Cannot open file"
- //                   << ": " << qPrintable(file.errorString());
- //       return;
- //   }
-
-	//QXmlStreamWriter stream(&file);
-	//stream.setAutoFormatting(true);
-	//stream.writeStartDocument();
-	//stream.writeStartElement("solution");
-	//for(int itemId = 0; itemId < this->rasterProblem->count(); itemId++) {
-	//	std::shared_ptr<RasterPackingItem> curItem = this->rasterProblem->getItem(itemId);
-	//	stream.writeStartElement("placement");
-	//	stream.writeAttribute("boardNumber", "1");
-	//	stream.writeAttribute("x", QString::number(this->solution.getPosition(itemId).x()/this->rasterProblem->getScale()));
-	//	stream.writeAttribute("y", QString::number(this->solution.getPosition(itemId).y()/this->rasterProblem->getScale()));
-	//	stream.writeAttribute("idBoard", this->rasterProblem->getContainerName());
-	//	stream.writeAttribute("idPiece", "piece" + QString::number(this->rasterProblem->getItemType(itemId))); // FIXME: Change to Name
-	//	stream.writeAttribute("angle", QString::number(this->rasterProblem->getItem(itemId)->getAngleValue(this->solution.getOrientation(itemId))));
-	//	stream.writeAttribute("mirror", "none");
-	//	stream.writeEndElement(); // placement
-	//}
-	//stream.writeTextElement("length", QString::number(solver->getCurrentWidth()/this->rasterProblem->getScale()));
-	//stream.writeEndElement(); // solution
-	//stream.writeEndDocument();
-
-	//file.close();
 }
 
 void MainWindow::loadSolution() {
@@ -556,7 +527,9 @@ void MainWindow::loadSolution() {
 			if (xml.name() == "length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
 				int scaledWidth = qRound(xml.readElementText().toFloat()*this->rasterProblem->getScale());
 				params.setDoubleResolution(false); params.setHeuristic(NONE);
-				solver->setContainerWidth(scaledWidth, params);
+				solver->updateMapsLength(scaledWidth, params);
+				solverGls->updateMapsLength(scaledWidth, params);
+				if (solverDoubleGls) solverDoubleGls->updateMapsLength(scaledWidth, params);
 				ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
 			}
 
@@ -597,18 +570,10 @@ void MainWindow::printDensity() {
 }
 
 void MainWindow::showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint seed) {
-	qDebug() << "New minimum length obtained: " << minLength / rasterProblem->getScale() << ". Elapsed time: " << elapsed << " secs";
+	qDebug() << "New minimum length obtained: " << minLength / rasterProblem->getScale() << ". It = " << totalItNum << ". Elapsed time: " << elapsed << " secs";
 }
 
 void MainWindow::saveZoomedSolution() {
 	QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
 	solution.save(fileName, this->rasterZoomedProblem, solver->getCurrentWidth() / this->rasterProblem->getScale(), false);
-}
-
-void MainWindow::createZoomedBottomLeftLayout() {
-	params.setDoubleResolution(true); params.setHeuristic(NONE);
-	solver->generateBottomLeftSolution(solution, params);
-	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
-	if (params.isDoubleResolution()) ui->graphicsView->setCurrentSolution(solution, rasterZoomedProblem->getScale());
-	else ui->graphicsView->setCurrentSolution(solution);
 }

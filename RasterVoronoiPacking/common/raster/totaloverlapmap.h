@@ -12,10 +12,20 @@ namespace RASTERVORONOIPACKING {
     public:
         TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp);
         TotalOverlapMap(int width, int height);
+		TotalOverlapMap(QRect &boundingBox);
 		virtual ~TotalOverlapMap() { delete[] data; }
 
         void init(uint _width, uint _height);
         void reset();
+
+		void setWidth(int _width) {
+			if (_width > this->width) {
+				// Expanding the map buffer
+				delete[] data;
+				init(_width, this->height);
+			}
+			this->width = _width;
+		}
 
         void shrink(int pixels) {
             Q_ASSERT_X(width-pixels > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
@@ -41,6 +51,7 @@ namespace RASTERVORONOIPACKING {
         QPoint getReferencePoint() {return reference;}
         int getWidth() {return width;}
         int getHeight() {return height;}
+		QRect getRect() { return QRect(-reference, QSize(width, height)); }
         float getValue(const QPoint &pt) {return getLocalValue(pt.x()+reference.x(),pt.y()+reference.y());}
         void setValue(const QPoint &pt, float value) {setLocalValue(pt.x()+reference.x(), pt.y()+reference.y(), value);}
 

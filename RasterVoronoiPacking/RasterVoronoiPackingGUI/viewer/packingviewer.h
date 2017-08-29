@@ -31,7 +31,7 @@ public:
     void createGraphicItems(RASTERPREPROCESSING::PackingProblem &problem);
     void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
     void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution);
-    void showTotalOverlapMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> newMap);
+	void showTotalOverlapMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> newMap, qreal scale = 1);
 
     void setStatusBar(QStatusBar *bar) {statusBar = bar;}
     int getTotalItems() {return pieces.size();}

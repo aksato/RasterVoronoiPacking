@@ -30,6 +30,7 @@ namespace RASTERVORONOIPACKING {
         //int height() {return (int)matrix.size();}
 		int width() {return w;}
 		int height() {return h;}
+		QRect boundingBox() { return QRect(-this->origin, QSize(w, h)); }
 
 		int *getMatrix() { return matrix; }
 		void setMatrix(int *_matrix) { matrix = _matrix; }

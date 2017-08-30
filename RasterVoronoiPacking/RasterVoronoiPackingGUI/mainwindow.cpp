@@ -82,8 +82,8 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-qreal getContainerWidth(RASTERPREPROCESSING::PackingProblem &problem) {
-	std::shared_ptr<RASTERPREPROCESSING::Polygon> conainerPolygon = (*problem.ccbegin())->getPolygon();
+qreal getContainerWidth(RASTERPACKING::PackingProblem &problem) {
+	std::shared_ptr<RASTERPACKING::Polygon> conainerPolygon = (*problem.ccbegin())->getPolygon();
 	qreal minY, maxY;
 	minY = conainerPolygon->at(0).y(); maxY = minY;
 	for (int i = 0; i < conainerPolygon->size(); i++) {
@@ -100,7 +100,7 @@ void MainWindow::loadPuzzle() {
 
     QString  fileName = QFileDialog::getOpenFileName(this, tr("Open Puzzle"), "", tr("Modified ESICUP Files (*.xml)"));
     QDir::setCurrent(QFileInfo(fileName).absolutePath());
-    RASTERPREPROCESSING::PackingProblem problem;
+    RASTERPACKING::PackingProblem problem;
     if(problem.load(fileName)) {
         rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
 		
@@ -154,7 +154,7 @@ void MainWindow::loadPuzzle() {
 void MainWindow::loadZoomedPuzzle() {
     QString  fileName = QFileDialog::getOpenFileName(this, tr("Open Puzzle"), "", tr("Modified ESICUP Files (*.xml)"));
     QDir::setCurrent(QFileInfo(fileName).absolutePath());
-    RASTERPREPROCESSING::PackingProblem problem;
+    RASTERPACKING::PackingProblem problem;
     if(problem.load(fileName)) {
         rasterZoomedProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
         rasterZoomedProblem->load(problem);

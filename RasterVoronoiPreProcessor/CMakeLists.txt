@@ -23,7 +23,8 @@ endif()
 
 set(SRC 
 	main.cpp
-	PackingProblem.cpp 
+	../RasterVoronoiPacking/common/packingproblem.cpp
+	rasterization.cpp
 	parametersParser.cpp 
 	annealing/cPolygon.cpp
 	annealing/cRectangularContainer.cpp

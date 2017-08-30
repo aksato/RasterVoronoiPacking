@@ -7,7 +7,7 @@
 #include <QMap>
 #include <QFileInfo>
 
-using namespace RASTERPREPROCESSING;
+using namespace RASTERPACKING;
 
 bool IsAtLeft(QPointF &v1, QPointF &v2)
 {
@@ -272,11 +272,12 @@ QStringList RasterNoFitPolygon::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("idPolygon"); commands.push_back(this->orbitingName);
     commands.push_back("writeAttribute"); commands.push_back("mirror"); commands.push_back("none");
     commands.push_back("writeEndElement"); // orbitingPolygon
-    commands.push_back("writeStartElement"); commands.push_back("resultingPolygon");
+    commands.push_back("writeStartElement"); commands.push_back("resultingImage");
     commands.push_back("writeAttribute"); commands.push_back("path"); commands.push_back(this->fileName);
     commands.push_back("writeAttribute"); commands.push_back("scale"); commands.push_back(QString::number(this->scale));
     commands.push_back("writeAttribute"); commands.push_back("x0"); commands.push_back(QString::number(this->referencePoint.x()));
     commands.push_back("writeAttribute"); commands.push_back("y0"); commands.push_back(QString::number(this->referencePoint.y()));
+	commands.push_back("writeAttribute"); commands.push_back("maxD"); commands.push_back(QString::number(this->maxD));
     commands.push_back("writeEndElement"); // resultingPolygon
     commands.push_back("writeEndElement"); // rnfp
 
@@ -297,7 +298,7 @@ QStringList RasterInnerFitPolygon::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("idPolygon"); commands.push_back(this->orbitingName);
     commands.push_back("writeAttribute"); commands.push_back("mirror"); commands.push_back("none");
     commands.push_back("writeEndElement"); // orbitingPolygon
-    commands.push_back("writeStartElement"); commands.push_back("resultingPolygon");
+    commands.push_back("writeStartElement"); commands.push_back("resultingImage");
     commands.push_back("writeAttribute"); commands.push_back("path"); commands.push_back(this->fileName);
     commands.push_back("writeAttribute"); commands.push_back("scale"); commands.push_back(QString::number(this->scale));
     commands.push_back("writeAttribute"); commands.push_back("x0"); commands.push_back(QString::number(this->referencePoint.x()));
@@ -318,10 +319,6 @@ Container::Container(QString _name, int _multiplicity) {
 Piece::Piece(QString _name, int _multiplicity) {
     this->name = _name;
     this->multiplicity = _multiplicity;
-}
-
-bool PackingProblem::load(QString fileName) {
-    return loadEsicup(fileName);
 }
 
 bool PackingProblem::copyHeader(QString fileName) {
@@ -351,7 +348,7 @@ bool PackingProblem::copyHeader(QString fileName) {
     return true;
 }
 
-bool PackingProblem::loadEsicup(QString &fileName) {
+bool PackingProblem::load(QString fileName) {
     QFile file(fileName);
      if (!file.open(QFile::ReadOnly | QFile::Text)) {
          qCritical() << "Error: Cannot read file"
@@ -389,12 +386,10 @@ bool PackingProblem::loadEsicup(QString &fileName) {
              if(curState == BOARDS_READING) {
                  curContainer = std::shared_ptr<Container>(new Container(xml.attributes().value("id").toString(), xml.attributes().value("quantity").toInt()));
                  this->addContainer(curContainer);
- //                qDebug() << "New container:" << curContainer->getName();
              }
              if(curState == LOT_READING) {
                  curPiece = std::shared_ptr<Piece>(new Piece(xml.attributes().value("id").toString(), xml.attributes().value("quantity").toInt()));
                  this->addPiece(curPiece);
- //                qDebug() << "New piece:" << curPiece->getName();
              }
          }
 
@@ -457,38 +452,29 @@ bool PackingProblem::loadEsicup(QString &fileName) {
          if(xml.name()=="resultingPolygon" && xml.tokenType() == QXmlStreamReader::StartElement) {
              curGeometricTool->setName(xml.attributes().value("idPolygon").toString());
          }
-         if(xml.name()=="nfp" && xml.tokenType() == QXmlStreamReader::EndElement) {
+         if(xml.name()=="nfp" && xml.tokenType() == QXmlStreamReader::EndElement)
              this->addNoFitPolygon(std::static_pointer_cast<NoFitPolygon>(curGeometricTool));
- //            qDebug() << "New nfp:" << curGeometricTool->getName();
-         }
-         if(xml.name()=="ifp" && xml.tokenType() == QXmlStreamReader::EndElement) {
+         if(xml.name()=="ifp" && xml.tokenType() == QXmlStreamReader::EndElement)
              this->addInnerFitPolygon(std::static_pointer_cast<InnerFitPolygon>(curGeometricTool));
- //            qDebug() << "New ifp:" << curGeometricTool->getName();
-         }
 
          // Process raster nofit polygon informations
-         if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::StartElement) {
+         if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::StartElement)
              curGeometricTool = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon);
-         }
          if(xml.name()=="resultingImage" && xml.tokenType() == QXmlStreamReader::StartElement) {
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setFileName(xml.attributes().value("path").toString());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setScale(xml.attributes().value("scale").toFloat());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setMaxD(xml.attributes().value("maxD").toFloat());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setReferencePoint(QPoint(xml.attributes().value("x0").toInt(),xml.attributes().value("y0").toInt()));
          }
-         if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::EndElement) {
-             this->addRasterNofitPolygon(std::static_pointer_cast<RasterNoFitPolygon>(curGeometricTool)); //qDebug() << "New rnfp:" << std::static_pointer_cast<RasterNoFitPolygon>(curGeometricTool)->getFileName();
-         }
+         if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::EndElement)
+             this->addRasterNofitPolygon(std::static_pointer_cast<RasterNoFitPolygon>(curGeometricTool));
 
          // Process raster innerfit polygon informations
-         if(xml.name()=="rifp" && xml.tokenType() == QXmlStreamReader::StartElement) {
+         if(xml.name()=="rifp" && xml.tokenType() == QXmlStreamReader::StartElement)
              curGeometricTool = std::shared_ptr<RasterInnerFitPolygon>(new RasterInnerFitPolygon);
-         }
-         if(xml.name()=="rifp" && xml.tokenType() == QXmlStreamReader::EndElement) {
-             this->addRasterInnerfitPolygon(std::static_pointer_cast<RasterInnerFitPolygon>(curGeometricTool)); //qDebug() << "New rifp:" << std::static_pointer_cast<RasterInnerFitPolygon>(curGeometricTool)->getFileName();
-         }
+         if(xml.name()=="rifp" && xml.tokenType() == QXmlStreamReader::EndElement)
+             this->addRasterInnerfitPolygon(std::static_pointer_cast<RasterInnerFitPolygon>(curGeometricTool));
      }
-//     qDebug() << "XML parsed.";
 
      if (xml.hasError()) {
          // do error handling
@@ -500,7 +486,6 @@ bool PackingProblem::loadEsicup(QString &fileName) {
              (*it)->setPolygon(*resultingPolygonIt);
          else return false; // do error handling
      }
-//     qDebug() << "NFPs polygons associated.";
 
      for(QList<std::shared_ptr<InnerFitPolygon>>::const_iterator it = this->cifpbegin(); it != this->cifpend(); it++) {
          QMap<QString, std::shared_ptr<Polygon> >::iterator resultingPolygonIt = polygonsTempSet.find((*it)->getName());
@@ -508,7 +493,6 @@ bool PackingProblem::loadEsicup(QString &fileName) {
              (*it)->setPolygon(*resultingPolygonIt);
          else return false; // do error handling
      }
-//     qDebug() << "IFPs polygons associated.";
 
      file.close();
      return true;
@@ -611,6 +595,10 @@ bool PackingProblem::save(QString fileName) {
             QStringList rnfpCommand = (*it)->getXML();
             processXMLCommands(rnfpCommand, stream);
         }
+		for (QList<std::shared_ptr<RasterInnerFitPolygon>>::const_iterator it = this->crifpbegin(); it != this->crifpend(); it++) {
+			QStringList rifpCommand = (*it)->getXML();
+			processXMLCommands(rifpCommand, stream);
+		}
         stream.writeEndElement(); // raster
     }
 

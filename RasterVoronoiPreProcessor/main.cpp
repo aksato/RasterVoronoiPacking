@@ -10,7 +10,7 @@
 #include <iostream>
 #include "colormap.h"
 #include "parametersParser.h"
-#include "PackingProblem.h"
+#include "../RasterVoronoiPacking/common/packingproblem.h"
 #include "cuda_runtime.h"
 
 cudaError_t transform( int * S, float * D, int N, int M);

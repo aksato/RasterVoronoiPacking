@@ -123,9 +123,9 @@ void PackingViewer::recreateContainerGraphics(int pixelWidth) {
 //    mainScene->setSceneRect(container->boundingRect());
 }
 
-void PackingViewer::createGraphicItems(RASTERPREPROCESSING::PackingProblem &problem) {
+void PackingViewer::createGraphicItems(RASTERPACKING::PackingProblem &problem) {
     // Create container
-    std::shared_ptr<RASTERPREPROCESSING::Polygon> curContainer = (*problem.ccbegin())->getPolygon();
+    std::shared_ptr<RASTERPACKING::Polygon> curContainer = (*problem.ccbegin())->getPolygon();
     QRectF containerPolygon = ((QPolygonF)(*curContainer)).boundingRect();
     container = new QGraphicsPolygonItem(containerPolygon);
     container->setBrush(QBrush(Qt::white));
@@ -138,8 +138,8 @@ void PackingViewer::createGraphicItems(RASTERPREPROCESSING::PackingProblem &prob
 
     // Create items
     int id = 0; int itemId = 0;
-    for(QList<std::shared_ptr<RASTERPREPROCESSING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++, id++) {
-        std::shared_ptr<RASTERPREPROCESSING::Polygon> curPiece = (*it)->getPolygon();
+    for(QList<std::shared_ptr<RASTERPACKING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++, id++) {
+        std::shared_ptr<RASTERPACKING::Polygon> curPiece = (*it)->getPolygon();
         for(uint mult = 0; mult < (*it)->getMultiplicity(); mult++, itemId++) {
             PackingItem *curStatic = new PackingItem(*curPiece, pieces.size());
             curStatic->setBrush(QColor(255,100,100,100));

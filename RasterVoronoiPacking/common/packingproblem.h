@@ -9,9 +9,13 @@
 #include<QDebug>
 #include<QImage>
 
+namespace POLYBOOLEAN {
+	struct PAREA;
+}
+
 typedef QVector<QPointF> PolygonF;
 
-namespace RASTERPREPROCESSING {
+namespace RASTERPACKING {
 
     class Polygon : public PolygonF {
     public:
@@ -25,8 +29,10 @@ namespace RASTERPREPROCESSING {
         QImage getRasterImage(QPoint &RP, qreal scale = 1.0);
         QImage getRasterImage8bit(QPoint &RP, qreal scale = 1.0);
         int *getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height);
+		int *getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height);
+		int *getRasterBoundingBoxImageVector(QPoint &RP, qreal scale, qreal epsilon, int &width, int &height);
+		void fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale);
 		qreal getArea();
-//        void fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale);
 		void setBoundingBoxMinX(int _minX) { this->minX = _minX; }
 		void setBoundingBoxMaxX(int _maxX) { this->maxX = _maxX; }
 		void setBoundingBoxMinY(int _minY) { this->minY = _minY; }
@@ -187,13 +193,13 @@ namespace RASTERPREPROCESSING {
 
     };
 
-
     class PackingProblem {
     public:
         PackingProblem() {}
         ~PackingProblem() {}
 
         bool load(QString fileName);
+		bool load(QString fileName, QString fileType, qreal scale = 1.0, qreal auxScale = 1.0);
         bool save(QString fileName);
 		qreal getTotalItemsArea();
 
@@ -252,8 +258,7 @@ namespace RASTERPREPROCESSING {
         QList<std::shared_ptr<RasterInnerFitPolygon>>::const_iterator crifpend() {return this->rasterInnerfitPolygons.cend();}
 
     private:
-        bool loadEsicup(QString &fileName);
-        bool loadCFREFP(QString &fileName, qreal scale);
+		bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
 
         QString name, author, date, description;
 

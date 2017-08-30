@@ -12,7 +12,7 @@
 #include "raster/rasterpackingsolution.h"
 #include "raster/totaloverlapmap.h"
 #include "packingitem.h"
-namespace RASTERPREPROCESSING {class PackingProblem;}
+namespace RASTERPACKING {class PackingProblem;}
 class QGraphicsPolygonItem;
 namespace Ui {
 class PackingViewer;
@@ -28,7 +28,7 @@ public:
     explicit PackingViewer(QWidget *parent = 0);
     ~PackingViewer();
 
-    void createGraphicItems(RASTERPREPROCESSING::PackingProblem &problem);
+    void createGraphicItems(RASTERPACKING::PackingProblem &problem);
     void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
     void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution);
 	void showTotalOverlapMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> newMap, qreal scale = 1);

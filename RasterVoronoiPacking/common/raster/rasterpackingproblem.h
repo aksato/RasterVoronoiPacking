@@ -6,7 +6,7 @@
 #include "rasterinnerfitpolygon.h"
 #include <QDebug>
 class QString;
-namespace RASTERPREPROCESSING {class PackingProblem; class RasterNoFitPolygon;}
+namespace RASTERPACKING {class PackingProblem; class RasterNoFitPolygon;}
 
 namespace RASTERVORONOIPACKING {
     class RasterPackingItem {
@@ -48,11 +48,11 @@ namespace RASTERVORONOIPACKING {
     {
     public:
         RasterPackingProblem();
-        RasterPackingProblem(RASTERPREPROCESSING::PackingProblem &problem);
+        RasterPackingProblem(RASTERPACKING::PackingProblem &problem);
         ~RasterPackingProblem() {}
 
     public:
-        bool load(RASTERPREPROCESSING::PackingProblem &problem);
+        virtual bool load(RASTERPACKING::PackingProblem &problem);
         std::shared_ptr<RasterPackingItem> getItem(int id) {return items[id];}
 
         std::shared_ptr<RasterNoFitPolygonSet> getIfps() {return innerFitPolygons;}
@@ -63,7 +63,7 @@ namespace RASTERVORONOIPACKING {
         QString getContainerName() {return containerName;}
         qreal getScale() {return scale;}
 
-		static void getProblemGPUMemRequirements(RASTERPREPROCESSING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem);
+		static void getProblemGPUMemRequirements(RASTERPACKING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem);
 
     private:
 //        QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<QPair<int,int>, int> &pieceAngleMap);

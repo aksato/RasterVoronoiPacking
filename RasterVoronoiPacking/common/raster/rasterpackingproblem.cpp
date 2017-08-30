@@ -9,13 +9,13 @@ RasterPackingProblem::RasterPackingProblem()
 {
 }
 
-RasterPackingProblem::RasterPackingProblem(RASTERPREPROCESSING::PackingProblem &problem) {
+RasterPackingProblem::RasterPackingProblem(RASTERPACKING::PackingProblem &problem) {
     this->load(problem);
 }
 
-void mapPieceNameAngle(RASTERPREPROCESSING::PackingProblem &problem, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int,int>, int> &pieceAngleMap) {
+void mapPieceNameAngle(RASTERPACKING::PackingProblem &problem, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int,int>, int> &pieceAngleMap) {
     int id = 0;
-    for(QList<std::shared_ptr<RASTERPREPROCESSING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++) {
+    for(QList<std::shared_ptr<RASTERPACKING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++) {
         pieceIndexMap.insert((*it)->getPolygon()->getName(), id);
         pieceTotalAngleMap.insert(id, (*it)->getOrientationsCount());
         int id2 = 0;
@@ -47,10 +47,10 @@ int *getMatrixFromQImage(QImage image) {
 	return ans;
 }
 
-bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
+bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     // 1. Load items information
     int typeId = 0; int itemId = 0;
-    for(QList<std::shared_ptr<RASTERPREPROCESSING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++, typeId++)
+    for(QList<std::shared_ptr<RASTERPACKING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++, typeId++)
         for(uint mult = 0; mult < (*it)->getMultiplicity(); mult++, itemId++) {
             std::shared_ptr<RasterPackingItem> curItem = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount()));
             curItem->setPieceName((*it)->getName());
@@ -59,8 +59,8 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
 			items.append(curItem);
         }
 
-    std::shared_ptr<RASTERPREPROCESSING::Container> container = *problem.ccbegin();
-    std::shared_ptr<RASTERPREPROCESSING::Polygon> pol = container->getPolygon();
+    std::shared_ptr<RASTERPACKING::Container> container = *problem.ccbegin();
+    std::shared_ptr<RASTERPACKING::Polygon> pol = container->getPolygon();
     qreal minX = (*pol->begin()).x();
     qreal maxX = minX;
     std::for_each(pol->begin(), pol->end(), [&minX, &maxX](QPointF pt){
@@ -79,8 +79,8 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
 
     // 3. Load innerfit polygons
     innerFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
-    for(QList<std::shared_ptr<RASTERPREPROCESSING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
-        std::shared_ptr<RASTERPREPROCESSING::RasterInnerFitPolygon> curRasterIfp = *it;
+    for(QList<std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
+        std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIfp = *it;
         // Create image. FIXME: Use data file instead?
         QImage curImage(curRasterIfp->getFileName());
         std::shared_ptr<RasterNoFitPolygon> curMap(new RasterNoFitPolygon(curImage, curRasterIfp->getReferencePoint(), 1.0));
@@ -96,8 +96,8 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
 
     // 4. Load nofit polygons
     noFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
-    for(QList<std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
-        std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon> curRasterNfp = *it;
+    for(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
+        std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
         // Create image. FIXME: Use data file instead?
         QImage curImage(curRasterNfp->getFileName());
         std::shared_ptr<RasterNoFitPolygon> curMountain(new RasterNoFitPolygon(curImage, curRasterNfp->getReferencePoint(), curRasterNfp->getMaxD()));
@@ -122,10 +122,10 @@ bool RasterPackingProblem::load(RASTERPREPROCESSING::PackingProblem &problem) {
     return true;
 }
 
-void RasterPackingProblem::getProblemGPUMemRequirements(RASTERPREPROCESSING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem) {
+void RasterPackingProblem::getProblemGPUMemRequirements(RASTERPACKING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem) {
 	unsigned int ifpCount = 0; ifpTotalMem = 0;  ifpMaxMem = 0;
-	for (QList<std::shared_ptr<RASTERPREPROCESSING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
-		std::shared_ptr<RASTERPREPROCESSING::RasterInnerFitPolygon> curRasterIfp = *it;
+	for (QList<std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
+		std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIfp = *it;
 		// Create image. FIXME: Use data file instead?
 		QImage curImage(curRasterIfp->getFileName());
 
@@ -136,8 +136,8 @@ void RasterPackingProblem::getProblemGPUMemRequirements(RASTERPREPROCESSING::Pac
 	}
 
 	unsigned int nfpCount = 0; nfpTotalMem = 0;
-	for (QList<std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
-		std::shared_ptr<RASTERPREPROCESSING::RasterNoFitPolygon> curRasterNfp = *it;
+	for (QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
+		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
 		// Create image. FIXME: Use data file instead?
 		QImage curImage(curRasterNfp->getFileName());
 

@@ -124,6 +124,9 @@ void PackingViewer::recreateContainerGraphics(int pixelWidth) {
 }
 
 void PackingViewer::createGraphicItems(RASTERPACKING::PackingProblem &problem) {
+	pieces.clear();
+	mainScene->clear();
+
     // Create container
     std::shared_ptr<RASTERPACKING::Polygon> curContainer = (*problem.ccbegin())->getPolygon();
     QRectF containerPolygon = ((QPolygonF)(*curContainer)).boundingRect();

@@ -2,6 +2,7 @@
 #include <QString>
 #include <QStringList>
 #include <QFile>
+#include <QDir>
 #include <QXmlStreamReader>
 #include <QDebug>
 #include <QMap>
@@ -615,4 +616,46 @@ qreal PackingProblem::getTotalItemsArea() {
 		area += (*it)->getMultiplicity()*(*it)->getPolygon()->getArea();
 	}
 	return -area;
+}
+
+bool PackingProblem::loadClusterInfo(QString fileName) {
+	QFile file(fileName);
+	if (!file.open(QFile::ReadOnly | QFile::Text)) {
+		qCritical() << "Error: Cannot read file"
+			<< ": " << qPrintable(file.errorString());
+		return false;
+	}
+
+	CLUSTERING::Cluster currentCluster;
+	QXmlStreamReader xml;
+	xml.setDevice(&file);
+	while (!xml.atEnd() && (xml.name() != "clusters" || xml.tokenType() != QXmlStreamReader::StartElement)) xml.readNext();
+	originalProblem = QDir(QFileInfo(fileName).path()).filePath(xml.attributes().value("originalProblem").toString());
+
+	QString clusterName;
+	while (!xml.atEnd() && (xml.name() != "clusters" || xml.tokenType() != QXmlStreamReader::EndElement)) {
+		xml.readNext();
+		if (xml.name() == "cluster" && xml.tokenType() == QXmlStreamReader::StartElement) {
+			currentCluster.clear();
+			clusterName = xml.attributes().value("id").toString();
+		}
+		if (xml.name() == "cluster" && xml.tokenType() == QXmlStreamReader::EndElement) {
+			clusteredPieces.insert(clusterName, currentCluster);
+		}
+
+		if (xml.name() == "piece" && xml.tokenType() == QXmlStreamReader::StartElement) {
+			currentCluster.push_back(CLUSTERING::ClusterPiece(xml.attributes().value("id").toString(), xml.attributes().value("angle").toInt(), 
+			QPointF(xml.attributes().value("xOffset").toFloat(), xml.attributes().value("yOffset").toFloat())));
+		}
+	}
+
+	if (xml.hasError()) {
+		// do error handling
+		return false;
+	}
+
+	file.close();
+
+	if (clusteredPieces.isEmpty()) return false;
+	return true;
 }

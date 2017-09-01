@@ -193,6 +193,16 @@ namespace RASTERPACKING {
 
     };
 
+	namespace CLUSTERING {
+		struct ClusterPiece {
+			ClusterPiece(QString _pieceName, int _angle, QPointF _offset) : pieceName(_pieceName), angle(_angle), offset(_offset) {}
+			QString pieceName;
+			int angle;
+			QPointF offset;
+		};
+		typedef QList<ClusterPiece> Cluster;
+	}
+
     class PackingProblem {
     public:
         PackingProblem() {}
@@ -200,6 +210,7 @@ namespace RASTERPACKING {
 
         bool load(QString fileName);
 		bool load(QString fileName, QString fileType, qreal scale = 1.0, qreal auxScale = 1.0);
+		bool loadClusterInfo(QString fileName);
         bool save(QString fileName);
 		qreal getTotalItemsArea();
 
@@ -257,6 +268,13 @@ namespace RASTERPACKING {
         QList<std::shared_ptr<RasterInnerFitPolygon>>::const_iterator crifpbegin() {return this->rasterInnerfitPolygons.cbegin();}
         QList<std::shared_ptr<RasterInnerFitPolygon>>::const_iterator crifpend() {return this->rasterInnerfitPolygons.cend();}
 
+		QMap<QString, CLUSTERING::Cluster>::iterator clusterbegin() { return this->clusteredPieces.begin(); }
+		QMap<QString, CLUSTERING::Cluster>::iterator clusterend() { return this->clusteredPieces.end(); }
+		QMap<QString, CLUSTERING::Cluster>::const_iterator cclusterbegin() { return this->clusteredPieces.cbegin(); }
+		QMap<QString, CLUSTERING::Cluster>::const_iterator cclusterend() { return this->clusteredPieces.cend(); }
+		CLUSTERING::Cluster getCluster(QString name) { return this->clusteredPieces[name]; }
+		QString getOriginalProblem() { return this->originalProblem; }
+
     private:
 		bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
 
@@ -268,7 +286,8 @@ namespace RASTERPACKING {
         QList<std::shared_ptr<InnerFitPolygon>> innerfitPolygons;
         QList<std::shared_ptr<RasterNoFitPolygon>> rasterNofitPolygons;
         QList<std::shared_ptr<RasterInnerFitPolygon>> rasterInnerfitPolygons;
-
+		QMap<QString, CLUSTERING::Cluster> clusteredPieces;
+		QString originalProblem;
     };
 }
 

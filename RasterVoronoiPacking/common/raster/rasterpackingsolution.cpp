@@ -11,8 +11,13 @@ RasterPackingSolution::RasterPackingSolution()
 
 RasterPackingSolution::RasterPackingSolution(int numItems)
 {
-    for(int i = 0; i < numItems; i++)
-        placements.append(RasterItemPlacement());
+	reset(numItems);
+}
+
+void RasterPackingSolution::reset(int numItems) {
+	placements.clear();
+	for (int i = 0; i < numItems; i++)
+		placements.append(RasterItemPlacement());
 }
 
 QDebug operator<<(QDebug dbg, const RasterPackingSolution &c)

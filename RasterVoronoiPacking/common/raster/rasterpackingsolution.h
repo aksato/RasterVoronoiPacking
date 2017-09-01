@@ -30,6 +30,7 @@ namespace RASTERVORONOIPACKING {
         RasterPackingSolution();
 		RasterPackingSolution(int numItems);
 
+		void reset(int numItems);
         int getNumItems() const {return placements.size();}
         void setPosition(int id, QPoint newPos) {placements[id].setPos(newPos);}
         QPoint getPosition(int id) const {return placements[id].getPos();}

@@ -71,6 +71,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_17, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumZoomedPosition()));
     connect(ui->pushButton_20, SIGNAL(clicked()), this, SLOT(zoomedlocalSearch()));
 
+	connect(ui->pushButton_11, SIGNAL(clicked()), this, SLOT(switchToOriginalProblem()));
+
     ui->comboBox->setVisible(false);
     ui->comboBox_3->setVisible(false);
     ui->graphicsView->setBackgroundBrush(QBrush(qRgb(240,240,240)));
@@ -102,7 +104,12 @@ void MainWindow::loadPuzzle() {
     QDir::setCurrent(QFileInfo(fileName).absolutePath());
     RASTERPACKING::PackingProblem problem;
     if(problem.load(fileName)) {
-        rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
+		if (problem.loadClusterInfo(fileName)) {
+			originalProblem.load(problem.getOriginalProblem());
+			rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem>(new RASTERVORONOIPACKING::RasterPackingClusterProblem);
+			ui->pushButton_11->setEnabled(true);
+		}
+		else rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
 		
 		// Density calculation
 		totalArea = problem.getTotalItemsArea();
@@ -576,4 +583,36 @@ void MainWindow::showExecutionMinLengthObtained(const RASTERVORONOIPACKING::Rast
 void MainWindow::saveZoomedSolution() {
 	QString  fileName = QFileDialog::getSaveFileName(this, tr("Save solution"), "", tr("Modified ESICUP Files (*.xml)"));
 	solution.save(fileName, this->rasterZoomedProblem, solver->getCurrentWidth() / this->rasterProblem->getScale(), false);
+}
+
+void MainWindow::switchToOriginalProblem() {
+	// Create new problem. TODO: Support for double resolution
+	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
+	int oldWidth = solver->getCurrentWidth();
+	rasterProblem = clusterProblem->getOriginalProblem();
+
+	// Recreate solution
+	ui->graphicsView->getCurrentSolution(solution);
+	clusterProblem->convertSolution(solution);
+
+	// Recreate items and container graphics
+	//solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
+	solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
+	solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
+	ui->graphicsView->createGraphicItems(originalProblem); ui->graphicsView->scale(1.0, -1.0);
+	ui->spinBox->setMinimum(0); ui->spinBox->setMaximum(rasterProblem->count() - 1);
+	ui->doubleSpinBox->setSingleStep(1 / ui->graphicsView->getScale());
+	ui->doubleSpinBox_2->setSingleStep(1 / ui->graphicsView->getScale());
+	weightViewer.setWeights(solverGls->getGlsWeights(), solution.getNumItems());
+	runConfig.setInitialLenght((qreal)rasterProblem->getContainerWidth() / ui->graphicsView->getScale(), 1.0 / ui->graphicsView->getScale());
+
+	// Change width
+	solver->setContainerWidth(oldWidth, solution, params);
+	solverGls->setContainerWidth(oldWidth, solution, params);
+	ui->graphicsView->recreateContainerGraphics(oldWidth);
+
+	// Update ui
+	ui->graphicsView->setCurrentSolution(solution);
+	ui->pushButton_11->setEnabled(false);
+	ui->statusBar->showMessage("Switched to original problem (cannot undo!).");
 }

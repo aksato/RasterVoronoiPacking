@@ -12,6 +12,7 @@
 #include "runconfigurationsdialog.h"
 #include <QMainWindow>
 #include <memory>
+#include "../common/packingproblem.h"
 
 namespace Ui {
 class MainWindow;
@@ -60,6 +61,8 @@ private slots:
     void loadSolution();
     void exportSolutionToSvg();
 
+	void switchToOriginalProblem();
+
 	void printDensity();
 
 private:
@@ -80,6 +83,7 @@ private:
 
     int accContainerShrink;
 	qreal totalArea; qreal containerWidth;
+	RASTERPACKING::PackingProblem originalProblem;
 };
 
 #endif // MAINWINDOW_H

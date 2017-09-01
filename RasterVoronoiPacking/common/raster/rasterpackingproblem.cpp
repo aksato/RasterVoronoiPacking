@@ -1,5 +1,7 @@
 #include "rasterpackingproblem.h"
 #include "../packingproblem.h"
+#include <QDir>
+#include <QFileInfo>
 
 #define NUM_ORIENTATIONS 4 // FIXME: Get form problem
 
@@ -143,5 +145,95 @@ void RasterPackingProblem::getProblemGPUMemRequirements(RASTERPACKING::PackingPr
 
 		// Determine memory space
 		nfpTotalMem += curImage.width()*curImage.height()*sizeof(int); nfpCount++;
+	}
+}
+
+bool RasterPackingClusterProblem::load(RASTERPACKING::PackingProblem &problem) {
+	if (!RasterPackingProblem::load(problem)) return false;
+
+	// Load original problem
+	RASTERPACKING::PackingProblem nonClusteredProblem;
+	QDir::setCurrent(QFileInfo(problem.getOriginalProblem()).absolutePath());
+	if (!nonClusteredProblem.load(problem.getOriginalProblem())) return false;
+	this->originalProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
+	if(!this->originalProblem->load(nonClusteredProblem)) return false;
+
+	// Create map of original item indexes -> piece names
+	QMap<int, QString> originalIdToNameMap;
+	for (QVector<std::shared_ptr<RasterPackingItem>>::iterator it = this->originalProblem->ibegin(); it != this->originalProblem->iend(); it++) {
+		std::shared_ptr<RasterPackingItem> item = *it;
+		originalIdToNameMap.insert(item->getId(), item->getPieceName());
+	}
+	
+	// For each item of the clustered problem, determine its respective cluster
+	QMap<int, RasterPackingCluster> clustersMaptest;
+	foreach(std::shared_ptr<RasterPackingItem> item, items) {
+		int originalPieceId = item->getId();
+		RASTERPACKING::CLUSTERING::Cluster currCluster = problem.getCluster(item->getPieceName());
+		
+		RasterPackingCluster translatedCluster;
+		foreach(RASTERPACKING::CLUSTERING::ClusterPiece clPiece, currCluster) {
+			// Get piece id and remove from map
+			int pieceId = originalIdToNameMap.key(clPiece.pieceName);
+			originalIdToNameMap.remove(pieceId);
+
+			// Get angle
+			unsigned int angleId = 0;
+			for (; angleId < this->originalProblem->getItem(pieceId)->getAngleCount(); angleId++)
+			if (this->originalProblem->getItem(pieceId)->getAngleValue(angleId) == clPiece.angle)
+				break;
+
+			// Create cluster item object
+			RasterPackingClusterItem rasterClusterItem(clPiece.pieceName, pieceId, angleId, QPoint(qRound(clPiece.offset.x()*scale), qRound(clPiece.offset.y()*scale)));
+			translatedCluster.push_back(rasterClusterItem);
+		}
+		clustersMap.insert(originalPieceId, translatedCluster);
+	}
+	return true;
+}
+
+void RasterPackingClusterProblem::convertSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {
+	RASTERVORONOIPACKING::RasterPackingSolution oldSolution = solution;
+	solution.reset(this->originalProblem->count());
+
+	// Recreate solution
+	for (QMap<int, RasterPackingCluster>::iterator it = clustersMap.begin(); it != clustersMap.end(); it++) {
+		RASTERVORONOIPACKING::RasterPackingCluster currCluster = *it;
+		if (currCluster.length() != 1) {
+			foreach(RASTERVORONOIPACKING::RasterPackingClusterItem item, currCluster) {
+				// Rotate offset
+				int clusterAngle = getItem(it.key())->getAngleValue(oldSolution.getOrientation(it.key()));
+				QPoint newOffset = QTransform().rotate(clusterAngle).map(item.offset);
+
+				// Get new angle
+				int newAngle = (this->originalProblem->getItem(item.id)->getAngleValue(item.angle) + clusterAngle) % 360;
+				// Find corrresponding orientation
+				int newOrientation = this->originalProblem->getItem(item.id)->getOrientationFromAngle(newAngle);
+				if (newOrientation == -1) {
+					// Find mirror rotation
+					for (int i = 0; i < this->originalProblem->getItem(item.id)->getAngleCount(); i++) {
+						if ((qAbs(newAngle - 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))
+							|| ((newAngle + 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))) {
+							newOrientation = i;
+							newAngle = this->originalProblem->getItem(item.id)->getAngleValue(i);
+							break;
+						}
+					}
+					Q_ASSERT(newOrientation != -1);
+					// Get item bounding box
+					int minX, minY, maxX, maxY;
+					this->originalProblem->getItem(item.id)->getBoundingBox(minX, maxX, minY, maxY);
+					// Adjust offset to match mirror position
+					newOffset = newOffset - QTransform().scale(this->originalProblem->getScale(), this->originalProblem->getScale()).rotate(newAngle).map(QPoint(maxX + minX, maxY + minY));
+				}
+
+				// Set position and orientation
+				solution.setPosition(item.id, oldSolution.getPosition(it.key()) + newOffset);
+				solution.setOrientation(item.id, newOrientation);
+			}
+			continue;
+		}
+		solution.setPosition(currCluster.first().id, oldSolution.getPosition(it.key()));
+		solution.setOrientation(currCluster.first().id, oldSolution.getOrientation(it.key()));
 	}
 }

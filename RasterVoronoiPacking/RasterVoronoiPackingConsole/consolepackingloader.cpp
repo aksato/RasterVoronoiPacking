@@ -14,7 +14,7 @@ ConsolePackingLoader::ConsolePackingLoader(QObject *parent) {
 }
 
 bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem) {
-	RASTERPREPROCESSING::PackingProblem preProblem;
+	RASTERPACKING::PackingProblem preProblem;
 	if (!preProblem.load(inputFilePath)) {
 		qCritical("Could not open file '%s'!", qPrintable(inputFilePath));
 		return false;
@@ -30,7 +30,7 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTX
 	// Create solution and problem 
 	RASTERVORONOIPACKING::RasterPackingSolution solution;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-	RASTERPREPROCESSING::PackingProblem preProblem;
+	RASTERPACKING::PackingProblem preProblem;
 	GpuMemoryRequirements gpuMemReq;
 	qDebug() << "Program execution started.";
 
@@ -53,7 +53,7 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString zoomedIn
 	// Create solution and problem 
 	RASTERVORONOIPACKING::RasterPackingSolution solution;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-	RASTERPREPROCESSING::PackingProblem preProblem;
+	RASTERPACKING::PackingProblem preProblem;
 	GpuMemoryRequirements gpuMemReq;
 	qDebug() << "Program execution started.";
 

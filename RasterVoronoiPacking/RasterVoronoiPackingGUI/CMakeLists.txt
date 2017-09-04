@@ -34,6 +34,7 @@ set(SRC
 	../common/raster/rasternofitpolygon.cpp
 	../common/raster/rasterinnerfitpolygon.cpp
 	../common/raster/packingthread.cpp
+	../common/raster/packingclusterthread.cpp
 	../common/raster/glsweightset.cpp
 	viewer/graphicsindexedrectitem.cpp
 	viewer/packingitem.cpp
@@ -59,6 +60,7 @@ set(HEADERS
 	../common/raster/rasternofitpolygon.h
 	../common/raster/rasterinnerfitpolygon.h
 	../common/raster/packingthread.h
+	../common/raster/packingclusterthread.h
 	../common/raster/glsweightset.h
 	viewer/graphicsindexedrectitem.h
 	viewer/packingitem.h

@@ -7,6 +7,7 @@
 #include "raster/rasterstrippackingsolvergls.h"
 #include "raster/rasterstrippackingsolverdoublegls.h"
 #include "raster/packingthread.h"
+#include "raster/packingclusterthread.h"
 #include "glsweightviewerdialog.h"
 #include "zoomedmapviewdialog.h"
 #include "runconfigurationsdialog.h"
@@ -62,11 +63,13 @@ private slots:
     void exportSolutionToSvg();
 
 	void switchToOriginalProblem();
+	void updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed);
 
 	void printDensity();
 
 private:
     void createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale);
+	int logposition(qreal value);
 
     Ui::MainWindow *ui;
     std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;
@@ -79,7 +82,8 @@ private:
     ZoomedMapViewDialog zoomedMapViewer;
     GlsWeightViewerDialog weightViewer;
     RunConfigurationsDialog runConfig;
-    PackingThread runThread;
+	PackingThread runThread;
+	PackingClusterThread runClusterThread;
 
     int accContainerShrink;
 	qreal totalArea; qreal containerWidth;

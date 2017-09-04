@@ -34,6 +34,18 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<GlsWeightSet> glsWeights;
 	};
 
+
+	class RasterStripPackingSolverClusterGLS : public RasterStripPackingSolverGLS
+	{
+		friend class MainWindow;
+	public:
+		RasterStripPackingSolverClusterGLS(std::shared_ptr<RasterPackingClusterProblem> _problem) : RasterStripPackingSolverGLS(_problem) {
+			this->clusterProblem = _problem;
+		}
+		void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) { clusterProblem->convertSolution(solution); }
+	private:
+		std::shared_ptr<RasterPackingClusterProblem> clusterProblem;
+	};
 }
 
 #endif // RASTERSTRIPPACKINGSOLVERGLS_H

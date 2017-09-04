@@ -164,7 +164,7 @@ void PackingViewer::createGraphicItems(RASTERPACKING::PackingProblem &problem) {
 
     // Determine scale
     rasterScale = (*problem.crnfpbegin())->getScale(); // FIXME
-    setZoomPosition(logposition(rasterScale));
+    //setZoomPosition(logposition(rasterScale));
     container->setPen(QPen(Qt::black, 1/rasterScale));
     std::for_each(pieces.begin(), pieces.end(), [this](PackingItem *curStatic){
         curStatic->setPen(QPen(Qt::red, 1/this->rasterScale));

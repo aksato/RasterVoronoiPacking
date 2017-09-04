@@ -44,3 +44,11 @@ void RunConfigurationsDialog::setInitialLenght(qreal lenght, qreal step) {
 bool RunConfigurationsDialog::getStripPacking() {
 	return ui->checkBox->isChecked();
 }
+
+bool RunConfigurationsDialog::getCluster() {
+	return ui->checkBox_2->isChecked();
+}
+
+void RunConfigurationsDialog::enableCluster() {
+	ui->checkBox_2->setEnabled(true);
+}

@@ -10,6 +10,7 @@
 #include <QDebug>
 #include <QXmlStreamReader>
 #include <QtSvg/QSvgGenerator>
+#include <QtCore/qmath.h>
 
 using namespace RASTERVORONOIPACKING;
 
@@ -65,6 +66,14 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
 
+	connect(&runClusterThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, int)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, int)));
+	connect(&runClusterThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
+	connect(&runClusterThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
+	connect(&runClusterThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
+	connect(&runClusterThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
+	connect(ui->pushButton_2, SIGNAL(clicked()), &runClusterThread, SLOT(abort()));
+	connect(&runClusterThread, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
+
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
 	connect(ui->pushButton_18, SIGNAL(clicked()), this, SLOT(generateCurrentTotalSearchOverlapMap()));
     connect(ui->pushButton_16, SIGNAL(clicked()), this, SLOT(showZoomedMap()));
@@ -96,6 +105,24 @@ qreal getContainerWidth(RASTERPACKING::PackingProblem &problem) {
 	return maxY - minY;
 }
 
+int MainWindow::logposition(qreal value) {
+	// set minv, ... like above
+	// ...
+
+	// position will be between 0 and 100
+	qreal minp = 0;
+	qreal maxp = 99;
+
+	// The result should be between 100 an 10000000
+	qreal minv = qLn(0.1);
+	qreal maxv = qLn(100);
+
+	// calculate adjustment factor
+	qreal scale = (maxv - minv) / (maxp - minp);
+
+	return (int)((qLn(value) - minv) / scale + minp);
+}
+
 void MainWindow::loadPuzzle() {
 	// TOREMOVE
 
@@ -108,6 +135,7 @@ void MainWindow::loadPuzzle() {
 			originalProblem.load(problem.getOriginalProblem());
 			rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem>(new RASTERVORONOIPACKING::RasterPackingClusterProblem);
 			ui->pushButton_11->setEnabled(true);
+			runConfig.enableCluster();
 		}
 		else rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
 		
@@ -127,6 +155,7 @@ void MainWindow::loadPuzzle() {
         ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
         ui->graphicsView->setStatusBar(ui->statusBar);
         ui->graphicsView->createGraphicItems(problem);
+		ui->graphicsView->setZoomPosition(logposition(rasterProblem->getScale()));
         ui->graphicsView->setFocus();
         ui->pushButton->setEnabled(true);
         ui->pushButton_2->setEnabled(true);
@@ -365,22 +394,51 @@ void MainWindow::executePacking() {
 	if (runConfig.getInitialSolution() == 0) params.setInitialSolMethod(KEEPSOLUTION);
 	if (runConfig.getInitialSolution() == 1) params.setInitialSolMethod(RANDOMFIXED);
 	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
-	runThread.setParameters(params);
-	if (params.getHeuristic() == GLS) 
-		if(!params.isDoubleResolution()) runThread.setSolver(solverGls);
+
+	if (!runConfig.getCluster()) {
+		runThread.setParameters(params);
+		if (params.getHeuristic() == GLS)
+		if (!params.isDoubleResolution()) runThread.setSolver(solverGls);
 		else runThread.setSolver(solverDoubleGls);
-	else runThread.setSolver(solver);
+		else runThread.setSolver(solver);
 
-	// Resize container
-	if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
-		solver->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
-		solverGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
-		if (solverDoubleGls) solverDoubleGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
-		runThread.setInitialSolution(solution);
+		// Resize container
+		if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
+			solver->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+			solverGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+			if (solverDoubleGls) solverDoubleGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+			runThread.setInitialSolution(solution);
+		}
+		ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+
+		runThread.start();
 	}
-	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+	else {
+		if (params.getHeuristic() != GLS) {
+			qDebug() << "Non-GLS unsupported for cluster at the moment!";
+			return;
+		}
 
-    runThread.start();
+		// Create new problem
+		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
+		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS> clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS(clusterProblem));
+		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS> originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(clusterProblem->getOriginalProblem()));
+
+		// Configure Thread
+		runClusterThread.setParameters(params);
+		runClusterThread.setSolver(originalSolverGls, clusterSolverGls);
+
+		// Resize container
+		if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
+			solver->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+			solverGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+			if (solverDoubleGls) solverDoubleGls->updateMapsLength(qRound(runConfig.getLenght()*ui->graphicsView->getScale()), params);
+			runClusterThread.setInitialSolution(solution);
+		}
+		ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+
+		runClusterThread.start();
+	}
 }
 
 void MainWindow::changeContainerWidth() {
@@ -470,6 +528,10 @@ void MainWindow::showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterP
 							" secs. Solution length : " + QString::number((qreal)minLength / rasterProblem->getScale()) + ".");
 	this->solution = solution;
 	showCurrentSolution(solution, minLength);
+	solver->setContainerWidth(minLength, this->solution, params);
+	solverGls->setContainerWidth(minLength, this->solution, params);
+	runConfig.setInitialLenght((qreal)minLength / ui->graphicsView->getScale(), 1.0 / ui->graphicsView->getScale());
+	if (solverDoubleGls) solverDoubleGls->setContainerWidth(minLength, this->solution, params);
 }
 
 void MainWindow::saveSolution() {
@@ -596,15 +658,9 @@ void MainWindow::switchToOriginalProblem() {
 	clusterProblem->convertSolution(solution);
 
 	// Recreate items and container graphics
-	//solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
 	solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
 	solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
 	ui->graphicsView->createGraphicItems(originalProblem); ui->graphicsView->scale(1.0, -1.0);
-	ui->spinBox->setMinimum(0); ui->spinBox->setMaximum(rasterProblem->count() - 1);
-	ui->doubleSpinBox->setSingleStep(1 / ui->graphicsView->getScale());
-	ui->doubleSpinBox_2->setSingleStep(1 / ui->graphicsView->getScale());
-	weightViewer.setWeights(solverGls->getGlsWeights(), solution.getNumItems());
-	runConfig.setInitialLenght((qreal)rasterProblem->getContainerWidth() / ui->graphicsView->getScale(), 1.0 / ui->graphicsView->getScale());
 
 	// Change width
 	solver->setContainerWidth(oldWidth, solution, params);
@@ -615,4 +671,21 @@ void MainWindow::switchToOriginalProblem() {
 	ui->graphicsView->setCurrentSolution(solution);
 	ui->pushButton_11->setEnabled(false);
 	ui->statusBar->showMessage("Switched to original problem (cannot undo!).");
+}
+
+void MainWindow::updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed) {
+	// Create new problem. TODO: Support for double resolution
+	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
+	rasterProblem = clusterProblem->getOriginalProblem();
+	ui->graphicsView->createGraphicItems(originalProblem); ui->graphicsView->scale(1.0, -1.0);
+	ui->graphicsView->recreateContainerGraphics(length);
+	ui->graphicsView->setCurrentSolution(solution);
+	ui->spinBox->setMaximum(rasterProblem->count() - 1);
+
+	// Update solvers
+	solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
+	solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
+
+	// Print to console
+	qDebug() << "Undoing the initial clusters, returning to original problem. Current length:" << length / rasterProblem->getScale() << ". Elapsed time: " << elapsed << " secs";
 }

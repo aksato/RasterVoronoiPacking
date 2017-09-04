@@ -4,6 +4,7 @@
 #include <memory>
 #include "rasterpackingsolution.h"
 #include "rasterstrippackingsolver.h"
+#include "rasterstrippackingsolvergls.h"
 
 #include <QThread>
 #include <QMutex>
@@ -16,7 +17,7 @@ public:
     ~PackingThread();
 
     void setInitialSolution(RASTERVORONOIPACKING::RasterPackingSolution &initialSolution);
-    void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {
+    virtual void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver) {
 		solver =_solver;
 		threadSolution = RASTERVORONOIPACKING::RasterPackingSolution(solver->getNumItems());
 	}
@@ -26,7 +27,7 @@ public:
 	uint getSeed() { return seed; }
 
 protected:
-	void run();
+	virtual void run();
 
 signals:
 	// Basic signals
@@ -50,7 +51,7 @@ signals:
 public slots:
 	void abort();
 
-private:
+protected:
 	uint seed; 
 	bool m_abort; 
     std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;

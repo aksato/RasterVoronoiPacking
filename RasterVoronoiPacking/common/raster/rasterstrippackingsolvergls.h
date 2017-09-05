@@ -42,7 +42,10 @@ namespace RASTERVORONOIPACKING {
 		RasterStripPackingSolverClusterGLS(std::shared_ptr<RasterPackingClusterProblem> _problem) : RasterStripPackingSolverGLS(_problem) {
 			this->clusterProblem = _problem;
 		}
-		void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) { clusterProblem->convertSolution(solution); }
+		void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) { 
+			if (solution.getNumItems() == clusterProblem->getOriginalProblem()->count()) return;
+			clusterProblem->convertSolution(solution);
+		}
 	private:
 		std::shared_ptr<RasterPackingClusterProblem> clusterProblem;
 	};

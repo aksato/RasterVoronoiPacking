@@ -35,7 +35,9 @@ void PackingClusterThread::run() {
 		solver->generateBottomLeftSolution(threadSolution, parameters);
 		curLength = solver->getCurrentWidth();
 		minSuccessfullLength = curLength;
-		emit minimumLenghtUpdated(threadSolution, minSuccessfullLength, 1, 0, seed);
+		bestSolution = threadSolution;
+		clusterSolver->declusterSolution(bestSolution);
+		emit minimumLenghtUpdated(bestSolution, minSuccessfullLength, 1, 0, seed);
 		// Execution the first container reduction
 		curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
 		curLength = qRound(curRealLength);
@@ -55,7 +57,6 @@ void PackingClusterThread::run() {
 			// Decluster!
 			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < parameters.getTimeLimit() * parameters.getClusterFactor() && !reverseCluster) {
 				// Convert solution
-				clusterSolver->declusterSolution(bestSolution);
 				clusterSolver->declusterSolution(threadSolution);
 				solver = originalSolver;
 				originalSolver->setContainerWidth(curLength, threadSolution, parameters);
@@ -69,7 +70,10 @@ void PackingClusterThread::run() {
 			curOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 			if (curOverlap < minOverlap) {
 				minOverlap = curOverlap;
-				if (parameters.isFixedLength()) bestSolution = threadSolution; // Best solution for the minimum overlap problem
+				if (parameters.isFixedLength()) {
+					bestSolution = threadSolution; // Best solution for the minimum overlap problem
+					clusterSolver->declusterSolution(bestSolution);
+				}
 				if (qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) { success = true; break; }
 				worseSolutionsCount = 0;
 			}
@@ -87,7 +91,7 @@ void PackingClusterThread::run() {
 			// Reduce or expand container
 			if (success) {
 				numLoops = 1;
-				bestSolution = threadSolution; minSuccessfullLength = curLength;
+				bestSolution = threadSolution; clusterSolver->declusterSolution(bestSolution); minSuccessfullLength = curLength;
 				curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
 				curLength = qRound(curRealLength);
 				emit minimumLenghtUpdated(bestSolution, minSuccessfullLength, totalItNum, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);

@@ -400,7 +400,6 @@ void MainWindow::executePacking() {
 		runThread.setParameters(params);
 		if (params.getHeuristic() == GLS)
 		if (!params.isDoubleResolution()) runThread.setSolver(solverGls);
-		
 		else runThread.setSolver(solverDoubleGls);
 		else runThread.setSolver(solver);
 

@@ -45,10 +45,17 @@ bool RunConfigurationsDialog::getStripPacking() {
 	return ui->checkBox->isChecked();
 }
 
-bool RunConfigurationsDialog::getCluster() {
-	return ui->checkBox_2->isChecked();
+qreal RunConfigurationsDialog::getClusterFactor() {
+	if (!ui->doubleSpinBox_2->isEnabled()) return -1.0;
+	return ui->doubleSpinBox_2->value();
 }
 
 void RunConfigurationsDialog::enableCluster() {
-	ui->checkBox_2->setEnabled(true);
+	ui->label_6->setEnabled(true);
+	ui->doubleSpinBox_2->setEnabled(true);
+}
+
+void RunConfigurationsDialog::disableCluster() {
+	ui->label_6->setEnabled(false);
+	ui->doubleSpinBox_2->setEnabled(false);
 }

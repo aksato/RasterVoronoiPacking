@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>360</width>
+    <width>372</width>
     <height>376</height>
    </rect>
   </property>
@@ -14,6 +14,22 @@
    <string>Configuration</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="5" column="2">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="maximum">
+      <double>1.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>0.100000000000000</double>
+     </property>
+     <property name="value">
+      <double>0.500000000000000</double>
+     </property>
+    </widget>
+   </item>
    <item row="3" column="2">
     <widget class="QTimeEdit" name="timeEdit">
      <property name="enabled">
@@ -37,7 +53,7 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
+   <item row="6" column="0" colspan="2">
     <widget class="QCheckBox" name="checkBox">
      <property name="enabled">
       <bool>true</bool>
@@ -57,17 +73,13 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Max. worse iterations:</string>
+   <item row="4" column="2">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox">
+     <property name="enabled">
+      <bool>true</bool>
      </property>
-    </widget>
-   </item>
-   <item row="2" column="2">
-    <widget class="QSpinBox" name="spinBox">
      <property name="maximum">
-      <number>9999</number>
+      <double>99999.990000000005239</double>
      </property>
     </widget>
    </item>
@@ -78,6 +90,13 @@
      </property>
      <property name="text">
       <string>Container lenght:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QSpinBox" name="spinBox">
+     <property name="maximum">
+      <number>9999</number>
      </property>
     </widget>
    </item>
@@ -103,33 +122,6 @@
      </item>
     </widget>
    </item>
-   <item row="7" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Initial solution:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="2">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="maximum">
-      <double>99999.990000000005239</double>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="2">
     <widget class="QComboBox" name="comboBox">
      <property name="currentIndex">
@@ -152,6 +144,30 @@
      </item>
     </widget>
    </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Max. worse iterations:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Initial solution:</string>
+     </property>
+    </widget>
+   </item>
    <item row="3" column="0">
     <widget class="QLabel" name="label_4">
      <property name="enabled">
@@ -162,13 +178,13 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QCheckBox" name="checkBox_2">
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_6">
      <property name="enabled">
       <bool>false</bool>
      </property>
      <property name="text">
-      <string>Undo Cluster At Halftime</string>
+      <string>Cluster Time Fraction</string>
      </property>
     </widget>
    </item>

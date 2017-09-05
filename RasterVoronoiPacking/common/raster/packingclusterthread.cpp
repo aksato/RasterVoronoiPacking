@@ -53,7 +53,7 @@ void PackingClusterThread::run() {
 			if (m_abort) break; 
 			
 			// Decluster!
-			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < parameters.getTimeLimit() / 2 && !reverseCluster) {
+			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < parameters.getTimeLimit() * parameters.getClusterFactor() && !reverseCluster) {
 				// Convert solution
 				clusterSolver->declusterSolution(bestSolution);
 				clusterSolver->declusterSolution(threadSolution);

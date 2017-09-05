@@ -395,10 +395,12 @@ void MainWindow::executePacking() {
 	if (runConfig.getInitialSolution() == 1) params.setInitialSolMethod(RANDOMFIXED);
 	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
 
-	if (!runConfig.getCluster()) {
+	params.setClusterFactor(runConfig.getClusterFactor());
+	if (params.getClusterFactor() < 0) {
 		runThread.setParameters(params);
 		if (params.getHeuristic() == GLS)
 		if (!params.isDoubleResolution()) runThread.setSolver(solverGls);
+		
 		else runThread.setSolver(solverDoubleGls);
 		else runThread.setSolver(solver);
 
@@ -685,6 +687,9 @@ void MainWindow::updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPack
 	// Update solvers
 	solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
 	solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
+
+	// Disable cluster execution
+	runConfig.disableCluster();
 
 	// Print to console
 	qDebug() << "Undoing the initial clusters, returning to original problem. Current length:" << length / rasterProblem->getScale() << ". Elapsed time: " << elapsed << " secs";

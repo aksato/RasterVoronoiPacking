@@ -22,10 +22,11 @@ public:
     qreal getLenght();
 	bool getUseCUDA();
 	bool getStripPacking();
-	bool getCluster();
+	qreal getClusterFactor();
 
     void setInitialLenght(qreal lenght, qreal step);
 	void enableCluster();
+	void disableCluster();
 private:
     Ui::RunConfigurationsDialog *ui;
 };

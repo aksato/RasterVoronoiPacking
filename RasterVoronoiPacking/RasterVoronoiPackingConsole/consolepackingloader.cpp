@@ -3,6 +3,7 @@
 #include "raster/rasterpackingsolution.h"
 #include "raster/rasterstrippackingsolvergls.h"
 #include "raster/rasterstrippackingsolverdoublegls.h"
+#include "raster/packingclusterthread.h"
 #include "packingproblem.h"
 #include <QDir>
 #include <QXmlStreamWriter>
@@ -13,13 +14,24 @@ ConsolePackingLoader::ConsolePackingLoader(QObject *parent) {
 	numProcesses = 0;
 }
 
-bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem) {
+bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> *problem) {
 	RASTERPACKING::PackingProblem preProblem;
 	if (!preProblem.load(inputFilePath)) {
 		qCritical("Could not open file '%s'!", qPrintable(inputFilePath));
 		return false;
 	}
-	problem->load(preProblem);
+	if (preProblem.loadClusterInfo(inputFilePath)) {
+		*problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem>(new RASTERVORONOIPACKING::RasterPackingClusterProblem);
+		qDebug() << "Cluster problem detected.";
+	}
+	else {
+		*problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
+		if (algorithmParamsBackup.getClusterFactor() > 0) {
+			algorithmParamsBackup.setClusterFactor(-1.0);
+			qWarning() << "Cluster problem not detected, ignoring cluster factor value.";
+		}
+	}
+	(*problem)->load(preProblem);
 	return true;
 }
 
@@ -39,8 +51,7 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTX
 	qDebug() << "Input file:" << inputFilePath;
 	QString originalPath = QDir::currentPath();
 	QDir::setCurrent(QFileInfo(inputFilePath).absolutePath());
-	problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-	loadInputFile(inputFilePath, problem);
+	loadInputFile(inputFilePath, &problem);
 	QDir::setCurrent(originalPath);
 	qDebug() << "Problem file read successfully";
 }
@@ -63,21 +74,37 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString zoomedIn
 	qDebug() << "Zoom Input file:" << zoomedInputFilePath;
 	QString originalPath = QDir::currentPath();
 	QDir::setCurrent(QFileInfo(inputFilePath).absolutePath());
-	problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-	loadInputFile(inputFilePath, problem);
+	loadInputFile(inputFilePath, &problem);
 	QDir::setCurrent(QFileInfo(zoomedInputFilePath).absolutePath());
-	zoomProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-	loadInputFile(zoomedInputFilePath, zoomProblem);
+	loadInputFile(zoomedInputFilePath, &zoomProblem);
 	QDir::setCurrent(originalPath);
 	qDebug() << "Problem file read successfully";
 }
 
 void ConsolePackingLoader::run() {
+	std::shared_ptr<PackingThread> threadedPacker;
+
 	// Create solver object
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-	if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));
-	else solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(problem, zoomProblem));
-
+	bool clusterExecution = algorithmParamsBackup.getClusterFactor() > 0;
+	if (!clusterExecution) {
+		if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));
+		else solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(problem, zoomProblem));
+		threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
+		threadedPacker->setSolver(solver);
+	}
+	else {
+		// Create new problem
+		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem);
+		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS> clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS(clusterProblem));
+		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS> originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(clusterProblem->getOriginalProblem()));
+		// Configure Thread
+		threadedPacker = std::shared_ptr<PackingClusterThread>(new PackingClusterThread);
+		std::shared_ptr<PackingClusterThread> threadedClusterPacker = std::dynamic_pointer_cast<PackingClusterThread>(threadedPacker);
+		threadedClusterPacker->setSolver(originalSolverGls, clusterSolverGls);
+		connect(&*threadedClusterPacker, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
+	}
+	
 	// Resize container to initial length
 	RASTERVORONOIPACKING::RasterPackingSolution solution = RASTERVORONOIPACKING::RasterPackingSolution(problem->count());
 	qreal length;
@@ -88,16 +115,13 @@ void ConsolePackingLoader::run() {
 	}
 
 	// Configure packer object
-	std::shared_ptr<PackingThread> threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
 	threadVector.push_back(threadedPacker);
 	connect(&*threadedPacker, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(printExecutionStatus(int, int, int, qreal, qreal, qreal)));
 	qRegisterMetaType<RASTERVORONOIPACKING::RasterPackingSolution>("RASTERVORONOIPACKING::RasterPackingSolution");
 	connect(&*threadedPacker, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), SLOT(saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
 	connect(&*threadedPacker, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), SLOT(saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(&*threadedPacker, SIGNAL(finished()), SLOT(threadFinished()));
-
 	threadedPacker->setParameters(algorithmParamsBackup);
-	threadedPacker->setSolver(solver);
 
 	// Print configurations
 	qDebug() << "Solver configured. The following parameters were set:";
@@ -109,7 +133,7 @@ void ConsolePackingLoader::run() {
 	qDebug() << "Minimum overlap placement heuristic:" << algorithmParamsBackup.getPlacementCriteria();
 	if (!algorithmParamsBackup.isFixedLength()) qDebug() << "Strip packing version";
 	qDebug() << "Solver parameters: Nmo =" << algorithmParamsBackup.getNmo() << "; Time Limit:" << algorithmParamsBackup.getTimeLimit();
-
+	if (algorithmParamsBackup.getClusterFactor() > 0) qDebug() << "Cluster factor:" << algorithmParamsBackup.getClusterFactor();
 	numProcesses++;
 	// Run!
 	threadedPacker->start();
@@ -151,6 +175,11 @@ void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterP
 	saveXMLSolution(solution, minLength, threadSeed);
 }
 
+void ConsolePackingLoader::updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed) {
+	// Print to console
+	std::cout << "\n" << "Undoing the initial clusters, returning to original problem. Current length:" << length / problem->getScale() << ". Elapsed time: " << elapsed << " secs" << "\n";
+}
+
 void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, int length, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, uint seed) {
 	if (algorithmParamsBackup.isFixedLength()) 
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << totalTime;
@@ -182,7 +211,9 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		stream.writeStartElement("layouts");
 		for (QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>>::iterator it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
 			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> curSolution = (*it).first;
-			curSolution->save(stream, problem, (*it).second, true, seed);
+			if (algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count())
+				curSolution->save(stream, std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem(), (*it).second, true, seed);
+			else curSolution->save(stream, problem, (*it).second, true, seed);
 		}
 		stream.writeEndElement(); // layouts
 		file.close();

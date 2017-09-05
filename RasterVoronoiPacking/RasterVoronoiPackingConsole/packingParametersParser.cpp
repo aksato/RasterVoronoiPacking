@@ -35,6 +35,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(valueNumThreads);
 	const QCommandLineOption placementMethod("placement", "Criteria for choosing positions when there are multiple minimum values (debug). Choices: bottomleft, random, limits and contour.", "type");
 	parser.addOption(placementMethod);
+	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value");
+	parser.addOption(valueCluster);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -206,6 +208,20 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		if (methodType == "contour") params->placementType = Pos_Contour;
 	}
 	else params->placementType = Pos_BottomLeft;
+
+	if (parser.isSet(valueCluster)) {
+		const QString clusterString = parser.value(valueCluster);
+		bool ok;
+		const float clusterFactor = clusterString.toFloat(&ok);
+		if (ok && clusterFactor >= 0 && clusterFactor <=1.0) {
+			params->clusterFactor = clusterFactor;
+		}
+		else {
+			*errorMessage = "Bad cluster factor value.";
+			return CommandLineError;
+		}
+	}
+	else params->clusterFactor = -1.0;
 
     return CommandLineOk;
 }

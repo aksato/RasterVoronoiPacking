@@ -517,7 +517,7 @@ void processXMLCommands(QStringList &commands, QXmlStreamWriter &stream) {
     }
 }
 
-bool PackingProblem::save(QString fileName) {
+bool PackingProblem::save(QString fileName, QString clusterInfo) {
     QFile file(fileName);
     if(!file.open(QIODevice::WriteOnly)) {
         qCritical() << "Error: Cannot create output file" << fileName << ": " << qPrintable(file.errorString());
@@ -603,6 +603,9 @@ bool PackingProblem::save(QString fileName) {
         stream.writeEndElement(); // raster
     }
 
+	// Write cluster info (optional). FIXME: Temporary fix.
+	if (clusterInfo != "") saveClusterInfo(stream, clusterInfo);
+
     stream.writeEndElement(); // nesting
     stream.writeEndDocument();
     file.close();
@@ -657,5 +660,48 @@ bool PackingProblem::loadClusterInfo(QString fileName) {
 	file.close();
 
 	if (clusteredPieces.isEmpty()) return false;
+	return true;
+}
+
+bool PackingProblem::saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfoFname) {
+	QFile file(clusterInfoFname);
+	if (!file.open(QFile::ReadOnly | QFile::Text)) {
+		qCritical() << "Error: Cannot read file"
+			<< ": " << qPrintable(file.errorString());
+		return false;
+	}
+
+	CLUSTERING::Cluster currentCluster;
+	QXmlStreamReader xml;
+	xml.setDevice(&file);
+	while (!xml.atEnd() && (xml.name() != "clusters" || xml.tokenType() != QXmlStreamReader::StartElement)) xml.readNext();
+	stream.writeStartElement("clusters");
+	stream.writeAttribute("originalProblem", xml.attributes().value("originalProblem").toString());
+	while (!xml.atEnd() && (xml.name() != "clusters" || xml.tokenType() != QXmlStreamReader::EndElement)) {
+		xml.readNext();
+		if (xml.name() == "cluster" && xml.tokenType() == QXmlStreamReader::StartElement) {
+			stream.writeStartElement("cluster");
+			stream.writeAttribute("id", xml.attributes().value("id").toString());
+		}
+		if (xml.name() == "cluster" && xml.tokenType() == QXmlStreamReader::EndElement) stream.writeEndElement(); // cluster
+
+		if (xml.name() == "piece" && xml.tokenType() == QXmlStreamReader::StartElement) {
+			stream.writeStartElement("piece");
+			stream.writeAttribute("id", xml.attributes().value("id").toString());
+			stream.writeAttribute("angle", xml.attributes().value("angle").toString());
+			stream.writeAttribute("xOffset", xml.attributes().value("xOffset").toString());
+			stream.writeAttribute("yOffset", xml.attributes().value("yOffset").toString());
+			stream.writeEndElement(); // piece
+		}
+	}
+	stream.writeEndElement(); // clusters
+
+	if (xml.hasError()) {
+		// do error handling
+		return false;
+	}
+
+	file.close();
+
 	return true;
 }

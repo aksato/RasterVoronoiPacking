@@ -105,6 +105,8 @@ int main(int argc, char *argv[])
             }
             QFileInfo optionsFileInfo(params.optionsFile);
             QDir::setCurrent(optionsFileInfo.absolutePath());
+
+			if (params.clusterInfoFile != "") params.clusterInfoFile = QDir(optionsFileInfo.absolutePath()).filePath(params.clusterInfoFile);
         }
     }
 
@@ -228,7 +230,7 @@ int main(int argc, char *argv[])
 	qDebug() << "Max distance determination finished." << problem.getNofitPolygonsCount() << "polygons processed in" << myTimer.elapsed()/1000.0 << "seconds";
 
 	for(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator it = problem.rnfpbegin(); it != problem.rnfpend(); it++) (*it)->setMaxD(maxD);
-	problem.save(params.outputDir + "/" + params.outputXMLName);
+	problem.save(params.outputDir + "/" + params.outputXMLName, params.clusterInfoFile);
 
 	qDebug() << "Final distance transformation started.";
 	myTimer.start();

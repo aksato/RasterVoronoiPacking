@@ -30,6 +30,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	parser.addOption(valueInnerFitEps);
 	const QCommandLineOption boolNoOverlap("nooverlap", "Creates nofit polygons with contour (guarantees no overlap).");
 	parser.addOption(boolNoOverlap);
+	const QCommandLineOption nameClusterInfoFile("cluster-info", "XML formatted cluster information.", "fileName");
+	parser.addOption(nameClusterInfoFile);;
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -137,6 +139,12 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 
 	if (parser.isSet(boolNoOverlap)) params->noOverlap = true;
 	else  params->noOverlap = false;
+
+	if (parser.isSet(nameClusterInfoFile)) {
+		const QString clusterInfoFile = parser.value(nameClusterInfoFile);
+		params->clusterInfoFile = clusterInfoFile;
+	}
+	else params->clusterInfoFile = "";
 
     const QStringList positionalArguments = parser.positionalArguments();
     if (positionalArguments.isEmpty() || positionalArguments.size() == 1) {
@@ -258,6 +266,11 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 				*errorMessage = "Bad no overlap value.";
 				return CommandLineError;
 			}
+		}
+
+		if (line.at(0).toLower().trimmed() == "cluster-info") { // FIXME: Assign default value?
+			const QString clusterInfoFile = line.at(1).trimmed();
+			params->clusterInfoFile = clusterInfoFile;
 		}
     }
 

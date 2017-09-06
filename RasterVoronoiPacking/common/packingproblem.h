@@ -8,6 +8,7 @@
 #include<QStringList>
 #include<QDebug>
 #include<QImage>
+#include<QXmlStreamWriter>
 
 namespace POLYBOOLEAN {
 	struct PAREA;
@@ -211,7 +212,7 @@ namespace RASTERPACKING {
         bool load(QString fileName);
 		bool load(QString fileName, QString fileType, qreal scale = 1.0, qreal auxScale = 1.0);
 		bool loadClusterInfo(QString fileName);
-        bool save(QString fileName);
+        bool save(QString fileName, QString clusterInfo = "");
 		qreal getTotalItemsArea();
 
         void setName(QString _name) {this->name = _name;}
@@ -277,6 +278,7 @@ namespace RASTERPACKING {
 
     private:
 		bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
+		bool saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfoFname);
 
         QString name, author, date, description;
 

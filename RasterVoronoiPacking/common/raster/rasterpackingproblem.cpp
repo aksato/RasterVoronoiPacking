@@ -203,32 +203,43 @@ void RasterPackingClusterProblem::convertSolution(RASTERVORONOIPACKING::RasterPa
 			foreach(RASTERVORONOIPACKING::RasterPackingClusterItem item, currCluster) {
 				// Rotate offset
 				int clusterAngle = getItem(it.key())->getAngleValue(oldSolution.getOrientation(it.key()));
-				QPoint newOffset = QTransform().rotate(clusterAngle).map(item.offset);
+				QPointF newOffset = QTransform().rotate(clusterAngle).map(item.offset);
 
 				// Get new angle
 				int newAngle = (this->originalProblem->getItem(item.id)->getAngleValue(item.angle) + clusterAngle) % 360;
 				// Find corrresponding orientation
 				int newOrientation = this->originalProblem->getItem(item.id)->getOrientationFromAngle(newAngle);
 				if (newOrientation == -1) {
-					// Find mirror rotation
-					for (int i = 0; i < this->originalProblem->getItem(item.id)->getAngleCount(); i++) {
-						if ((qAbs(newAngle - 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))
-							|| ((newAngle + 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))) {
-							newOrientation = i;
-							newAngle = this->originalProblem->getItem(item.id)->getAngleValue(i);
-							break;
+					// Find mirror rotation. FIXME: Only works with increments of 90 degrees
+					if (this->originalProblem->getItem(item.id)->getAngleCount() == 1) newOrientation = 0;
+					else {
+						for (int i = 0; i < this->originalProblem->getItem(item.id)->getAngleCount(); i++) {
+							if ((qAbs(newAngle - 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))
+								|| ((newAngle + 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))) {
+								newOrientation = i;
+								break;
+							}
 						}
 					}
 					Q_ASSERT(newOrientation != -1);
+					newAngle = this->originalProblem->getItem(item.id)->getAngleValue(newOrientation);
+
 					// Get item bounding box
 					int minX, minY, maxX, maxY;
 					this->originalProblem->getItem(item.id)->getBoundingBox(minX, maxX, minY, maxY);
-					// Adjust offset to match mirror position
-					newOffset = newOffset - QTransform().scale(this->originalProblem->getScale(), this->originalProblem->getScale()).rotate(newAngle).map(QPoint(maxX + minX, maxY + minY));
+
+					// Determine offset of the reference point
+					int deltaAngle = (this->originalProblem->getItem(item.id)->getAngleValue(item.angle) + clusterAngle) - newAngle;
+					QPointF center = QPointF(maxX - minX, maxY - minY) / 2 + QPointF(minX, minY);
+					QPointF referencePointsOffset = -QTransform().translate(center.x(), center.y()).rotate(deltaAngle).map(-center);
+
+					// Adjust offset to match mirror posvisuition
+					newOffset = newOffset + QTransform().scale(this->originalProblem->getScale(), this->originalProblem->getScale()).rotate(newAngle).map(referencePointsOffset);
 				}
 
 				// Set position and orientation
-				solution.setPosition(item.id, oldSolution.getPosition(it.key()) + newOffset);
+				QPoint newOffSetGrid = QPoint(qRound(newOffset.x()), qRound(newOffset.y()));
+				solution.setPosition(item.id, oldSolution.getPosition(it.key()) + newOffSetGrid);
 				solution.setOrientation(item.id, newOrientation);
 			}
 			continue;

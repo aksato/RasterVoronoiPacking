@@ -33,6 +33,20 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<RasterPackingProblem> searchProblem;
 	};
 
+	class RasterStripPackingSolverClusterDoubleGLS : public RasterStripPackingSolverDoubleGLS
+	{
+		friend class MainWindow;
+	public:
+		RasterStripPackingSolverClusterDoubleGLS(std::shared_ptr<RasterPackingClusterProblem> _problem, std::shared_ptr<RasterPackingClusterProblem> _searchProblem) : RasterStripPackingSolverDoubleGLS(_problem, _searchProblem) {
+			this->clusterProblem = _problem;
+		}
+		void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {
+			if (solution.getNumItems() == clusterProblem->getOriginalProblem()->count()) return;
+			clusterProblem->convertSolution(solution);
+		}
+	private:
+		std::shared_ptr<RasterPackingClusterProblem> clusterProblem;
+	};
 }
 
 #endif // RASTERSTRIPPACKINGSOLVERDOUBLEGLS_H

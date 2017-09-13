@@ -60,6 +60,8 @@ namespace RASTERVORONOIPACKING {
 		// --> Guided Local Search functions
 		void updateWeights(RasterPackingSolution &solution, RasterStripPackingParameters &params) {}
 		void resetWeights() {}
+		// Cluster only function
+		virtual void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {};
 
 	protected:
 		virtual void updateMapsLength(int pixelWidth, RasterStripPackingParameters &params);
@@ -88,7 +90,6 @@ namespace RASTERVORONOIPACKING {
 		TotalOverlapMapSet maps;
 		int minimumOriginalIfpWidth;
 	};
-
 }
 
 #endif // RASTERSTRIPPACKINGSOLVER_H

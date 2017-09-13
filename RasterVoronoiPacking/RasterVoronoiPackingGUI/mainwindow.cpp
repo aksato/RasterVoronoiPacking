@@ -192,7 +192,14 @@ void MainWindow::loadZoomedPuzzle() {
     QDir::setCurrent(QFileInfo(fileName).absolutePath());
     RASTERPACKING::PackingProblem problem;
     if(problem.load(fileName)) {
-        rasterZoomedProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
+
+		if (problem.loadClusterInfo(fileName)) rasterZoomedProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem>(new RASTERVORONOIPACKING::RasterPackingClusterProblem);
+		else {
+			ui->pushButton_11->setEnabled(false);
+			runConfig.disableCluster();
+			rasterZoomedProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
+		}
+        //rasterZoomedProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
         rasterZoomedProblem->load(problem);
         
 		solverDoubleGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(rasterProblem, rasterZoomedProblem));
@@ -420,10 +427,21 @@ void MainWindow::executePacking() {
 			return;
 		}
 
-		// Create new problem
-		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS> clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS(clusterProblem));
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS> originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(clusterProblem->getOriginalProblem()));
+		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> clusterSolverGls;
+		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> originalSolverGls;
+		if (params.isDoubleResolution()) {
+			// Create new problems
+			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
+			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterSearchProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterZoomedProblem);
+			clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS(clusterProblem, clusterSearchProblem));
+			originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
+		}
+		else {
+			// Create new problem
+			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
+			clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS(clusterProblem));
+			originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(clusterProblem->getOriginalProblem()));
+		}
 
 		// Configure Thread
 		runClusterThread.setParameters(params);
@@ -653,7 +671,7 @@ void MainWindow::switchToOriginalProblem() {
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
 	int oldWidth = solver->getCurrentWidth();
 	rasterProblem = clusterProblem->getOriginalProblem();
-
+	if (solverDoubleGls) rasterZoomedProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterZoomedProblem)->getOriginalProblem();
 	// Recreate solution
 	ui->graphicsView->getCurrentSolution(solution);
 	clusterProblem->convertSolution(solution);
@@ -661,11 +679,13 @@ void MainWindow::switchToOriginalProblem() {
 	// Recreate items and container graphics
 	solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
 	solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
+	if (solverDoubleGls) solverDoubleGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(rasterProblem, rasterZoomedProblem));
 	ui->graphicsView->createGraphicItems(originalProblem); ui->graphicsView->scale(1.0, -1.0);
 
 	// Change width
 	solver->setContainerWidth(oldWidth, solution, params);
 	solverGls->setContainerWidth(oldWidth, solution, params);
+	if (solverDoubleGls) solverDoubleGls->setContainerWidth(oldWidth, solution, params);
 	ui->graphicsView->recreateContainerGraphics(oldWidth);
 
 	// Update ui
@@ -678,6 +698,7 @@ void MainWindow::updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPack
 	// Create new problem. TODO: Support for double resolution
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
 	rasterProblem = clusterProblem->getOriginalProblem();
+	if (solverDoubleGls) rasterZoomedProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterZoomedProblem)->getOriginalProblem();
 	ui->graphicsView->createGraphicItems(originalProblem); ui->graphicsView->scale(1.0, -1.0);
 	ui->graphicsView->recreateContainerGraphics(length);
 	ui->graphicsView->setCurrentSolution(solution);
@@ -686,6 +707,7 @@ void MainWindow::updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPack
 	// Update solvers
 	solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
 	solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
+	if (solverDoubleGls) solverDoubleGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(rasterProblem, rasterZoomedProblem));
 
 	// Disable cluster execution
 	runConfig.disableCluster();

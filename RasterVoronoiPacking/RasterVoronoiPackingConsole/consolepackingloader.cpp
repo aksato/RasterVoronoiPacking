@@ -35,9 +35,9 @@ bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<
 	return true;
 }
 
-void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams) {
+void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams, bool appendSeed) {
 	// FIXME: Is it necessary?
-	algorithmParamsBackup.Copy(algorithmParams); this->outputTXTFile = outputTXTFile; this->outputXMLFile = outputXMLFile;
+	algorithmParamsBackup.Copy(algorithmParams); this->outputTXTFile = outputTXTFile; this->outputXMLFile = outputXMLFile; this->appendSeedToOutputFiles = appendSeed;
 
 	// Create solution and problem 
 	RASTERVORONOIPACKING::RasterPackingSolution solution;
@@ -57,9 +57,9 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTX
 }
 
 // Create problem objects and initial solution using given parameters
-void ConsolePackingLoader::setParameters(QString inputFilePath, QString zoomedInputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams) {
+void ConsolePackingLoader::setParameters(QString inputFilePath, QString zoomedInputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams, bool appendSeed) {
 	// FIXME: Is it necessary?
-	algorithmParamsBackup.Copy(algorithmParams); this->outputTXTFile = outputTXTFile; this->outputXMLFile = outputXMLFile;
+	algorithmParamsBackup.Copy(algorithmParams); this->outputTXTFile = outputTXTFile; this->outputXMLFile = outputXMLFile; this->appendSeedToOutputFiles = appendSeed;
 
 	// Create solution and problem 
 	RASTERVORONOIPACKING::RasterPackingSolution solution;
@@ -159,8 +159,15 @@ void ConsolePackingLoader::printExecutionStatus(int curLength, int totalItNum, i
 		". It: " << totalItNum << " (" << worseSolutionsCount << "). Min overlap: " << minOverlap / zoomProblem->getScale() << ". Time: " << elapsed << " s.";
 }
 
+QString getSeedAppendedString(QString originalString, uint seed) {
+	QFileInfo fileInfo(originalString);
+	QString newFileName = fileInfo.baseName() + "_" + QString::number(seed) + "." + fileInfo.suffix();
+	return QDir(QFileInfo(originalString).path()).filePath(newFileName);
+}
+
 void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elapsed, uint threadSeed) {
-	QFile file(outputTXTFile);
+	QString processedOutputTXTFile = appendSeedToOutputFiles ? getSeedAppendedString(outputTXTFile, threadSeed) : outputTXTFile;
+	QFile file(processedOutputTXTFile);
 	if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << outputTXTFile << ": " << qPrintable(file.errorString());
 	QTextStream out(&file);
 	if (!algorithmParamsBackup.isDoubleResolution())
@@ -198,10 +205,14 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << length / problem->getScale() << ". Elapsed time:" << totalTime;
 	writeNewLength(length, totalIt, totalTime, seed);
 
+	// Determine output file names
+	QString processedOutputTXTFile = appendSeedToOutputFiles ? getSeedAppendedString(outputTXTFile, seed) : outputTXTFile;
+	QString processedOutputXMLFile = appendSeedToOutputFiles ? getSeedAppendedString(outputXMLFile, seed) : outputXMLFile;
+
 	// Print fixed container final result to file
 	if (algorithmParamsBackup.isFixedLength()) {
-		QFile file(outputTXTFile);
-		if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << outputTXTFile << ": " << qPrintable(file.errorString());
+		QFile file(processedOutputTXTFile);
+		if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << processedOutputTXTFile << ": " << qPrintable(file.errorString());
 		QTextStream out(&file);
 		if (!algorithmParamsBackup.isDoubleResolution())
 			out << problem->getScale() << " - " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
@@ -211,9 +222,9 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	}
 
 	// Print solutions collection xml file
-	QFile file(outputXMLFile);
+	QFile file(processedOutputXMLFile);
 	if (!file.open(QIODevice::WriteOnly))
-		qCritical() << "Error: Cannot create output file" << outputXMLFile << ": " << qPrintable(file.errorString());
+		qCritical() << "Error: Cannot create output file" << processedOutputXMLFile << ": " << qPrintable(file.errorString());
 	else {
 		QXmlStreamWriter stream;
 		stream.setDevice(&file);

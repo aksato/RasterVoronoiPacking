@@ -22,8 +22,8 @@ class ConsolePackingLoader : public QObject
 public:
 	explicit ConsolePackingLoader(QObject *parent = 0);
 
-	void setParameters(QString inputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams);
-	void setParameters(QString inputFilePath, QString zoomedInputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams);
+	void setParameters(QString inputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams, bool appendSeed = false);
+	void setParameters(QString inputFilePath, QString zoomedInputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams, bool appendSeed = false);
 	//void run(PackingThread &threadedPacker);
 	void run();
 
@@ -44,6 +44,7 @@ private:
 	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParamsBackup;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, zoomProblem;
 	QString outputTXTFile, outputXMLFile;
+	bool appendSeedToOutputFiles;
 	int numProcesses;
 	QVector<std::shared_ptr<PackingThread>> threadVector;
 	QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>> solutionsCompilation;

@@ -16,6 +16,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.addOption(nameOutputTXT);
     const QCommandLineOption nameOutputXML(QStringList() << "layout", "The output layout XML file name.", "name");
     parser.addOption(nameOutputXML);
+	const QCommandLineOption boolOutputSeed("appendseed", "Automatically append seed value to output file names.");
+	parser.addOption(boolOutputSeed);
 
     const QCommandLineOption typeMethod("method", "Raster packing method choices: default, gls, zoom, zoomgls.", "type");
     parser.addOption(typeMethod);
@@ -80,7 +82,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
         params->outputXMLFile = outputName;
     }
     else params->outputXMLFile = "bestSol.xml";
-
+	params->appendSeedToOutputFiles = parser.isSet(boolOutputSeed);
 
     if (parser.isSet(typeMethod)) {
         const QString methodType = parser.value(typeMethod).toLower();

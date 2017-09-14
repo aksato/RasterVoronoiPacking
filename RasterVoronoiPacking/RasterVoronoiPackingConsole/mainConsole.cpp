@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
 	}
 	algorithmParams.setClusterFactor(params.clusterFactor);
 
-	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams);
-	else packingLoader.setParameters(params.inputFilePath, params.zoomedInputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams);
+	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
+	else packingLoader.setParameters(params.inputFilePath, params.zoomedInputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
 
 	if (params.numThreads > 1) qDebug() << "Multithreaded version:" << params.numThreads << "parallel executions.";
 	for (int i = 0; i < params.numThreads; i++) {

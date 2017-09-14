@@ -27,6 +27,7 @@ struct ConsolePackingArgs {
 
     bool originalContainerLenght;
 	bool stripPacking;
+	bool appendSeedToOutputFiles;
 
 	int numThreads;
 };

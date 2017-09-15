@@ -162,19 +162,17 @@ void ConsolePackingLoader::printExecutionStatus(int curLength, int totalItNum, i
 QString getSeedAppendedString(QString originalString, uint seed) {
 	QFileInfo fileInfo(originalString);
 	QString newFileName = fileInfo.baseName() + "_" + QString::number(seed) + "." + fileInfo.suffix();
-	return QDir(QFileInfo(originalString).path()).filePath(newFileName);
+	return QDir(fileInfo.path()).filePath(newFileName);
 }
 
 void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elapsed, uint threadSeed) {
-	QString processedOutputTXTFile = appendSeedToOutputFiles ? getSeedAppendedString(outputTXTFile, threadSeed) : outputTXTFile;
-	QFile file(processedOutputTXTFile);
-	if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << outputTXTFile << ": " << qPrintable(file.errorString());
-	QTextStream out(&file);
+	QString *threadOutlogContens = outlogContents[threadSeed]; 
+	if (!threadOutlogContens) { threadOutlogContens = new QString; outlogContents.insert(threadSeed, threadOutlogContens); }
+	QTextStream out(threadOutlogContens);
 	if (!algorithmParamsBackup.isDoubleResolution())
 		out << problem->getScale() << " - " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
 	else
 		out << problem->getScale() << " " << zoomProblem->getScale() << " " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
-	file.close();
 }
 
 void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, uint seed) {
@@ -218,6 +216,13 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 			out << problem->getScale() << " - " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
 		else
 			out << problem->getScale() << " " << zoomProblem->getScale() << " " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
+		file.close();
+	}
+	else {
+		QFile file(processedOutputTXTFile);
+		if (!file.open(QIODevice::Append | QIODevice::Text)) qCritical() << "Error: Cannot create output file" << processedOutputTXTFile << ": " << qPrintable(file.errorString());
+		QTextStream out(&file);
+		out << *outlogContents[seed];
 		file.close();
 	}
 

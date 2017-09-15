@@ -44,6 +44,7 @@ private:
 	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParamsBackup;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, zoomProblem;
 	QString outputTXTFile, outputXMLFile;
+	QMap<int, QString*> outlogContents;
 	bool appendSeedToOutputFiles;
 	int numProcesses;
 	QVector<std::shared_ptr<PackingThread>> threadVector;

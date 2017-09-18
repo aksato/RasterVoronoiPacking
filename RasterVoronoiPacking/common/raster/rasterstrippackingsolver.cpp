@@ -254,10 +254,6 @@ qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution
 }
 
 void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-
-	bool error = false;
-
-
 	QVector<int> sequence;
 	for (int i = 0; i < originalProblem->count(); i++) sequence.append(i);
 	std::random_shuffle(sequence.begin(), sequence.end());
@@ -273,14 +269,7 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 		}
 		solution.setOrientation(shuffledId, minAngle);
 		solution.setPosition(shuffledId, minPos);
-
-		// Check if item is inside the ifp
-		QRect ifpRect = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(shuffledId), minAngle)->boundingBox();
-		int curWidth = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(shuffledId), minAngle)->width() - (this->initialWidth - this->currentWidth);
-		ifpRect.setWidth(curWidth);
-		if (!ifpRect.contains(minPos)) error = true;
 	}
-	if (error) qDebug() << "HEEEEY THATS MY FISH!";
 }
 
 // --> Get absolute minimum overlap position

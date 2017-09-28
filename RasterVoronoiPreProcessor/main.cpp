@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
     }
 
 	// Check if cluster original destination path exist
-	if (params.clusterNumber > 0 && !QDir(originalOutputDir).exists()) {
+	if (!params.clusterRankings.isEmpty() && !QDir(originalOutputDir).exists()) {
 		qWarning() << "Cluster original destination folder does not exist. Creating it.";
 		QDir(originalOutputDir).mkpath(originalOutputDir);
 	}
@@ -316,15 +316,15 @@ int main(int argc, char *argv[])
 	problem.load(params.inputFilePath, params.inputFileType, params.puzzleScaleFactor, params.scaleFixFactor);
     if(params.headerFile != "") problem.copyHeader(params.headerFile);
     qDebug() << "Problem file read." << problem.getNofitPolygonsCount() << "nofit polygons read in" << myTimer.elapsed()/1000.0 << "seconds";
-	preProcessProblem(problem, params, params.clusterNumber > 0 ? originalOutputDir : params.outputDir, "");
+	preProcessProblem(problem, params, params.clusterRankings.isEmpty() ? params.outputDir : originalOutputDir, "");
 
-	if (params.clusterNumber > 0) {
+	if (!params.clusterRankings.isEmpty()) {
 		qDebug() << "Clustering finished problem.";
 		qDebug() << "Determining clusters.";
 		CLUSTERING::Clusterizator rasterClusterizator(&problem);
-		QList<CLUSTERING::Cluster> clusters = rasterClusterizator.getBestClusters(params.clusterNumber);
-		for (int i = 0; i < params.clusterNumber; i++) {
-			QString clusterFileName = problem.getName() + "_" + clusters[i].noFitPolygon->getFileName().left(clusters[i].noFitPolygon->getFileName().length() - 4) + "_" + QString::number(i + 1) + "_" + QString::number(clusters[i].clusterValue) + ".svg";
+		QList<CLUSTERING::Cluster> clusters = rasterClusterizator.getBestClusters(params.clusterRankings);
+		for (int i = 0; i < clusters.length(); i++) {
+			QString clusterFileName = problem.getName() + "_" + clusters[i].noFitPolygon->getFileName().left(clusters[i].noFitPolygon->getFileName().length() - 4) + "_" + QString::number(params.clusterRankings[i] + 1) + "_" + QString::number(clusters[i].clusterValue) + ".svg";
 			printCluster(problem, QDir(params.outputDir).filePath(clusterFileName), clusters[i].noFitPolygon, (QList<QPointF>() << clusters[i].orbitingPos));
 		}
 

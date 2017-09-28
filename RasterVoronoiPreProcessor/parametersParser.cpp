@@ -30,7 +30,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	parser.addOption(valueInnerFitEps);
 	const QCommandLineOption boolNoOverlap("nooverlap", "Creates nofit polygons with contour (guarantees no overlap).");
 	parser.addOption(boolNoOverlap);
-	const QCommandLineOption valueCluster("cluster", "Number of clustered items (max. 4).", "clusterValue");
+	const QCommandLineOption valueCluster("cluster", "List of ranks of clustered items given in x;x ... ;x format (max. 4).", "clusterRankings");
 	parser.addOption(valueCluster);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -142,15 +142,19 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 
 	if (parser.isSet(valueCluster)) {
 		const QString valueClusterStr = parser.value(valueCluster);
+		QStringList clusterRankingsStrList = valueClusterStr.split(";");
 		bool ok;
-		const int number = valueClusterStr.toInt(&ok);
-		if (ok && number > 0 && number < 5) params->clusterNumber = number;
-		else {
+		for (auto valStr : clusterRankingsStrList) {
+			const int number = valStr.toInt(&ok);
+			if (!ok) break;
+			if (number > 0 && number < 5) params->clusterRankings.push_back(number-1);
+			else { ok = false; break; }
+		}
+		if (!ok) {
 			*errorMessage = "Bad cluster value.";
 			return CommandLineError;
 		}
 	}
-	else params->clusterNumber = 0;
 
     const QStringList positionalArguments = parser.positionalArguments();
     if (positionalArguments.isEmpty() || positionalArguments.size() == 1) {
@@ -274,11 +278,17 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 			}
 		}
 
-		if (line.at(0).toLower().trimmed() == "cluster") { // FIXME: Assign default value?
-			const QString clusterNumber = line.at(1);
-			const int number = clusterNumber.toInt(&ok);
-			if (ok && number > 0 && number < 5) params->clusterNumber = number;
-			else {
+		if (line.at(0).toLower().trimmed() == "cluster") {
+			const QString valueClusterStr = line.at(1);
+			QStringList clusterRankingsStrList = valueClusterStr.split(";");
+			bool ok;
+			for (auto valStr : clusterRankingsStrList) {
+				const int number = valStr.toInt(&ok);
+				if (!ok) break;
+				if (number > 0 && number < 5) params->clusterRankings.push_back(number - 1);
+				else { ok = false; break; }
+			}
+			if (!ok) {
 				*errorMessage = "Bad cluster value.";
 				return CommandLineError;
 			}

@@ -188,33 +188,17 @@ void Clusterizator::getClusteredProblem(RASTERPACKING::PackingProblem &problem, 
 	}
 }
 
+QList<Cluster> Clusterizator::getBestClusters(QList<int> rankings) {
+	int numClusters = (*std::max_element(rankings.cbegin(), rankings.cend())) + 1;
+	QList<Cluster> bestClusters = getBestClusters(numClusters);
+	std::sort(bestClusters.begin(), bestClusters.end(), [](const Cluster & a, const Cluster & b) -> bool {return a.clusterValue > b.clusterValue; });
+	QList<Cluster> chosenClusters;
+	foreach(int rank, rankings) chosenClusters << bestClusters[rank];
+	return chosenClusters;
+}
+
 QList<Cluster> Clusterizator::getBestClusters(int numClusters) {
 	QList<Cluster> bestClusters;
-	//QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator it = problem->rnfpbegin();
-
-	////for (int i = 0; i < numClusters; i++, it++) {
-	//while(minClusters.length() < numClusters) {
-	//	QPointF minPoint; qreal minVal = getMinimumClusterPosition(*it, minPoint);
-	//	Cluster newCluster(*it, minPoint, minVal);
-	//	if (checkValidClustering(minClusters, newCluster)) minClusters.push_back(newCluster);
-	//	it++;
-	//}
-	//QPair<qreal, int> maxMinClusterVal = getMaximumVal(minClusters);
-
-	//for (; it != problem->rnfpend(); it++) {
-	//	QPointF clusterPos;
-	//	qreal clusterVal = getMinimumClusterPosition(*it, clusterPos);
-	//	if (clusterVal < maxMinClusterVal.first) {
-	//		Cluster removedCluster = minClusters.takeAt(maxMinClusterVal.second);
-	//		Cluster newCluster(*it, clusterPos, clusterVal);
-	//		if (checkValidClustering(minClusters, newCluster)) minClusters.push_back(newCluster);
-	//		else minClusters.push_back(removedCluster);
-	//		maxMinClusterVal = getMaximumVal(minClusters);
-	//	}
-	//}
-	//for (int i = 0; i < numClusters; i ++)
-	//	printCluster("MinBBAreaCluster" + QString::number(i) + ".svg", minClusters[i].noFitPolygon, (QList<QPointF>() << minClusters[i].orbitingPos));
-
 	QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator it = problem->rnfpbegin();
 	QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> pairNoFitPolygons1;
 	while (bestClusters.length() < numClusters && it != problem->rnfpend()) {

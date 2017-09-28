@@ -350,6 +350,7 @@ bool PackingProblem::copyHeader(QString fileName) {
 }
 
 bool PackingProblem::load(QString fileName) {
+	folder = QFileInfo(fileName).absolutePath();
     QFile file(fileName);
      if (!file.open(QFile::ReadOnly | QFile::Text)) {
          qCritical() << "Error: Cannot read file"
@@ -518,6 +519,7 @@ void processXMLCommands(QStringList &commands, QXmlStreamWriter &stream) {
 }
 
 bool PackingProblem::save(QString fileName, QString clusterInfo) {
+	folder = QFileInfo(fileName).absolutePath();
     QFile file(fileName);
     if(!file.open(QIODevice::WriteOnly)) {
         qCritical() << "Error: Cannot create output file" << fileName << ": " << qPrintable(file.errorString());
@@ -663,17 +665,18 @@ bool PackingProblem::loadClusterInfo(QString fileName) {
 	return true;
 }
 
-bool PackingProblem::saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfoFname) {
-	QFile file(clusterInfoFname);
-	if (!file.open(QFile::ReadOnly | QFile::Text)) {
-		qCritical() << "Error: Cannot read file"
-			<< ": " << qPrintable(file.errorString());
-		return false;
-	}
+bool PackingProblem::saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfo) {
+	//QFile file(clusterInfoFname);
+	//if (!file.open(QFile::ReadOnly | QFile::Text)) {
+	//	qCritical() << "Error: Cannot read file"
+	//		<< ": " << qPrintable(file.errorString());
+	//	return false;
+	//}
 
 	CLUSTERING::Cluster currentCluster;
-	QXmlStreamReader xml;
-	xml.setDevice(&file);
+	//QXmlStreamReader xml;
+	//xml.setDevice(&file);
+	QXmlStreamReader xml(clusterInfo);
 	while (!xml.atEnd() && (xml.name() != "clusters" || xml.tokenType() != QXmlStreamReader::StartElement)) xml.readNext();
 	stream.writeStartElement("clusters");
 	stream.writeAttribute("originalProblem", xml.attributes().value("originalProblem").toString());
@@ -701,7 +704,7 @@ bool PackingProblem::saveClusterInfo(QXmlStreamWriter &stream, QString clusterIn
 		return false;
 	}
 
-	file.close();
+	//file.close();
 
 	return true;
 }

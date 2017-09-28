@@ -37,9 +37,35 @@ set(SRC
 	polybool/polybool.cpp
 	polybool/triacons.cpp
 	polybool/triamono.cpp
+	cluster/clusterizator.cpp
 	kernel.cu
 	)
 	
-cuda_add_executable(RasterPackingPreProcessor ${SRC})
+set(HEADERS
+	../RasterVoronoiPacking/common/packingproblem.h
+	parametersParser.h
+	colormap.h
+	annealing/cContainer.h
+	annealing/cPolygon.h
+	annealing/cRectangularContainer.h
+	annealing/cShape.h
+	annealing/cShapeInlines.h
+	annealing/cShapeParameters.h
+	annealing/cShapePlacement.h
+	annealing/cVector.h
+	annealing/problemInstance.h
+	polybool/ObjHeap.h
+	polybool/pbarea.h
+	polybool/pbdefs.h
+	polybool/pbgeom.h
+	polybool/pbimpl.h
+	polybool/pbio.h
+	polybool/pbtria.h
+	polybool/polybool.h
+	polybool/Sort.h
+	cluster/clusterizator.h
+	)
+	
+cuda_add_executable(RasterPackingPreProcessor ${SRC} ${HEADERS})
 
 qt5_use_modules(RasterPackingPreProcessor Core Gui)

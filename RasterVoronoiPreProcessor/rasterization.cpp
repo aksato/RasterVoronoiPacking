@@ -588,6 +588,7 @@ QImage Polygon::getRasterImage(QPoint &RP, qreal scale) {
 }
 
 bool PackingProblem::load(QString fileName, QString fileType, qreal scale, qreal auxScale) {
+	folder = QFileInfo(fileName).absolutePath();
 	if (fileType != "esicup" && fileType != "cfrefp") {
 		QFileInfo info(fileName);
 		if (info.suffix() == "xml") fileType = "esicup";
@@ -666,16 +667,22 @@ void Polygon::fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale) {
 }
 
 bool PackingProblem::loadCFREFP(QString &fileName, qreal scale, qreal auxScale) {
-	std::vector<std::shared_ptr<cShape> > shapes;
-	std::shared_ptr<cRectangularContainer> container;
-
-	FILE *f = fopen(fileName.toUtf8().constData(), "rt");
-	if (f == NULL) {
+	QFile file(fileName);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 		qCritical() << "Puzzle file not found";
 		return false;
 	}
-	container = readProblemInstance(f, shapes, scale);
-	fclose(f);
+	QTextStream f(&file);
+	bool ans = loadCFREFP(f, scale, auxScale);
+	file.close();
+	return ans;
+}
+
+bool PackingProblem::loadCFREFP(QTextStream &stream, qreal scale, qreal auxScale) {
+	std::vector<std::shared_ptr<cShape> > shapes;
+	std::shared_ptr<cRectangularContainer> container;
+
+	container = readProblemInstance(stream, shapes, scale);
 
 	unsigned int polygonid = 0;
 	QString containerName;

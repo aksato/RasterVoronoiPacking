@@ -14,14 +14,15 @@ namespace POLYBOOLEAN {
 	struct PAREA;
 }
 
-typedef QVector<QPointF> PolygonF;
+//typedef QVector<QPointF> PolygonF;
 
 namespace RASTERPACKING {
 
-    class Polygon : public PolygonF {
+	class Polygon : public QPolygonF {
     public:
-        Polygon() : PolygonF() {}
-        Polygon(QString _name) : PolygonF() {this->name = _name;}
+		Polygon() : QPolygonF() {}
+		Polygon(QString _name) : QPolygonF() { this->name = _name; }
+		Polygon(const QVector<QPointF> &points) : QPolygonF(points) {}
         ~Polygon() {}
         QStringList getXML();
         QString getName() {return this->name;}
@@ -211,9 +212,11 @@ namespace RASTERPACKING {
 
         bool load(QString fileName);
 		bool load(QString fileName, QString fileType, qreal scale = 1.0, qreal auxScale = 1.0);
+		bool loadCFREFP(QTextStream &stream, qreal scale, qreal auxScale = 1.0);
 		bool loadClusterInfo(QString fileName);
         bool save(QString fileName, QString clusterInfo = "");
 		qreal getTotalItemsArea();
+		QString getFolder() { return this->folder; }
 
         void setName(QString _name) {this->name = _name;}
         QString getName() {return this->name;}
@@ -248,11 +251,13 @@ namespace RASTERPACKING {
         QList<std::shared_ptr<Piece>>::iterator pend() {return this->pieces.end();}
         QList<std::shared_ptr<Piece>>::const_iterator cpbegin() {return this->pieces.cbegin();}
         QList<std::shared_ptr<Piece>>::const_iterator cpend() {return this->pieces.cend();}
+		QList<std::shared_ptr<Piece>>::iterator erasep(QList<std::shared_ptr<Piece>>::iterator pos) {return this->pieces.erase(pos);}
 
         QList<std::shared_ptr<NoFitPolygon>>::iterator nfpbegin() {return this->nofitPolygons.begin();}
         QList<std::shared_ptr<NoFitPolygon>>::iterator nfpend() {return this->nofitPolygons.end();}
         QList<std::shared_ptr<NoFitPolygon>>::const_iterator cnfpbegin() {return this->nofitPolygons.cbegin();}
         QList<std::shared_ptr<NoFitPolygon>>::const_iterator cnfpend() {return this->nofitPolygons.cend();}
+		QList<std::shared_ptr<NoFitPolygon>>::iterator erasenfp(QList<std::shared_ptr<NoFitPolygon>>::iterator pos) { return this->nofitPolygons.erase(pos); }
 
         QList<std::shared_ptr<InnerFitPolygon>>::iterator ifpbegin() {return this->innerfitPolygons.begin();}
         QList<std::shared_ptr<InnerFitPolygon>>::iterator ifpend() {return this->innerfitPolygons.end();}
@@ -278,9 +283,9 @@ namespace RASTERPACKING {
 
     private:
 		bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
-		bool saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfoFname);
+		bool saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfo);
 
-        QString name, author, date, description;
+        QString name, author, date, description, folder;
 
         QList<std::shared_ptr<Container>> containers;
         QList<std::shared_ptr<Piece>> pieces;

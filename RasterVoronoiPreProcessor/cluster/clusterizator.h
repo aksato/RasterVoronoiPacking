@@ -15,6 +15,7 @@ namespace CLUSTERING {
 	class Clusterizator {
 	public:
 		Clusterizator(RASTERPACKING::PackingProblem *_problem);
+		Clusterizator(RASTERPACKING::PackingProblem *_problem, qreal compressW, qreal intersectW, qreal widthW);
 		~Clusterizator() {}
 		QList<Cluster> getBestClusters(int numClusters);
 		QList<Cluster> getBestClusters(QList<int> rankings);
@@ -34,6 +35,7 @@ namespace CLUSTERING {
 		void insertNewCluster(QList<Cluster> &minClusters, Cluster &candidateCluster, int numClusters);
 		RASTERPACKING::PackingProblem *problem;
 		qreal containerWidth, containerHeight;
+		qreal weight_compression, weight_intersection, weight_width;
 
 		class SimplifiedPuzzleProblem {
 		public:

@@ -30,8 +30,10 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	parser.addOption(valueInnerFitEps);
 	const QCommandLineOption boolNoOverlap("nooverlap", "Creates nofit polygons with contour (guarantees no overlap).");
 	parser.addOption(boolNoOverlap);
-	const QCommandLineOption valueCluster("cluster", "List of ranks of clustered items given in x;x ... ;x format (max. 4).", "clusterRankings");
+	const QCommandLineOption valueCluster("cluster", "List of ranks of clustered items given in x;x ... ;x format.", "clusterRankings");
 	parser.addOption(valueCluster);
+	const QCommandLineOption valueClusterWeight("cluster-weights", "List of weights for the cluster method given in x;x;x format.", "clusterWeights");
+	parser.addOption(valueClusterWeight);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -141,6 +143,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	else  params->noOverlap = false;
 
 	if (parser.isSet(valueCluster)) {
+		params->clusterRankings.clear();
 		const QString valueClusterStr = parser.value(valueCluster);
 		QStringList clusterRankingsStrList = valueClusterStr.split(";");
 		bool ok;
@@ -152,6 +155,24 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 		}
 		if (!ok) {
 			*errorMessage = "Bad cluster value.";
+			return CommandLineError;
+		}
+	}
+
+	if (parser.isSet(valueClusterWeight)) {
+		params->clusterWeights.clear();
+		const QString valueClusterWeightsStr = parser.value(valueClusterWeight);
+		QStringList clusterWeightsStrList = valueClusterWeightsStr.split(";");
+		bool ok = false;
+		if (clusterWeightsStrList.length() == 3) {
+			for (auto valStr : clusterWeightsStrList) {
+				const qreal number = valStr.toDouble(&ok);
+				if (!ok) break;
+				params->clusterWeights.push_back(number);
+			}
+		}
+		if (!ok) {
+			*errorMessage = "Bad cluster weight value.";
 			return CommandLineError;
 		}
 	}
@@ -279,6 +300,7 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 		}
 
 		if (line.at(0).toLower().trimmed() == "cluster") {
+			params->clusterRankings.clear();
 			const QString valueClusterStr = line.at(1);
 			QStringList clusterRankingsStrList = valueClusterStr.split(";");
 			bool ok;
@@ -290,6 +312,24 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 			}
 			if (!ok) {
 				*errorMessage = "Bad cluster value.";
+				return CommandLineError;
+			}
+		}
+
+		if (line.at(0).toLower().trimmed() == "cluster-weights") {
+			params->clusterWeights.clear();
+			const QString valueClusterWeightsStr = line.at(1);
+			QStringList clusterWeightsStrList = valueClusterWeightsStr.split(";");
+			bool ok = false;
+			if (clusterWeightsStrList.length() == 3) {
+				for (auto valStr : clusterWeightsStrList) {
+					const qreal number = valStr.toDouble(&ok);
+					if (!ok) break;
+					params->clusterWeights.push_back(number);
+				}
+			}
+			if (!ok) {
+				*errorMessage = "Bad cluster weight value.";
 				return CommandLineError;
 			}
 		}

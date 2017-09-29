@@ -23,11 +23,13 @@ QPair<qreal, int> getMinimumVal(QList<Cluster> maxClusters) {
 
 QStringList transformPolygon(QStringList &pol, int angle, QPointF displacement) {
 	QPolygonF newPol;
+	bool firstPt = true;
+	QPointF basePoint;
 	QStringList ans;
 	for (QStringList::iterator it = pol.begin(); it != pol.end(); it++) {
 		if ((*it).isEmpty()) {
 			// Adjust basepoint
-			newPol = QTransform().translate(-newPol.first().x(), -newPol.first().y()).map(newPol);
+			newPol = QTransform().translate(-basePoint.x(), -basePoint.y()).map(newPol);
 			newPol = QTransform().translate(displacement.x(), displacement.y()).rotate(angle).map(newPol);
 			foreach(QPointF pt, newPol) ans << QString::number(qRound(pt.x())) + ", " + QString::number(qRound(pt.y()));
 			ans << "";
@@ -37,11 +39,16 @@ QStringList transformPolygon(QStringList &pol, int angle, QPointF displacement) 
 		qreal x, y; char dot;
 		QTextStream(&*it) >> x >> dot >> y;
 		newPol << QPointF(x, y);
+		if (firstPt) basePoint = QPointF(x, y), firstPt = false;
 	}
 	return ans;
 }
 
-Clusterizator::Clusterizator(RASTERPACKING::PackingProblem *_problem) : problem(_problem) {
+Clusterizator::Clusterizator(RASTERPACKING::PackingProblem *_problem) : problem(_problem), weight_compression(COMPRESS_W), weight_intersection(INTERSECT_W), weight_width(WIDTH_W) {
+	Clusterizator(_problem, COMPRESS_W, INTERSECT_W, WIDTH_W);
+}
+
+Clusterizator::Clusterizator(RASTERPACKING::PackingProblem *_problem, qreal compressW, qreal intersectW, qreal widthW) : problem(_problem), weight_compression(compressW), weight_intersection(intersectW), weight_width(widthW) {
 	std::shared_ptr<RASTERPACKING::Container> container = *(problem->ccbegin());
 	std::shared_ptr<RASTERPACKING::Polygon> pol = container->getPolygon();
 	qreal minX = (*pol->begin()).x(); qreal minY = (*pol->begin()).y();
@@ -352,7 +359,7 @@ qreal Clusterizator::getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTER
 	//qreal width = qMin(bb1.left() - bb1.right(), bb2.left() - bb2.right()) / (left - right);
 	qreal width = (right - left) / containerHeight;
 
-	return COMPRESS_W*compressionRate + INTERSECT_W*intArea + WIDTH_W*width;
+	return weight_compression*compressionRate + weight_intersection*intArea + weight_width*width;
 }
 
 void Clusterizator::insertNewCluster(QList<Cluster> &minClusters, Cluster &candidateCluster, int numClusters) {

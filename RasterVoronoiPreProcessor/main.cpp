@@ -321,8 +321,10 @@ int main(int argc, char *argv[])
 	if (!params.clusterRankings.isEmpty()) {
 		qDebug() << "Clustering finished problem.";
 		qDebug() << "Determining clusters.";
-		CLUSTERING::Clusterizator rasterClusterizator(&problem);
-		QList<CLUSTERING::Cluster> clusters = rasterClusterizator.getBestClusters(params.clusterRankings);
+		std::shared_ptr<CLUSTERING::Clusterizator> rasterClusterizator;
+		if(params.clusterWeights.isEmpty()) rasterClusterizator = std::shared_ptr<CLUSTERING::Clusterizator>(new CLUSTERING::Clusterizator(&problem));
+		else rasterClusterizator = std::shared_ptr<CLUSTERING::Clusterizator>(new CLUSTERING::Clusterizator(&problem, params.clusterWeights[0], params.clusterWeights[1], params.clusterWeights[2]));
+		QList<CLUSTERING::Cluster> clusters = rasterClusterizator->getBestClusters(params.clusterRankings);
 		for (int i = 0; i < clusters.length(); i++) {
 			QString clusterFileName = problem.getName() + "_" + clusters[i].noFitPolygon->getFileName().left(clusters[i].noFitPolygon->getFileName().length() - 4) + "_" + QString::number(params.clusterRankings[i] + 1) + "_" + QString::number(clusters[i].clusterValue) + ".svg";
 			printCluster(problem, QDir(params.outputDir).filePath(clusterFileName), clusters[i].noFitPolygon, (QList<QPointF>() << clusters[i].orbitingPos));
@@ -331,11 +333,15 @@ int main(int argc, char *argv[])
 		qDebug() << "Generating clustered problem.";
 		RASTERPACKING::PackingProblem clusterProblem;
 		QList<QString> removedPieces;
-		QString puzzleString = rasterClusterizator.getClusteredPuzzle(params.inputFilePath, clusters, removedPieces);
+		QString puzzleString = rasterClusterizator->getClusteredPuzzle(params.inputFilePath, clusters, removedPieces);
+		
+		QFile file("newpuzzle.txt");
+		if (file.open(QIODevice::WriteOnly)) QTextStream(&file) << puzzleString, file.close();
+
 		myTimer.start();
 		QTextStream puzzleStream(&puzzleString);
 		clusterProblem.loadCFREFP(puzzleStream, params.puzzleScaleFactor, params.scaleFixFactor);
-		QString clusterInfo = rasterClusterizator.getClusterInfo(clusterProblem, clusters, params.outputXMLName, removedPieces);
+		QString clusterInfo = rasterClusterizator->getClusterInfo(clusterProblem, clusters, params.outputXMLName, removedPieces);
 		if (params.headerFile != "") problem.copyHeader(params.headerFile);
 		qDebug() << "Cluster problem file generated." << clusterProblem.getNofitPolygonsCount() << "nofit polygons read in" << myTimer.elapsed() / 1000.0 << "seconds";
 		preProcessProblem(clusterProblem, params, params.outputDir, clusterInfo);

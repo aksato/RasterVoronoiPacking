@@ -45,6 +45,10 @@ int logposition(qreal value) {
    return (int)((qLn(value)-minv) / scale + minp);
 }
 
+void updateOriginBrush(QGraphicsEllipseItem *originItem, qreal scale) {
+	originItem->setRect(-7.5 * scale, -7.5 * scale, 15 * scale, 15 * scale);
+}
+
 PackingViewer::PackingViewer(QWidget *parent) :
     QGraphicsView(parent),
     ui(new Ui::PackingViewer)
@@ -66,6 +70,7 @@ void PackingViewer::setZoomPosition(int pos) {
         scale(1/logslider(this->zoomPosition),1/logslider(this->zoomPosition));
         this->zoomPosition = pos;
         scale(logslider(this->zoomPosition),logslider(this->zoomPosition));
+		updateOriginBrush(originItem, 1/logslider(this->zoomPosition));
         emit zoomChanged(this->zoomPosition);
     }
 }
@@ -89,6 +94,7 @@ void PackingViewer::wheelEvent(QWheelEvent *event)
                 emit zoomChanged(this->zoomPosition);
             }
         }
+		updateOriginBrush(originItem, 1 / logslider(this->zoomPosition));
 //        scaleView(pow((double)2, event->delta() / 240.0));
     }
     else if(event->modifiers() & Qt::ShiftModifier)
@@ -103,6 +109,7 @@ void PackingViewer::keyPressEvent(QKeyEvent *event) {
             scale(1/logslider(this->zoomPosition),1/logslider(this->zoomPosition));
             this->zoomPosition = logposition(rasterScale);
             scale(logslider(this->zoomPosition),logslider(this->zoomPosition));
+			updateOriginBrush(originItem, 1 / logslider(this->zoomPosition));
             emit zoomChanged(this->zoomPosition);
         }
         if(event->key() == Qt::Key::Key_L) {
@@ -159,18 +166,17 @@ void PackingViewer::createGraphicItems(RASTERPACKING::PackingProblem &problem) {
 
     // Create origin circle
     originItem = new QGraphicsEllipseItem;
-    originItem->setPen(QPen(Qt::black, 0));
-    originItem->setBrush(Qt::blue);
+    originItem->setPen(Qt::NoPen);
+	originItem->setBrush(QColor(0,0,255,120));
 
     // Determine scale
     rasterScale = (*problem.crnfpbegin())->getScale(); // FIXME
-    //setZoomPosition(logposition(rasterScale));
-    container->setPen(QPen(Qt::black, 1/rasterScale));
+	container->setPen(QPen(Qt::black, 0));
     std::for_each(pieces.begin(), pieces.end(), [this](PackingItem *curStatic){
-        curStatic->setPen(QPen(Qt::red, 1/this->rasterScale));
+		curStatic->setPen(QPen(Qt::red, 0));
         curStatic->setGridSize(1/this->rasterScale);
     });
-    originItem->setRect(-3.5/rasterScale, -3.5/rasterScale,7.0/rasterScale,7.0/rasterScale);
+	updateOriginBrush(originItem, 1 / logslider(this->zoomPosition));
     curMap->setScale(1/rasterScale);
 
     // Set initial configuration
@@ -210,12 +216,12 @@ void PackingViewer::setSelectedItem(int id) {
     if(this->currentPieceId != id) {
         if(this->currentPieceId != -1) {
             PackingItem *curStatic  = pieces[this->currentPieceId];
-            curStatic->setPen(QPen(Qt::red, 1/rasterScale));
+			curStatic->setPen(QPen(Qt::red, 0));
             curStatic->setBrush(QColor(255,100,100,100));
         }
         this->currentPieceId = id;
         PackingItem *curOrbiting = pieces[this->currentPieceId];
-        curOrbiting->setPen(QPen(Qt::blue, 1/rasterScale));
+		curOrbiting->setPen(QPen(Qt::blue, 0));
         curOrbiting->setBrush(QColor(100,100,255,100));
         originItem->setParentItem(curOrbiting);
         curOrbiting->setZValue((*mainScene->items().begin())->zValue() + 0.1); // TEST
@@ -229,7 +235,7 @@ void PackingViewer::setSelectedItem(int id) {
 void PackingViewer::disableItemSelection() {
     if(this->currentPieceId != -1) {
         PackingItem *curStatic  = pieces[this->currentPieceId];
-        curStatic->setPen(QPen(Qt::red, 1/rasterScale));
+		curStatic->setPen(QPen(Qt::red, 0));
         curStatic->setBrush(QColor(255,100,100,100));
         originItem->setVisible(false);
     }
@@ -248,17 +254,17 @@ void PackingViewer::highlightPair(int id1, int id2) {
 
 void PackingViewer::highlightItem(int id) {
     PackingItem *curItem  = pieces[id];
-    curItem->setPen(QPen(QColor(255,0,255), 2.5/rasterScale));
+	curItem->setPen(QPen(QColor(255, 0, 255), 0));
     if(id == this->currentPieceId) originItem->setBrush(QColor(255,0,255));
 
     QTimer *timer = new QTimer(this);
     timer->setSingleShot(true);
     connect(timer, &QTimer::timeout, [curItem, id, this](){
         if(id == this->currentPieceId) {
-            curItem->setPen(QPen(Qt::blue, 1/rasterScale));
+			curItem->setPen(QPen(Qt::blue, 0));
             originItem->setBrush(Qt::blue);
         }
-        else curItem->setPen(QPen(Qt::red, 1/rasterScale));
+		else curItem->setPen(QPen(Qt::red, 0));
     });
     timer->start(2000);
 }

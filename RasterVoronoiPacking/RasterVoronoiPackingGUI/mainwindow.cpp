@@ -142,7 +142,6 @@ void MainWindow::loadPuzzle() {
 		// Density calculation
 		totalArea = problem.getTotalItemsArea();
 		containerWidth = getContainerWidth(problem);
-
 		
 		rasterProblem->load(problem);
 
@@ -155,8 +154,12 @@ void MainWindow::loadPuzzle() {
         ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
         ui->graphicsView->setStatusBar(ui->statusBar);
         ui->graphicsView->createGraphicItems(problem);
-		ui->graphicsView->setZoomPosition(logposition(rasterProblem->getScale()));
-        ui->graphicsView->setFocus();
+		
+		qreal widthFullZoom = (qreal)ui->graphicsView->width() / ui->graphicsView->sceneRect().width();
+		qreal heightFullZoom = (qreal)ui->graphicsView->height() / ui->graphicsView->sceneRect().height();
+		ui->graphicsView->setZoomPosition(logposition(0.7*std::min(widthFullZoom, heightFullZoom)));
+        
+		ui->graphicsView->setFocus();
         ui->pushButton->setEnabled(true);
         ui->pushButton_2->setEnabled(true);
 
@@ -686,6 +689,7 @@ void MainWindow::switchToOriginalProblem() {
 	solver->setContainerWidth(oldWidth, solution, params);
 	solverGls->setContainerWidth(oldWidth, solution, params);
 	if (solverDoubleGls) solverDoubleGls->setContainerWidth(oldWidth, solution, params);
+	ui->spinBox->setMaximum(rasterProblem->count() - 1);
 	ui->graphicsView->recreateContainerGraphics(oldWidth);
 
 	// Update ui

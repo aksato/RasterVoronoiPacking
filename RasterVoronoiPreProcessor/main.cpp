@@ -335,9 +335,6 @@ int main(int argc, char *argv[])
 		QList<QString> removedPieces;
 		QString puzzleString = rasterClusterizator->getClusteredPuzzle(params.inputFilePath, clusters, removedPieces);
 		
-		QFile file("newpuzzle.txt");
-		if (file.open(QIODevice::WriteOnly)) QTextStream(&file) << puzzleString, file.close();
-
 		myTimer.start();
 		QTextStream puzzleStream(&puzzleString);
 		clusterProblem.loadCFREFP(puzzleStream, params.puzzleScaleFactor, params.scaleFixFactor);

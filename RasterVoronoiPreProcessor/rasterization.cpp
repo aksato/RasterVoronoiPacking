@@ -222,6 +222,12 @@ bool greaterThanEqualEpsilon(qreal v1, qreal v2, qreal eps) {
 	else return v1 > v2;
 
 }
+
+bool lessThanNotEqualEpsilon(qreal v1, qreal v2, qreal eps) {
+	if (qAbs(v2 - v1) < eps) return false;
+	else return v1 < v2;
+}
+
 int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height) {
 	QPolygonF polygon;
 	qreal xMin, xMax, yMin, yMax;
@@ -264,8 +270,8 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 
 			qreal curY = (qreal)pixelY;
 			if (
-				(polyYi < curY && greaterThanEqualEpsilon(polyYj, curY, RASTER_EPS)) ||
-				(polyYj < curY && greaterThanEqualEpsilon(polyYi, curY, RASTER_EPS))
+				(lessThanNotEqualEpsilon(polyYi, curY, RASTER_EPS) && greaterThanEqualEpsilon(polyYj, curY, RASTER_EPS)) ||
+				(lessThanNotEqualEpsilon(polyYj, curY, RASTER_EPS) && greaterThanEqualEpsilon(polyYi, curY, RASTER_EPS))
 				)
 				nodeX.push_back(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi));
 			j = i;

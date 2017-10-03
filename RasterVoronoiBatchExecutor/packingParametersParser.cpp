@@ -13,6 +13,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value"); parser.addOption(valueNumThreads); 
 	const QCommandLineOption valueNumExecutions("executions", "Number of total executions of the algorithm per case.", "value"); parser.addOption(valueNumExecutions);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value"); parser.addOption(valueCluster);
+	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem."); parser.addOption(valueRectangular);
 	const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -60,6 +61,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 		if (parseOk && clusterFactor >= 0 && clusterFactor <= 1.0) params->clusterFactor = clusterFactor;
 		else { *errorMessage = "Bad cluster factor value."; return CommandLineError; }
 	}
+	params->rectangular = parser.isSet(valueRectangular);
 
     return CommandLineOk;
 }

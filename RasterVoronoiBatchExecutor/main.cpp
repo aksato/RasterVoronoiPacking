@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
 		else arguments << "--method=zoomgls" << "--zoom=" + curCase.searchProblemFileName;
 		arguments << "--initial=bottomleft" << "--duration=" + QString::number(curCase.timeLimit) << "--strippacking" << "--appendseed" << "--layout=" + xmlOutput << "--result=" + txtOutput;// << "--parallel=" + QString::number(params.threadCount);
 		if (params.clusterFactor > 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution
+		if (params.rectangular) arguments << "--rectpacking";
 
 		if (pastExecutionCount >= params.executionCount) { qDebug() << "Skipping execution of fully processed case" << curCase.problemFileName; continue; }		
 		qDebug() << "Running Raster Packing Console with arguments" << arguments;

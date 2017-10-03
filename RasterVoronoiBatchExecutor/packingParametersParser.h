@@ -11,6 +11,7 @@ struct PackingBatchExecutorArgs {
 	int executionCount;
 	int threadCount;
 	qreal clusterFactor;
+	bool rectangular;
 };
 
 enum CommandLineParseResult

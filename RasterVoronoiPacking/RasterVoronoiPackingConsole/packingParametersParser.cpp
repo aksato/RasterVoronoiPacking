@@ -39,6 +39,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(placementMethod);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value");
 	parser.addOption(valueCluster);
+	const QCommandLineOption boolRectangularPacking("rectpacking", "Rectangular packing version.");
+	parser.addOption(boolRectangularPacking);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -183,6 +185,9 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
 	if (parser.isSet(boolStripPacking)) params->stripPacking = true;
 	else  params->stripPacking = false;
+
+	if (parser.isSet(boolRectangularPacking)) params->rectangularPacking = true;
+	else  params->rectangularPacking = false;
 
 	if (parser.isSet(valueNumThreads)) {
 		const QString threadsString = parser.value(valueNumThreads);

@@ -218,6 +218,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushButton_19">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Set Container Height</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line_3">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -498,7 +508,7 @@
      <x>0</x>
      <y>0</y>
      <width>1068</width>
-     <height>36</height>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

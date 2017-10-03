@@ -3,6 +3,7 @@
 #include "raster/rasterpackingsolution.h"
 #include "raster/rasterstrippackingsolvergls.h"
 #include "raster/rasterstrippackingsolverdoublegls.h"
+#include "raster/packing2dthread.h"
 #include "raster/packingclusterthread.h"
 #include "packingproblem.h"
 #include <QDir>
@@ -88,10 +89,19 @@ void ConsolePackingLoader::run() {
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
 	bool clusterExecution = algorithmParamsBackup.getClusterFactor() > 0;
 	if (!clusterExecution) {
-		if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));
-		else solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(problem, zoomProblem));
-		threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
-		threadedPacker->setSolver(solver);
+		if (algorithmParamsBackup.isRectangularPacking()) {
+			solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(new RASTERVORONOIPACKING::RasterStripPackingSolver2D(problem));
+			std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
+			threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
+			std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
+			threadedPacker2D->setSolver(solver2D);
+		}
+		else {
+			if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));
+			else solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(problem, zoomProblem));
+			threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
+			threadedPacker->setSolver(solver);
+		}
 	}
 	else {
 		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> clusterSolverGls;

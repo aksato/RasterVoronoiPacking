@@ -6,14 +6,27 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>372</width>
-    <height>376</height>
+    <width>602</width>
+    <height>656</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Configuration</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="7" column="0" colspan="2">
+    <widget class="QCheckBox" name="checkBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Strip packing</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
    <item row="5" column="2">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
      <property name="enabled">
@@ -53,24 +66,26 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
-    <widget class="QCheckBox" name="checkBox">
-     <property name="enabled">
-      <bool>true</bool>
+   <item row="1" column="2">
+    <widget class="QComboBox" name="comboBox">
+     <property name="currentIndex">
+      <number>1</number>
      </property>
-     <property name="text">
-      <string>Strip packing</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Metaheuristic:</string>
-     </property>
+     <item>
+      <property name="text">
+       <string>None</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>GLS</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Zoom GLS</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item row="4" column="2">
@@ -83,20 +98,24 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
-    <widget class="QLabel" name="label_5">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
+   <item row="2" column="0" colspan="2">
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Container lenght:</string>
+      <string>Max. worse iterations:</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="2">
-    <widget class="QSpinBox" name="spinBox">
-     <property name="maximum">
-      <number>9999</number>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Initial solution:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Metaheuristic:</string>
      </property>
     </widget>
    </item>
@@ -122,49 +141,13 @@
      </item>
     </widget>
    </item>
-   <item row="1" column="2">
-    <widget class="QComboBox" name="comboBox">
-     <property name="currentIndex">
-      <number>1</number>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label_6">
+     <property name="enabled">
+      <bool>false</bool>
      </property>
-     <item>
-      <property name="text">
-       <string>None</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>GLS</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Zoom GLS</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="2" column="0" colspan="2">
-    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Max. worse iterations:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Initial solution:</string>
+      <string>Cluster Time Fraction</string>
      </property>
     </widget>
    </item>
@@ -178,13 +161,37 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QLabel" name="label_6">
+   <item row="4" column="0" colspan="2">
+    <widget class="QLabel" name="label_5">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="text">
-      <string>Cluster Time Fraction</string>
+      <string>Container lenght:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QSpinBox" name="spinBox">
+     <property name="maximum">
+      <number>9999</number>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QCheckBox" name="checkBox_2">
+     <property name="text">
+      <string>Rectangular Packing Problem</string>
      </property>
     </widget>
    </item>

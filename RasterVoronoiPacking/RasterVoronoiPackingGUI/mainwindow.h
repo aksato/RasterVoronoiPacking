@@ -7,6 +7,7 @@
 #include "raster/rasterstrippackingsolvergls.h"
 #include "raster/rasterstrippackingsolverdoublegls.h"
 #include "raster/packingthread.h"
+#include "raster/packing2dthread.h"
 #include "raster/packingclusterthread.h"
 #include "glsweightviewerdialog.h"
 #include "zoomedmapviewdialog.h"
@@ -38,6 +39,7 @@ private slots:
     void createRandomLayout();
 	void createBottomLeftLayout();
     void changeContainerWidth();
+	void changeContainerHeight();
     void showGlobalOverlap();
     void localSearch();
     void generateCurrentTotalGlsWeightedOverlapMap();
@@ -56,6 +58,7 @@ private slots:
 	void showExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed);
 	void showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed, uint seed);
 	void showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint seed);
+	void showCurrent2DSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);
 
     void saveSolution();
 	void saveZoomedSolution();
@@ -83,6 +86,7 @@ private:
     GlsWeightViewerDialog weightViewer;
     RunConfigurationsDialog runConfig;
 	PackingThread runThread;
+	Packing2DThread run2DThread;
 	PackingClusterThread runClusterThread;
 
     int accContainerShrink;

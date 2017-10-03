@@ -47,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_5, SIGNAL(clicked()), this, SLOT(createRandomLayout()));
 	connect(ui->pushButton_32, SIGNAL(clicked()), this, SLOT(createBottomLeftLayout()));
     connect(ui->pushButton_14, SIGNAL(clicked()), this, SLOT(changeContainerWidth()));
+	connect(ui->pushButton_19, SIGNAL(clicked()), this, SLOT(changeContainerHeight()));
     connect(ui->pushButton_6, SIGNAL(clicked()), this, SLOT(showGlobalOverlap()));
     connect(ui->pushButton_7, SIGNAL(clicked()), this, SLOT(localSearch()));
     connect(ui->pushButton_10, SIGNAL(clicked()), this, SLOT(generateCurrentTotalGlsWeightedOverlapMap()));
@@ -65,6 +66,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&runThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
 	connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
+
+	connect(&run2DThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, int)), this, SLOT(showCurrent2DSolution(RASTERVORONOIPACKING::RasterPackingSolution, int)));
+	connect(&run2DThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
+	connect(&run2DThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
+	connect(&run2DThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
+	connect(&run2DThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
+	connect(ui->pushButton_2, SIGNAL(clicked()), &run2DThread, SLOT(abort()));
 
 	connect(&runClusterThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, int)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, int)));
 	connect(&runClusterThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
@@ -174,6 +182,7 @@ void MainWindow::loadPuzzle() {
 		ui->pushButton_9->setEnabled(true); ui->pushButton_10->setEnabled(true); 
 		ui->pushButton_12->setEnabled(true); ui->pushButton_13->setEnabled(true); 
 		ui->pushButton_14->setEnabled(true); ui->pushButton_15->setEnabled(true);
+		ui->pushButton_19->setEnabled(true);
 		ui->pushButton_32->setEnabled(true);
 		
         ui->actionLoad_Zoomed_Problem->setEnabled(true);
@@ -399,6 +408,7 @@ void MainWindow::executePacking() {
 	params.setNmo(runConfig.getMaxWorse()); params.setTimeLimit(runConfig.getMaxSeconds());
 	params.setFixedLength(!runConfig.getStripPacking());
 	params.setDoubleResolution(runConfig.getMetaheuristic() == 2);
+	params.setRectangularPacking(runConfig.getSquaredOpenDimensions());
 	if (runConfig.getMetaheuristic() == 0) params.setHeuristic(NONE);
 	if (runConfig.getMetaheuristic() == 1 || runConfig.getMetaheuristic() == 2) params.setHeuristic(GLS);
 	if (runConfig.getInitialSolution() == 0) params.setInitialSolMethod(KEEPSOLUTION);
@@ -406,7 +416,13 @@ void MainWindow::executePacking() {
 	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
 
 	params.setClusterFactor(runConfig.getClusterFactor());
-	if (params.getClusterFactor() < 0) {
+	if (params.isRectangularPacking()) {
+		run2DThread.setParameters(params);
+		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
+		run2DThread.setSolver(solver2D);
+		run2DThread.start();
+	}
+	else if (params.getClusterFactor() < 0) {
 		runThread.setParameters(params);
 		if (params.getHeuristic() == GLS)
 		if (!params.isDoubleResolution()) runThread.setSolver(solverGls);
@@ -477,6 +493,20 @@ void MainWindow::changeContainerWidth() {
 	ui->graphicsView->setCurrentSolution(solution);
 }
 
+void MainWindow::changeContainerHeight() {
+	// FIXME: Create custom dialog
+	ui->graphicsView->getCurrentSolution(solution);
+	bool ok;
+	qreal height = QInputDialog::getDouble(this, "New container height", "Height:", (qreal)solver->getCurrentHeight() / ui->graphicsView->getScale(), 0, (qreal)10 * (qreal)solver->getCurrentHeight() / ui->graphicsView->getScale(), 2, &ok);
+	if (!ok) return;
+	int scaledHeight = qRound(height*ui->graphicsView->getScale());
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
+	int currentWidth = solver->getCurrentWidth();
+	solver2D->setContainerDimensions(currentWidth, scaledHeight, solution, params);
+	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth(), solver->getCurrentHeight());
+	ui->graphicsView->setCurrentSolution(solution);
+}
+
 void MainWindow::showZoomedMap() {
 	int zoomSquareSize = 3 * qRound(this->rasterProblem->getScale() / this->rasterZoomedProblem->getScale());
     ui->graphicsView->getCurrentSolution(solution);
@@ -532,6 +562,11 @@ void MainWindow::zoomedlocalSearch() {
 
 void MainWindow::showCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length) {
 	ui->graphicsView->recreateContainerGraphics(length);
+	ui->graphicsView->setCurrentSolution(solution);
+}
+
+void MainWindow::showCurrent2DSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length) {
+	ui->graphicsView->recreateContainerGraphics(length, length);
 	ui->graphicsView->setCurrentSolution(solution);
 }
 

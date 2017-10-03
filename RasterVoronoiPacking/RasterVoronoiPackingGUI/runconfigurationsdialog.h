@@ -22,6 +22,7 @@ public:
     qreal getLenght();
 	bool getUseCUDA();
 	bool getStripPacking();
+	bool getSquaredOpenDimensions();
 	qreal getClusterFactor();
 
     void setInitialLenght(qreal lenght, qreal step);

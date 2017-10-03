@@ -93,21 +93,6 @@ namespace RASTERVORONOIPACKING {
 		TotalOverlapMapSet maps;
 		int minimumOriginalIfpWidth;
 	};
-
-	class RasterStripPackingSolver2D : public RasterStripPackingSolver {
-		friend class MainWindow;
-
-	public:
-		RasterStripPackingSolver2D(std::shared_ptr<RasterPackingProblem> _problem) : RasterStripPackingSolver(_problem) {
-			currentHeight = this->originalProblem->getContainerHeight();
-			initialHeight = currentHeight;
-		}
-		void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		bool setContainerDimensions(int &pixelWidthX, int &pixelWidthY, RasterPackingSolution &solution, RasterStripPackingParameters &params);
-	private:
-		int getItemMaxY(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
-		void updateMapsDimensions(int pixelWidth, int pixelHeight, RasterStripPackingParameters &params);
-	};
 }
 
 #endif // RASTERSTRIPPACKINGSOLVER_H

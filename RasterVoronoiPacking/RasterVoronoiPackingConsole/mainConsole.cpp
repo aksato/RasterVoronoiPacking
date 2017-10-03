@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
 		case Pos_Contour: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::CONTOUR_POS); break;
 	}
 	algorithmParams.setClusterFactor(params.clusterFactor);
+	algorithmParams.setRectangularPacking(params.rectangularPacking);
 
 	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
 	else packingLoader.setParameters(params.inputFilePath, params.zoomedInputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);

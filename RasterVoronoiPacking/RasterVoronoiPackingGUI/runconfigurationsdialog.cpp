@@ -59,3 +59,7 @@ void RunConfigurationsDialog::disableCluster() {
 	ui->label_6->setEnabled(false);
 	ui->doubleSpinBox_2->setEnabled(false);
 }
+
+bool RunConfigurationsDialog::getSquaredOpenDimensions() {
+	return ui->checkBox_2->isChecked();
+}

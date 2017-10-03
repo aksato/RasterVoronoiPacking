@@ -11,7 +11,7 @@ namespace RASTERVORONOIPACKING {
 	public:
 		RasterStripPackingParameters() :
 			Nmo(200), maxSeconds(600), heuristicType(GLS), doubleResolution(false),
-			fixedLength(false), maxIterations(0)
+			fixedLength(false), maxIterations(0), rectangularPacking(false)
 		{} // Default parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
@@ -43,6 +43,9 @@ namespace RASTERVORONOIPACKING {
 
 		void setClusterFactor(qreal _clusterFactor) { this->clusterFactor = _clusterFactor; }
 		qreal getClusterFactor() { return this->clusterFactor; }
+		
+		void setRectangularPacking(bool val) { this->rectangularPacking = val; }
+		bool isRectangularPacking() { return this->rectangularPacking; }
 
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
@@ -55,6 +58,7 @@ namespace RASTERVORONOIPACKING {
 			if (getInitialSolMethod() == RANDOMFIXED) setInitialLenght(source.getInitialLenght());
 			setPlacementCriteria(source.getPlacementCriteria());
 			setClusterFactor(source.getClusterFactor());
+			setRectangularPacking(source.isRectangularPacking());
 		}
 
 	private:
@@ -63,7 +67,7 @@ namespace RASTERVORONOIPACKING {
 		ConstructivePlacement initialSolMethod;
 		PositionChoice placementCriteria; // FIXME: Debug
 		qreal initialLenght; // Only used with RANDOMFIXED initial solution
-		bool doubleResolution, fixedLength;
+		bool doubleResolution, fixedLength, rectangularPacking;
 		qreal clusterFactor;
 	};
 }

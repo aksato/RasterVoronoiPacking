@@ -302,11 +302,29 @@ int main(int argc, char *argv[])
     }
 
 	// Check if cluster original destination path exist
-	if (!params.clusterRankings.isEmpty() && !QDir(originalOutputDir).exists()) {
+	if ((!params.clusterRankings.isEmpty() || !params.clusterFile.isEmpty()) && !QDir(originalOutputDir).exists()) {
 		qWarning() << "Cluster original destination folder does not exist. Creating it.";
 		QDir(originalOutputDir).mkpath(originalOutputDir);
 	}
 
+	// Check if cluster input files exist
+	if (!params.clusterFile.isEmpty()) {
+		QString clusterInfoFileName = params.clusterFile;
+		clusterInfoFileName = clusterInfoFileName.left(clusterInfoFileName.length() - 11);
+		params.clusterInfoFile = clusterInfoFileName + "_clusterInfo.xml";
+		params.clusterFile = QFileInfo(params.clusterFile).absoluteFilePath();
+		params.clusterInfoFile = QFileInfo(params.clusterInfoFile).absoluteFilePath();
+		if (!QFile(params.clusterFile).exists()) {
+			qCritical() << "Cluster file not found.";
+			return 1;
+		}
+		if (!QFile(params.clusterInfoFile).exists()) {
+			qCritical() << "Cluster informations file not found.";
+			return 1;
+		}
+	}
+
+	bool processCluster = !params.clusterRankings.isEmpty() || !params.clusterFile.isEmpty();
     qDebug() << "Program execution started.";
     QTime myTimer, totalTimer;
 
@@ -316,8 +334,10 @@ int main(int argc, char *argv[])
 	problem.load(params.inputFilePath, params.inputFileType, params.puzzleScaleFactor, params.scaleFixFactor);
     if(params.headerFile != "") problem.copyHeader(params.headerFile);
     qDebug() << "Problem file read." << problem.getNofitPolygonsCount() << "nofit polygons read in" << myTimer.elapsed()/1000.0 << "seconds";
-	preProcessProblem(problem, params, params.clusterRankings.isEmpty() ? params.outputDir : originalOutputDir, "");
+	preProcessProblem(problem, params, !processCluster ? params.outputDir : originalOutputDir, "");
 
+	RASTERPACKING::PackingProblem clusterProblem;
+	QString clusterInfo;
 	if (!params.clusterRankings.isEmpty()) {
 		qDebug() << "Clustering finished problem.";
 		qDebug() << "Determining clusters.";
@@ -331,20 +351,52 @@ int main(int argc, char *argv[])
 		}
 
 		qDebug() << "Generating clustered problem.";
-		RASTERPACKING::PackingProblem clusterProblem;
 		QList<QString> removedPieces;
 		QString puzzleString = rasterClusterizator->getClusteredPuzzle(params.inputFilePath, clusters, removedPieces);
-		
+	
+
 		myTimer.start();
 		QTextStream puzzleStream(&puzzleString);
 		clusterProblem.loadCFREFP(puzzleStream, params.puzzleScaleFactor, params.scaleFixFactor);
-		QString clusterInfo = rasterClusterizator->getClusterInfo(clusterProblem, clusters, params.outputXMLName, removedPieces);
+		clusterInfo = rasterClusterizator->getClusterInfo(clusterProblem, clusters, params.outputXMLName, removedPieces);
 		if (params.headerFile != "") problem.copyHeader(params.headerFile);
 		qDebug() << "Cluster problem file generated." << clusterProblem.getNofitPolygonsCount() << "nofit polygons read in" << myTimer.elapsed() / 1000.0 << "seconds";
-		preProcessProblem(clusterProblem, params, params.outputDir, clusterInfo);
-	}
 
+		// Save output files
+		QString clusterPuzzleFileName = outputDirDir.filePath(params.clusterPrefix + "_puzzle.txt");
+		QFile fileClusterPuzzle(clusterPuzzleFileName); if (fileClusterPuzzle.open(QIODevice::WriteOnly)) QTextStream(&fileClusterPuzzle) << puzzleString, fileClusterPuzzle.close();
+		QString clusterInfoFileName = outputDirDir.filePath(params.clusterPrefix + "_clusterInfo.xml");
+		QFile fileClusterInfo(clusterInfoFileName);  if (fileClusterInfo.open(QIODevice::WriteOnly)) QTextStream(&fileClusterInfo) << clusterInfo, fileClusterInfo.close();
+	}
+	else if(!params.clusterFile.isEmpty()) {
+		qDebug() << "Clustering finished problem.";
+		qDebug() << "Reading clustered problem.";
+		// Read puzzle cluster file
+		myTimer.start();
+		QFile file(params.clusterFile);
+		if (!file.open(QIODevice::ReadOnly)) {
+			qWarning() << "Could not load cluster puzzle file. Finishing execution with error.";
+			return 1;
+		}
+		QTextStream puzzleStream(&file);
+		clusterProblem.loadCFREFP(puzzleStream, params.puzzleScaleFactor, params.scaleFixFactor);
+		file.close();
+		qDebug() << "Cluster problem file read." << clusterProblem.getNofitPolygonsCount() << "nofit polygons read in" << myTimer.elapsed() / 1000.0 << "seconds";
+
+		// Read cluster info file
+		QFile fileClusterInfo(params.clusterInfoFile);
+		if (!fileClusterInfo.open(QIODevice::ReadOnly)) {
+			qWarning() << "Could not load cluster info file. Finishing execution with error.";
+			return 1;
+		}
+		QTextStream infoStream(&fileClusterInfo);
+		clusterInfo = infoStream.readAll();
+		fileClusterInfo.close();
+	}
+	if (processCluster)
+		// Pre-process cluster problems
+		preProcessProblem(clusterProblem, params, params.outputDir, clusterInfo);
+	
     qDebug() << "Program execution finished. Total time:" << totalTimer.elapsed()/1000.0 << "seconds.";
-	//return app.exec();
     return 0;
 }

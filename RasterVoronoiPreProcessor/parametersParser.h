@@ -21,6 +21,7 @@ struct PreProcessorParameters {
 	qreal innerFitEpsilon; // Epsilon for ifp rasterization
 	bool noOverlap; // Create nfps with contours
 	QList<int> clusterRankings;
+	QString clusterPrefix, clusterFile, clusterInfoFile;
 	QList<qreal> clusterWeights;
 };
 

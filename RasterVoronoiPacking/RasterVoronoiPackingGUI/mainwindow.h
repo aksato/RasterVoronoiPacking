@@ -59,6 +59,8 @@ private slots:
 	void showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed, uint seed);
 	void showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint seed);
 	void showCurrent2DSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);
+	void showCurrent2DSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, int height);
+	void showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int newLength, int newHeight, int totalItNum, qreal elapsed, uint seed);
 
     void saveSolution();
 	void saveZoomedSolution();
@@ -87,6 +89,7 @@ private:
     RunConfigurationsDialog runConfig;
 	PackingThread runThread;
 	Packing2DThread run2DThread;
+	PackingEnclosedThread runEnclosedThread;
 	PackingClusterThread runClusterThread;
 
     int accContainerShrink;

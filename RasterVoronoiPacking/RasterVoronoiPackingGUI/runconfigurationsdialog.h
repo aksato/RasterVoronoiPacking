@@ -23,6 +23,7 @@ public:
 	bool getUseCUDA();
 	bool getStripPacking();
 	bool getSquaredOpenDimensions();
+	bool getMinimalRectangleProblem();
 	qreal getClusterFactor();
 
     void setInitialLenght(qreal lenght, qreal step);

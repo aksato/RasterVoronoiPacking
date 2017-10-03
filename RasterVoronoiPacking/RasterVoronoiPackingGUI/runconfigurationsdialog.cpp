@@ -63,3 +63,7 @@ void RunConfigurationsDialog::disableCluster() {
 bool RunConfigurationsDialog::getSquaredOpenDimensions() {
 	return ui->checkBox_2->isChecked();
 }
+
+bool RunConfigurationsDialog::getMinimalRectangleProblem() {
+	return ui->checkBox_3->isChecked();
+}

@@ -121,10 +121,21 @@ void PackingViewer::keyPressEvent(QKeyEvent *event) {
 }
 
 void PackingViewer::recreateContainerGraphics(int pixelWidth) {
+	// Create container
+	//    curMap->setVisible(false);
+	QRectF containerPolygon = container->polygon().boundingRect();
+	containerPolygon.setWidth((qreal)pixelWidth / this->rasterScale);
+	container->setPolygon(containerPolygon);
+	std::for_each(pieces.begin(), pieces.end(), [&containerPolygon](PackingItem *curItem){curItem->setContainer(containerPolygon, curItem->getAngle(curItem->getCurAngle())); });
+	//    mainScene->setSceneRect(container->boundingRect());
+}
+
+void PackingViewer::recreateContainerGraphics(int pixelWidth, int pixelHeight) {
     // Create container
 //    curMap->setVisible(false);
     QRectF containerPolygon = container->polygon().boundingRect();
     containerPolygon.setWidth((qreal)pixelWidth/this->rasterScale);
+	containerPolygon.setHeight((qreal)pixelHeight/this->rasterScale);
     container->setPolygon(containerPolygon);
     std::for_each(pieces.begin(), pieces.end(), [&containerPolygon](PackingItem *curItem){curItem->setContainer(containerPolygon, curItem->getAngle(curItem->getCurAngle()));});
 //    mainScene->setSceneRect(container->boundingRect());

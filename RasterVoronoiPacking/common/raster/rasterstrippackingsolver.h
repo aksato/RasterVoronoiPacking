@@ -20,6 +20,7 @@ namespace RASTERVORONOIPACKING {
 		// Info Functions
 		int getNumItems() { return originalProblem->count(); }
 		int getCurrentWidth() { return currentWidth; }
+		int getCurrentHeight() { return currentHeight; }
 		// Basic Functions
 		virtual void generateRandomSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) = 0;
 		virtual void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) = 0;
@@ -39,6 +40,8 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<RasterPackingProblem> originalProblem;
 		TotalOverlapMapSet maps;
 		int currentWidth, initialWidth;
+		// FIXME: Should be only in  RasterStripPackingSolver2D solver
+		int currentHeight, initialHeight;
 	};
 
 	class RasterStripPackingSolver : public RasterStripPackingSolverBase
@@ -50,7 +53,7 @@ namespace RASTERVORONOIPACKING {
 
 		// Basic Functions
 		void generateRandomSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		virtual void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		// --> Get layout overlap (sum of individual overlap values)
 		qreal getGlobalOverlap(RasterPackingSolution &solution, RasterStripPackingParameters &params);
 		// --> Local search
@@ -89,6 +92,21 @@ namespace RASTERVORONOIPACKING {
 
 		TotalOverlapMapSet maps;
 		int minimumOriginalIfpWidth;
+	};
+
+	class RasterStripPackingSolver2D : public RasterStripPackingSolver {
+		friend class MainWindow;
+
+	public:
+		RasterStripPackingSolver2D(std::shared_ptr<RasterPackingProblem> _problem) : RasterStripPackingSolver(_problem) {
+			currentHeight = this->originalProblem->getContainerHeight();
+			initialHeight = currentHeight;
+		}
+		void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		bool setContainerDimensions(int &pixelWidthX, int &pixelWidthY, RasterPackingSolution &solution, RasterStripPackingParameters &params);
+	private:
+		int getItemMaxY(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
+		void updateMapsDimensions(int pixelWidth, int pixelHeight, RasterStripPackingParameters &params);
 	};
 }
 

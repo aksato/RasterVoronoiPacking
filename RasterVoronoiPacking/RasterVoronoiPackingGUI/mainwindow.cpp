@@ -147,7 +147,7 @@ void MainWindow::loadPuzzle() {
 
 		solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
 
-        solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(rasterProblem));
+		solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(new RASTERVORONOIPACKING::RasterStripPackingSolver2D(rasterProblem));
 		solverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(rasterProblem));
 
         ui->graphicsView->setEnabled(true);
@@ -266,7 +266,7 @@ void MainWindow::createBottomLeftLayout() {
 	solverGls->updateMapsLength(solver->getCurrentWidth(), params);
 	if (solverDoubleGls) solverDoubleGls->updateMapsLength(solver->getCurrentWidth(), params);
 	int milliseconds = myTimer.elapsed();
-	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
+	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth(), solver->getCurrentHeight());
 	ui->graphicsView->setCurrentSolution(solution);
 	ui->statusBar->showMessage("New bottom left solution created. Length: " + QString::number(solver->getCurrentWidth() / rasterProblem->getScale()) + ". Elapsed Time : " + QString::number(milliseconds) + " miliseconds");
 }

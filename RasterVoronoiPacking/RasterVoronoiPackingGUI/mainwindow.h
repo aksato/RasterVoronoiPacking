@@ -74,7 +74,7 @@ private:
     Ui::MainWindow *ui;
     std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;
     RASTERVORONOIPACKING::RasterPackingSolution solution;
-    std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS> solverGls;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS> solverDoubleGls;
 	RASTERVORONOIPACKING::RasterStripPackingParameters params;

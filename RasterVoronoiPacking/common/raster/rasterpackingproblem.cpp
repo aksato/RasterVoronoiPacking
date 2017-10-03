@@ -64,13 +64,17 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     std::shared_ptr<RASTERPACKING::Container> container = *problem.ccbegin();
     std::shared_ptr<RASTERPACKING::Polygon> pol = container->getPolygon();
     qreal minX = (*pol->begin()).x();
-    qreal maxX = minX;
-    std::for_each(pol->begin(), pol->end(), [&minX, &maxX](QPointF pt){
+	qreal minY = (*pol->begin()).y();
+    qreal maxX = minX, maxY = minY;
+    std::for_each(pol->begin(), pol->end(), [&minX, &maxX, &minY, &maxY](QPointF pt){
         if(pt.x() < minX) minX = pt.x();
         if(pt.x() > maxX) maxX = pt.x();
+		if (pt.y() < minY) minY = pt.y();
+		if (pt.y() > maxY) maxY = pt.y();
     });
     qreal rasterScale = (*problem.crnfpbegin())->getScale(); // FIXME: Global scale
     containerWidth = qRound(rasterScale*(maxX - minX));
+	containerHeight = qRound(rasterScale*(maxY - minY));
     containerName = (*problem.ccbegin())->getName();
 
     // 2. Link the name and angle of the piece with the ids defined for the items

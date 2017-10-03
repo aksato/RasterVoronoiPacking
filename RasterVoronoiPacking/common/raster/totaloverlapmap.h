@@ -27,6 +27,16 @@ namespace RASTERVORONOIPACKING {
 			this->width = _width;
 		}
 
+		void setDimensions(int _width, int _height) {
+			if (_width > this->width || _height > this->height) {
+				// Expanding the map buffer
+				delete[] data;
+				init(_width, _height);
+			}
+			this->width = _width;
+			this->width = _height;
+		}
+
         void shrink(int pixels) {
             Q_ASSERT_X(width-pixels > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
             this->width = width-pixels;
@@ -46,6 +56,23 @@ namespace RASTERVORONOIPACKING {
             //#endif
             shrink(-pixels);
         }
+
+		void shrink2D(int pixelsX, int pixelsY) {
+			Q_ASSERT_X(width - pixelsX > 0 || height - pixelsY > 0, "TotalOverlapMap::shrink2D", "Item does not fit the container");
+			this->width = width - pixelsX;
+			this->height = height - pixelsY;
+			if (pixelsX < 0 || pixelsY < 0) {
+				//qWarning() << "Expansion over limit not yet implemented!"; return;
+				// FIXME: Expand GPU innerift polygon buffer!
+				delete[] data;
+				init(this->width, this->height);
+				return;
+			}
+			std::fill(data, data + width*height, (float)0.0);
+		}
+		void expand2D(int pixelsX, int pixelsY) {
+			shrink2D(-pixelsX, -pixelsY);
+		}
 
         void setReferencePoint(QPoint _ref) {reference = _ref;}
         QPoint getReferencePoint() {return reference;}

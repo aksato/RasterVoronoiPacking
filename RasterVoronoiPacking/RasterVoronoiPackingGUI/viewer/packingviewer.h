@@ -64,6 +64,7 @@ public slots:
     void setCurrentYCoord(double ypos);
     void highlightPair(int id1, int id2);
 	void recreateContainerGraphics(int pixelWidth);
+	void recreateContainerGraphics(int pixelWidth, int pixelHeight);
 
 signals:
     void zoomChanged(int pos);

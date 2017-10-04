@@ -38,8 +38,12 @@ public:
 	~PackingEnclosedThread() {};
 
 	void setMethod(RASTERVORONOIPACKING::EnclosedMethod _method) { method = _method; }
+	
 protected:
 	void run();
+
+signals:
+	void dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const Solution2DInfo &info, int totalItNum, qreal elapsed, uint seed);
 
 private:
 	void runRandom();

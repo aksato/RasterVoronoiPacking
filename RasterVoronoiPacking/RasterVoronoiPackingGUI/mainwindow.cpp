@@ -67,19 +67,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
 
+	qRegisterMetaType<Solution2DInfo>("Solution2DInfo");
 	connect(&run2DThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, int, int)), this, SLOT(showCurrent2DSolution(RASTERVORONOIPACKING::RasterPackingSolution, int, int)));
 	connect(&run2DThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
 	connect(&run2DThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	connect(&run2DThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
+	connect(&run2DThread, SIGNAL(dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)), this, SLOT(showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)));
 	connect(&run2DThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
 	connect(ui->pushButton_2, SIGNAL(clicked()), &run2DThread, SLOT(abort()));
-
-	connect(&runEnclosedThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, int, int)), this, SLOT(showCurrent2DSolution(RASTERVORONOIPACKING::RasterPackingSolution, int, int)));
-	connect(&runEnclosedThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-	connect(&runEnclosedThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	connect(&runEnclosedThread, SIGNAL(dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, int, qreal, uint)), this, SLOT(showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, int, qreal, uint)));
-	connect(&runEnclosedThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
-	connect(ui->pushButton_2, SIGNAL(clicked()), &runEnclosedThread, SLOT(abort()));
 
 	connect(&runClusterThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, int)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, int)));
 	connect(&runClusterThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
@@ -426,13 +420,15 @@ void MainWindow::executePacking() {
 	if (params.isRectangularPacking() || runConfig.getMinimalRectangleProblem()) {
 		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
 		if (runConfig.getMinimalRectangleProblem()) {
-			runEnclosedThread.setParameters(params);
-			runEnclosedThread.setSolver(solver2D);
-			runEnclosedThread.start();
+			run2DThread.setParameters(params);
+			run2DThread.setSolver(solver2D);
+			run2DThread.setMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED);
+			run2DThread.start();
 		}
 		else {
 			run2DThread.setParameters(params);
 			run2DThread.setSolver(solver2D);
+			run2DThread.setMethod(RASTERVORONOIPACKING::SQUARE);
 			run2DThread.start();
 		}
 	}
@@ -718,8 +714,8 @@ void MainWindow::showExecutionMinLengthObtained(const RASTERVORONOIPACKING::Rast
 	qDebug() << "New minimum length obtained: " << minLength / rasterProblem->getScale() << ". It = " << totalItNum << ". Elapsed time: " << elapsed << " secs";
 }
 
-void MainWindow::showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int newLength, int newHeight, int totalItNum, qreal elapsed, uint seed) {
-	qDebug() << "New dimensions: " << newLength / rasterProblem->getScale() << newHeight / rasterProblem->getScale() << "Area =" << (newLength * newHeight) / (rasterProblem->getScale() * rasterProblem->getScale()) << ". It = " << totalItNum << ". Elapsed time: " << elapsed << " secs";
+void MainWindow::showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const Solution2DInfo &info, int totalItNum, qreal elapsed, uint seed) {
+	qDebug() << "New dimensions: " << info.length / rasterProblem->getScale() << info.height / rasterProblem->getScale() << "Area =" << (info.length * info.height) / (rasterProblem->getScale() * rasterProblem->getScale()) << ". It = " << totalItNum << ". Elapsed time: " << elapsed << " secs";
 }
 
 void MainWindow::saveZoomedSolution() {

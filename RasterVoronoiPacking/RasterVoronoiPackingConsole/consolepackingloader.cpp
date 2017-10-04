@@ -108,19 +108,12 @@ void ConsolePackingLoader::run() {
 		if (algorithmParamsBackup.isRectangularPacking()) {
 			solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(new RASTERVORONOIPACKING::RasterStripPackingSolver2D(problem));
 			std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
-			if (algorithmParamsBackup.getRectangularPackingMethod() == RASTERVORONOIPACKING::SQUARE) {
-				threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
-				std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
-				threadedPacker2D->setSolver(solver2D);
-			}
-			else {
-				threadedPacker = std::shared_ptr<PackingEnclosedThread>(new PackingEnclosedThread);
-				std::shared_ptr<PackingEnclosedThread> threadedPacker2D = std::dynamic_pointer_cast<PackingEnclosedThread>(threadedPacker);
-				threadedPacker2D->setSolver(solver2D);
-				threadedPacker2D->setMethod(algorithmParamsBackup.getRectangularPackingMethod());
-				qRegisterMetaType<Solution2DInfo>("Solution2DInfo");
-				connect(&*threadedPacker2D, SIGNAL(dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)), SLOT(saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)));
-			}
+			threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
+			std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
+			threadedPacker2D->setSolver(solver2D);
+			threadedPacker2D->setMethod(algorithmParamsBackup.getRectangularPackingMethod());
+			qRegisterMetaType<Solution2DInfo>("Solution2DInfo");
+			connect(&*threadedPacker2D, SIGNAL(dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)), SLOT(saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)));
 		}
 		else {
 			if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));
@@ -320,7 +313,7 @@ void ConsolePackingLoader::writeNewLength2D(const Solution2DInfo &info, int tota
 }
 
 void ConsolePackingLoader::saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const Solution2DInfo &info, int totalItNum, qreal elapsed, uint threadSeed) {
-	std::cout << "\n" << "New layout obtained: " << info.length / problem->getScale() << ", " << info.height / problem->getScale() << ". Area:" << info.area / (problem->getScale() *problem->getScale() ) << ". Elapsed time: " << elapsed << " secs. Seed = " << threadSeed << "\n";
+	std::cout << "\n" << "New layout obtained: (" << info.length / problem->getScale() << ", " << info.height / problem->getScale() << ") with density = " << (problem->getScale()*problem->getScale()*totalArea) / info.area << ". Area:" << info.area / (problem->getScale() *problem->getScale()) << ". Elapsed time: " << elapsed << " secs. Seed = " << threadSeed << "\n";
 	// Save only if it is the best solution
 	auto bestResult = std::min_element(solutionInfoHistory[threadSeed].begin(), solutionInfoHistory[threadSeed].end(),
 		[](Solution2DInfo const & lhs, Solution2DInfo const & rhs) {

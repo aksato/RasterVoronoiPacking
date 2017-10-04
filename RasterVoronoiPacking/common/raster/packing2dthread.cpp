@@ -6,7 +6,34 @@
 #define MAXLOOPSPERLENGTH 5
 #define UPDATEINTERVAL 2
 
+void randomChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio) {
+	bool changeLenght = qrand() % 2 - 1;
+	if (changeLenght) {
+		if (ratio < 1) curLenght = std::floor(ratio * (qreal)curLenght);
+		else curLenght = std::ceil(ratio * (qreal)curLenght);
+		return;
+	}
+	if (ratio < 1) curHeight = std::floor(ratio * (qreal)curHeight);
+	else curHeight = std::ceil(ratio * (qreal)curHeight);
+}
+
 void Packing2DThread::run() {
+
+	switch (method) {
+	case RASTERVORONOIPACKING::SQUARE:
+		runSquare();
+		break;
+	case RASTERVORONOIPACKING::RANDOM_ENCLOSED: 
+		runRandom();
+		break;
+	case RASTERVORONOIPACKING::BAGPIPE:
+		runBagpipe();
+		break;
+	}
+	quit();
+}
+
+void Packing2DThread::runSquare() {
 	m_abort = false;
 	seed = QDateTime::currentDateTime().toTime_t();
 	qsrand(seed);
@@ -32,7 +59,10 @@ void Packing2DThread::run() {
 	curDim = solver2d->getCurrentWidth();
 	lastFeasibleSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, curDim);
 	bestSolution = lastFeasibleSolution;
-	emit minimumLenghtUpdated(threadSolution, bestSolution.second, 1, 0, seed);
+	// Create solution snapshot
+	Solution2DInfo solInfo; solInfo.iteration = 1; solInfo.timestamp = 0;
+	solInfo.length = curDim; solInfo.height = curDim; solInfo.area = solInfo.length * solInfo.height;
+	emit dimensionUpdated(threadSolution, solInfo, 1, 0, seed);
 	// Execution the first container reduction
 	curDim = qRound(areaDec * solver2d->getCurrentWidth());
 	solver2d->setContainerDimensions(curDim, curDim, threadSolution, parameters);
@@ -64,15 +94,19 @@ void Packing2DThread::run() {
 			}
 			itNum++; totalItNum++;
 		}
+		// Create solution snapshot
+		solInfo.iteration = totalItNum;
+		solInfo.timestamp = (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0;
 		if (!parameters.isFixedLength()) {
 			// Reduce or expand container
 			if (success) {
+				solInfo.length = curDim; solInfo.height = curDim; solInfo.area = solInfo.length * solInfo.height;
+				emit dimensionUpdated(threadSolution, solInfo, totalItNum, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);
 				numLoops = 1;
 				if (solver2d->getCurrentWidth() < bestSolution.second)
 					bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, solver2d->getCurrentWidth());
 				curDim = qRound(areaDec * solver2d->getCurrentWidth());
 				lastFeasibleSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, curDim);
-				emit minimumLenghtUpdated(threadSolution, solver2d->getCurrentWidth(), totalItNum, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);
 			}
 			else if (numLoops >= MAXLOOPSPERLENGTH) {
 				numLoops = 1;
@@ -98,34 +132,7 @@ void Packing2DThread::run() {
 	quit();
 }
 
-void randomChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio) {
-	bool changeLenght = qrand() % 2 - 1;
-	if (changeLenght) {
-		if (ratio < 1) curLenght = std::floor(ratio * (qreal)curLenght);
-		else curLenght = std::ceil(ratio * (qreal)curLenght);
-		return;
-	}
-	if (ratio < 1) curHeight = std::floor(ratio * (qreal)curHeight);
-	else curHeight = std::ceil(ratio * (qreal)curHeight);
-}
-
-void PackingEnclosedThread::run() {
-
-	switch (method) {
-	case RASTERVORONOIPACKING::RANDOM_ENCLOSED: 
-		runRandom();
-		break;
-	case RASTERVORONOIPACKING::BAGPIPE:
-		runBagpipe();
-		break;
-	}
-	quit();
-}
-
-void PackingEnclosedThread::runBagpipe() {
-}
-
-void PackingEnclosedThread::runRandom() {
+void Packing2DThread::runRandom() {
 	m_abort = false;
 	seed = QDateTime::currentDateTime().toTime_t();
 	qsrand(seed);
@@ -195,24 +202,15 @@ void PackingEnclosedThread::runRandom() {
 		// Reduce or expand container
 		int currentArea = solver2d->getCurrentWidth() * solver2d->getCurrentHeight();
 		if (success) {
-			numLoops = 1;
-			if (currentArea < bestSolution.second)
-				bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, currentArea);
-			randomChangeContainerDimensions(curLenght, curHeight, areaDec);
-			//lastFeasibleSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, curDim);
 			solInfo.length = curLenght; solInfo.height = curHeight; solInfo.area = solInfo.length * solInfo.height;
 			emit dimensionUpdated(threadSolution, solInfo, totalItNum, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);
+			numLoops = 1;
+			if (currentArea < bestSolution.second) bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, currentArea);
+			randomChangeContainerDimensions(curLenght, curHeight, areaDec);
 		}
 		else if (numLoops >= MAXLOOPSPERLENGTH) {
 			numLoops = 1;
 			randomChangeContainerDimensions(curLenght, curHeight, areaInc);
-			solInfo.length = curLenght; solInfo.height = curHeight; solInfo.area = solInfo.length * solInfo.height;
-			emit dimensionUpdated(threadSolution, solInfo, totalItNum, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);
-			//// Failure
-			//if (lastFeasibleSolution.second > curDim) {
-			//	solver2d->setContainerDimensions(lastFeasibleSolution.second, lastFeasibleSolution.second, threadSolution, parameters);
-			//	threadSolution = lastFeasibleSolution.first;
-			//}
 		}
 		else numLoops++;
 
@@ -226,4 +224,7 @@ void PackingEnclosedThread::runRandom() {
 	if (m_abort) { qDebug() << "Aborted!"; quit(); }
 	solver2d->setContainerDimensions(curLenght, curHeight, threadSolution, parameters);
 	emit finishedExecution(bestSolution.first, bestSolution.second, totalItNum, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);
+}
+
+void Packing2DThread::runBagpipe() {
 }

@@ -39,8 +39,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(placementMethod);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value");
 	parser.addOption(valueCluster);
-	const QCommandLineOption boolRectangularPacking("rectpacking", "Rectangular packing version.");
-	parser.addOption(boolRectangularPacking);
+	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, bagpipe", "value");
+	parser.addOption(valueRectangularPacking);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -186,8 +186,17 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	if (parser.isSet(boolStripPacking)) params->stripPacking = true;
 	else  params->stripPacking = false;
 
-	if (parser.isSet(boolRectangularPacking)) params->rectangularPacking = true;
-	else  params->rectangularPacking = false;
+	if (parser.isSet(valueRectangularPacking)) {
+		params->rectangularPacking = true;
+		const QString methodType = parser.value(valueRectangularPacking).toLower();
+		if (methodType != "square" && methodType != "random" && methodType != "bagpipe") {
+			*errorMessage = "Invalid initial rectangular method type! Avaible methods: 'square', 'random', 'bagpipe'.";
+			return CommandLineError;
+		}
+		if (methodType == "square") params->rectMehod = SQUARE;
+		if (methodType == "random") params->rectMehod = RANDOM_ENCLOSED;
+		if (methodType == "bagpipe") params->rectMehod = BAGPIPE;
+	}
 
 	if (parser.isSet(valueNumThreads)) {
 		const QString threadsString = parser.value(valueNumThreads);

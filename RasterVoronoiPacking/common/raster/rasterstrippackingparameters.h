@@ -5,6 +5,7 @@ namespace RASTERVORONOIPACKING {
 	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
 	enum Heuristic { NONE, GLS };
 	enum PositionChoice { BOTTOMLEFT_POS, RANDOM_POS, LIMITS_POS, CONTOUR_POS};
+	enum EnclosedMethod { SQUARE, RANDOM_ENCLOSED, BAGPIPE };
 
 	class RasterStripPackingParameters
 	{
@@ -47,6 +48,9 @@ namespace RASTERVORONOIPACKING {
 		void setRectangularPacking(bool val) { this->rectangularPacking = val; }
 		bool isRectangularPacking() { return this->rectangularPacking; }
 
+		void setRectangularPackingMethod(EnclosedMethod method) { this->rectangularPackingMethod = method; }
+		EnclosedMethod getRectangularPackingMethod() { return this->rectangularPackingMethod; }
+
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
 			setTimeLimit(source.getTimeLimit());
@@ -59,6 +63,7 @@ namespace RASTERVORONOIPACKING {
 			setPlacementCriteria(source.getPlacementCriteria());
 			setClusterFactor(source.getClusterFactor());
 			setRectangularPacking(source.isRectangularPacking());
+			setRectangularPackingMethod(source.getRectangularPackingMethod());
 		}
 
 	private:
@@ -68,6 +73,7 @@ namespace RASTERVORONOIPACKING {
 		PositionChoice placementCriteria; // FIXME: Debug
 		qreal initialLenght; // Only used with RANDOMFIXED initial solution
 		bool doubleResolution, fixedLength, rectangularPacking;
+		EnclosedMethod rectangularPackingMethod;
 		qreal clusterFactor;
 	};
 }

@@ -92,6 +92,11 @@ int main(int argc, char *argv[])
 	}
 	algorithmParams.setClusterFactor(params.clusterFactor);
 	algorithmParams.setRectangularPacking(params.rectangularPacking);
+	switch (params.rectMehod) {
+	case SQUARE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::SQUARE); break;
+	case RANDOM_ENCLOSED: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED); break;
+	case BAGPIPE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::BAGPIPE); break;
+	}
 
 	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
 	else packingLoader.setParameters(params.inputFilePath, params.zoomedInputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);

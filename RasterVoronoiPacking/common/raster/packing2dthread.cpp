@@ -112,10 +112,10 @@ void randomChangeContainerDimensions(int &curLenght, int &curHeight, const qreal
 void PackingEnclosedThread::run() {
 
 	switch (method) {
-	case RANDOM_ENCLOSED: 
+	case RASTERVORONOIPACKING::RANDOM_ENCLOSED: 
 		runRandom();
 		break;
-	case BAGPIPE:
+	case RASTERVORONOIPACKING::BAGPIPE:
 		runBagpipe();
 		break;
 	}

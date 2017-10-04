@@ -3,6 +3,13 @@
 
 #include "packingthread.h"
 
+struct Solution2DInfo {
+	int length, height;
+	double area;
+	qreal timestamp;
+	int iteration;
+};
+
 class Packing2DThread : public PackingThread {
 	Q_OBJECT
 public:
@@ -21,18 +28,16 @@ protected:
 signals:
 	// GUI signals
 	void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, int height);
-	void dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, int height, int totalItNum, qreal elapsed, uint seed);
+	void dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int lenght, int height, int totalItNum, qreal elapsed, uint seed);
 };
-
-enum EnclosedMethod {RANDOM_ENCLOSED, BAGPIPE};
 
 class PackingEnclosedThread : public Packing2DThread {
 	Q_OBJECT
 public:
-	PackingEnclosedThread(QObject *parent = 0) { method = RANDOM_ENCLOSED; };
+	PackingEnclosedThread(QObject *parent = 0) { method = RASTERVORONOIPACKING::RANDOM_ENCLOSED; };
 	~PackingEnclosedThread() {};
 
-	void setMethod(EnclosedMethod _method) { method = _method; }
+	void setMethod(RASTERVORONOIPACKING::EnclosedMethod _method) { method = _method; }
 protected:
 	void run();
 
@@ -40,7 +45,7 @@ private:
 	void runRandom();
 	void runBagpipe();
 
-	EnclosedMethod method;
+	RASTERVORONOIPACKING::EnclosedMethod method;
 };
 
 #endif // PACKING2DTHREAD_H

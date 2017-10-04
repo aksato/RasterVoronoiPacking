@@ -92,9 +92,19 @@ void ConsolePackingLoader::run() {
 		if (algorithmParamsBackup.isRectangularPacking()) {
 			solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(new RASTERVORONOIPACKING::RasterStripPackingSolver2D(problem));
 			std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
-			threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
-			std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
-			threadedPacker2D->setSolver(solver2D);
+			if (algorithmParamsBackup.getRectangularPackingMethod() == RASTERVORONOIPACKING::SQUARE) {
+				threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
+				std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
+				threadedPacker2D->setSolver(solver2D);
+			}
+			else {
+				threadedPacker = std::shared_ptr<PackingEnclosedThread>(new PackingEnclosedThread);
+				std::shared_ptr<PackingEnclosedThread> threadedPacker2D = std::dynamic_pointer_cast<PackingEnclosedThread>(threadedPacker);
+				threadedPacker2D->setSolver(solver2D);
+				threadedPacker2D->setMethod(algorithmParamsBackup.getRectangularPackingMethod());
+			}
+			
+			
 		}
 		else {
 			if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));

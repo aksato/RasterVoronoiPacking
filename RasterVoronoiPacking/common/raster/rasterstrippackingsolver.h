@@ -65,6 +65,9 @@ namespace RASTERVORONOIPACKING {
 		void resetWeights() {}
 		// Cluster only function
 		virtual void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {};
+		// Size information function
+		virtual int getMinimumContainerWidth() { return originalProblem->getMaxWidth(); }
+		virtual int getMinimumContainerHeight() { return originalProblem->getMaxHeight(); }
 
 	protected:
 		virtual void updateMapsLength(int pixelWidth, RasterStripPackingParameters &params);

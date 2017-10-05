@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
 	switch (params.rectMehod) {
 	case SQUARE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::SQUARE); break;
 	case RANDOM_ENCLOSED: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED); break;
+	case COST_EVALUATION: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::COST_EVALUATION); break;
 	case BAGPIPE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::BAGPIPE); break;
 	}
 

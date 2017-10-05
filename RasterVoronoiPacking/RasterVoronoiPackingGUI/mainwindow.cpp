@@ -496,6 +496,10 @@ void MainWindow::changeContainerWidth() {
     qreal lenght = QInputDialog::getDouble(this, "New container lenght", "Lenght:", (qreal)solver->getCurrentWidth()/ui->graphicsView->getScale(), 0, (qreal)10*this->rasterProblem->getContainerWidth()/ui->graphicsView->getScale(), 2, &ok);
 	if (!ok) return;
     int scaledWidth = qRound(lenght*ui->graphicsView->getScale());
+	if (scaledWidth < solver->getMinimumContainerWidth()) {
+		ui->statusBar->showMessage("Could not reduce container width.");
+		return;
+	}
     solver->setContainerWidth(scaledWidth, solution, params);
 	solverGls->setContainerWidth(scaledWidth, solution, params);
 	if (solverDoubleGls) solverDoubleGls->setContainerWidth(scaledWidth, solution, params);
@@ -510,6 +514,10 @@ void MainWindow::changeContainerHeight() {
 	qreal height = QInputDialog::getDouble(this, "New container height", "Height:", (qreal)solver->getCurrentHeight() / ui->graphicsView->getScale(), 0, (qreal)10 * (qreal)solver->getCurrentHeight() / ui->graphicsView->getScale(), 2, &ok);
 	if (!ok) return;
 	int scaledHeight = qRound(height*ui->graphicsView->getScale());
+	if (scaledHeight < solver->getMinimumContainerHeight()) {
+		ui->statusBar->showMessage("Could not reduce container height.");
+		return;
+	}
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
 	int currentWidth = solver->getCurrentWidth();
 	solver2D->setContainerDimensions(currentWidth, scaledHeight, solution, params);

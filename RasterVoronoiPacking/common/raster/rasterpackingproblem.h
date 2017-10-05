@@ -66,6 +66,8 @@ namespace RASTERVORONOIPACKING {
         int getItemType(int id) {return items[id]->getPieceType();}
         int getContainerWidth() {return containerWidth;}
 		int getContainerHeight() { return containerHeight; }
+		int getMaxWidth() { return this->maxWidth; }
+		int getMaxHeight() { return this->maxHeight; }
         QString getContainerName() {return containerName;}
         qreal getScale() {return scale;}
 
@@ -75,6 +77,7 @@ namespace RASTERVORONOIPACKING {
 //        QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<QPair<int,int>, int> &pieceAngleMap);
 
         int containerWidth, containerHeight;
+		int maxWidth, maxHeight;
         QString containerName;
         unsigned int maxOrientations;
         QVector<std::shared_ptr<RasterPackingItem>> items;

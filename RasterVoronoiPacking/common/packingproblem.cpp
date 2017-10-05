@@ -368,6 +368,8 @@ bool PackingProblem::load(QString fileName) {
      std::shared_ptr<GeometricTool> curGeometricTool;
      //    PLINE2 *curContour = NULL;
      ReadStates curState = NEUTRAL;
+	 maxLength = 0, maxWidth = 0;
+	 QRectF itemBoundingBox;
 
      xml.setDevice(&file);
      while (!xml.atEnd()) {
@@ -426,8 +428,23 @@ bool PackingProblem::load(QString fileName) {
              QPointF vertex;
              vertex.setX(xml.attributes().value("x0").toDouble());
              vertex.setY(xml.attributes().value("y0").toDouble());
+			 //// Update bounding box
+			 //if (curPolygon->isEmpty()) { itemBoundingBox.setBottomLeft(vertex); itemBoundingBox.setTopRight(vertex); }
+			 //else {
+				// if (vertex.x() < itemBoundingBox.left()) itemBoundingBox.setLeft(vertex.x());
+				// if (vertex.x() > itemBoundingBox.right()) itemBoundingBox.setRight(vertex.x());
+				// if (vertex.y() < itemBoundingBox.top()) itemBoundingBox.setTop(vertex.y());
+				// if (vertex.y() > itemBoundingBox.bottom()) itemBoundingBox.setBottom(vertex.y());
+			 //}
+			 // Insert vertex into polygon
              curPolygon->push_back(vertex);
          }
+
+		 //// Process finished polygon
+		 //if (xml.name() == "polygon" && xml.tokenType() == QXmlStreamReader::EndElement) {
+			// if(itemBoundingBox.width() > maxLength) maxLength = itemBoundingBox.width();
+			// if(itemBoundingBox.height() > maxWidth) maxWidth = itemBoundingBox.height();
+		 //}
 
 		 // Add Bounding Box Information
 		 if (xml.name() == "xMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinX(xml.readElementText().toInt());
@@ -495,6 +512,28 @@ bool PackingProblem::load(QString fileName) {
              (*it)->setPolygon(*resultingPolygonIt);
          else return false; // do error handling
      }
+
+	 int maxOrientations = 0;
+	 // Fing largest dimensions
+	 for(auto piece : pieces) {
+		 auto polIt = piece->getPolygon()->begin();
+		 itemBoundingBox.setBottomLeft(*polIt); 
+		 itemBoundingBox.setTopRight(*polIt);
+		 for (; polIt != piece->getPolygon()->end(); polIt++) {
+			 QPointF vertex = *polIt;
+			 if (vertex.x() < itemBoundingBox.left()) itemBoundingBox.setLeft(vertex.x());
+			 if (vertex.x() > itemBoundingBox.right()) itemBoundingBox.setRight(vertex.x());
+			 if (vertex.y() < itemBoundingBox.top()) itemBoundingBox.setTop(vertex.y());
+			 if (vertex.y() > itemBoundingBox.bottom()) itemBoundingBox.setBottom(vertex.y());
+		 }
+		 if (itemBoundingBox.width() > maxLength) maxLength = itemBoundingBox.width();
+		 if (itemBoundingBox.height() > maxWidth) maxWidth = itemBoundingBox.height();
+		 maxOrientations = std::max(piece->getOrientationsCount(), maxOrientations);
+	 }
+	 if (maxOrientations == 4) {
+		 maxLength = std::max(maxLength, maxWidth);
+		 maxWidth = std::max(maxLength, maxWidth);
+	 }
 
      file.close();
      return true;

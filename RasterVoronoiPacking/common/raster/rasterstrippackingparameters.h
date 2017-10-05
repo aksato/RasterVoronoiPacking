@@ -5,7 +5,7 @@ namespace RASTERVORONOIPACKING {
 	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
 	enum Heuristic { NONE, GLS };
 	enum PositionChoice { BOTTOMLEFT_POS, RANDOM_POS, LIMITS_POS, CONTOUR_POS};
-	enum EnclosedMethod { SQUARE, RANDOM_ENCLOSED, BAGPIPE };
+	enum EnclosedMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
 
 	class RasterStripPackingParameters
 	{

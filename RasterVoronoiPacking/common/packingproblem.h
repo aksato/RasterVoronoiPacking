@@ -281,6 +281,8 @@ namespace RASTERPACKING {
 		CLUSTERING::Cluster getCluster(QString name) { return this->clusteredPieces[name]; }
 		QString getOriginalProblem() { return this->originalProblem; }
 
+		qreal getMaxLength() { return this->maxLength; }
+		qreal getMaxWidth() { return this->maxWidth; }
     private:
 		bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
 		bool saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfo);
@@ -295,6 +297,7 @@ namespace RASTERPACKING {
         QList<std::shared_ptr<RasterInnerFitPolygon>> rasterInnerfitPolygons;
 		QMap<QString, CLUSTERING::Cluster> clusteredPieces;
 		QString originalProblem;
+		qreal maxLength, maxWidth;
     };
 }
 

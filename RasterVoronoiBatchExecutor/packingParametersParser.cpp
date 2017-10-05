@@ -65,8 +65,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	if (parser.isSet(valueRectangular)) {
 		params->rectangular = true;
 		const QString methodType = parser.value(valueRectangular).toLower();
-		if (methodType != "square" && methodType != "random" && methodType != "bagpipe") {
-			*errorMessage = "Invalid initial rectangular method type! Avaible methods: 'square', 'random', 'bagpipe'.";
+		if (methodType != "square" && methodType != "random" && methodType != "cost" && methodType != "bagpipe") {
+			*errorMessage = "Invalid initial rectangular method type! Avaible methods: 'square', 'random', 'cost' and 'bagpipe'.";
 			return CommandLineError;
 		}
 		params->rectMehod = methodType;

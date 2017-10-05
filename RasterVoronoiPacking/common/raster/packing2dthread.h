@@ -34,7 +34,12 @@ signals:
 private:
 	void runSquare();
 	void runRandom();
+	void runCost();
 	void runBagpipe();
+	void costShrinkContainerDimensions(int &curLenght, int &curHeight, RASTERVORONOIPACKING::RasterPackingSolution &currentSolution, const qreal ratio);
+	void randomChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio);
+	bool getShrinkedDimension(int dim, int &newDim, bool length);
+	bool checkShrinkSizeConstraint(int &curLength, int &curHeight, int &reducedLength, int &reducedHeight, qreal ratio);
 	RASTERVORONOIPACKING::EnclosedMethod method;
 };
 

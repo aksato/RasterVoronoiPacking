@@ -125,6 +125,10 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     // 5. Read problem scale
     this->scale = (*problem.crnfpbegin())->getScale();
 
+	// 6. Read max size for container
+	this->maxWidth = std::ceil(problem.getMaxLength() * this->scale);
+	this->maxHeight = std::ceil(problem.getMaxWidth() * this->scale);
+
     return true;
 }
 

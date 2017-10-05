@@ -3,13 +3,6 @@
 
 #include "packingthread.h"
 
-struct Solution2DInfo {
-	int length, height;
-	double area;
-	qreal timestamp;
-	int iteration;
-};
-
 class Packing2DThread : public PackingThread {
 	Q_OBJECT
 public:
@@ -23,23 +16,17 @@ public:
 	void setMethod(RASTERVORONOIPACKING::EnclosedMethod _method) { method = _method; }
 	
 protected:
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2d;
 	void run();
-
-signals:
-	// GUI signals
-	void solutionGenerated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, int height);
-	void dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const Solution2DInfo &info, int totalItNum, qreal elapsed, uint seed);
 
 private:
 	void runSquare();
-	void runRandom();
-	void runCost();
-	void runBagpipe();
+	void runRectangle();
 	void costShrinkContainerDimensions(int &curLenght, int &curHeight, RASTERVORONOIPACKING::RasterPackingSolution &currentSolution, const qreal ratio);
 	void randomChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio);
 	bool getShrinkedDimension(int dim, int &newDim, bool length);
 	bool checkShrinkSizeConstraint(int &curLength, int &curHeight, int &reducedLength, int &reducedHeight, qreal ratio);
+
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2d;
 	RASTERVORONOIPACKING::EnclosedMethod method;
 };
 

@@ -30,11 +30,11 @@ public:
 
 public slots :
 	void printExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed);
-	void saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint threadSeed);
-	void saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, int length, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, uint seed);
+	void saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info);
+	void saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, const ExecutionSolutionInfo &info, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime);
 	void updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed);
 	void threadFinished();
-	void saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const Solution2DInfo &info, int totalItNum, qreal elapsed, uint threadSeed);
+	void saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint threadSeed);
 
 signals:
 	void quitApp();
@@ -42,8 +42,8 @@ signals:
 private:
 	bool loadInputFile(QString inputFilePath, std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> *problem);
 	void writeNewLength(int length, int totalItNum, qreal elapsed, uint threadSeed);
-	void writeNewLength2D(const Solution2DInfo &info, int totalItNum, qreal elapsed, uint threadSeed);
-	void saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, uint seed);
+	void writeNewLength2D(const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint threadSeed);
+	void saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info);
 	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParamsBackup;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, zoomProblem;
 	QString outputTXTFile, outputXMLFile;
@@ -51,8 +51,8 @@ private:
 	bool appendSeedToOutputFiles;
 	int numProcesses;
 	QVector<std::shared_ptr<PackingThread>> threadVector;
-	QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>> solutionsCompilation;
-	QMap<uint, QList<Solution2DInfo>> solutionInfoHistory;
+	QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>> solutionsCompilation;
+	QMap<uint, QList<ExecutionSolutionInfo>> solutionInfoHistory;
 	qreal totalArea;
 	int containerWidth;
 };

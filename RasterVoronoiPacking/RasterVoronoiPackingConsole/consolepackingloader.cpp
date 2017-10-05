@@ -112,8 +112,8 @@ void ConsolePackingLoader::run() {
 			std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
 			threadedPacker2D->setSolver(solver2D);
 			threadedPacker2D->setMethod(algorithmParamsBackup.getRectangularPackingMethod());
-			qRegisterMetaType<Solution2DInfo>("Solution2DInfo");
-			connect(&*threadedPacker2D, SIGNAL(dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)), SLOT(saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution, const Solution2DInfo, int, qreal, uint)));
+			//qRegisterMetaType<ExecutionSolutionInfo>("ExecutionSolutionInfo");
+			//connect(&*threadedPacker2D, SIGNAL(dimensionUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, uint)), SLOT(saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, uint)));
 		}
 		else {
 			if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));
@@ -158,8 +158,9 @@ void ConsolePackingLoader::run() {
 	threadVector.push_back(threadedPacker);
 	connect(&*threadedPacker, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(printExecutionStatus(int, int, int, qreal, qreal, qreal)));
 	qRegisterMetaType<RASTERVORONOIPACKING::RasterPackingSolution>("RASTERVORONOIPACKING::RasterPackingSolution");
-	connect(&*threadedPacker, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)), SLOT(saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, uint)));
-	connect(&*threadedPacker, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)), SLOT(saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution, int, int, qreal, qreal, qreal, uint)));
+	qRegisterMetaType<ExecutionSolutionInfo>("ExecutionSolutionInfo");
+	connect(&*threadedPacker, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), SLOT(saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	connect(&*threadedPacker, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), SLOT(saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
 	connect(&*threadedPacker, SIGNAL(finished()), SLOT(threadFinished()));
 	threadedPacker->setParameters(algorithmParamsBackup);
 
@@ -204,20 +205,26 @@ void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elap
 		out << problem->getScale() << " " << zoomProblem->getScale() << " " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
 }
 
-void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, uint seed) {
-	qreal realLength = length / problem->getScale();
+void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
+	//qreal realLength = info.length / problem->getScale();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> newSolution(new RASTERVORONOIPACKING::RasterPackingSolution(solution.getNumItems()));
 	for (int i = 0; i < solution.getNumItems(); i++) {
 		newSolution->setPosition(i, solution.getPosition(i));
 		newSolution->setOrientation(i, solution.getOrientation(i));
 	}
-	solutionsCompilation.push_back(QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>(newSolution, realLength));
+	solutionsCompilation.push_back(QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>(newSolution, info));
 }
 
-void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint threadSeed) {
-	std::cout << "\n" << "New minimum length obtained: " << minLength / problem->getScale() << ". Elapsed time: " << elapsed << " secs. Seed = " << threadSeed << "\n";
-	writeNewLength(minLength, totalItNum, elapsed, threadSeed);
-	saveXMLSolution(solution, minLength, threadSeed);
+void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
+	if (!info.twodim) {
+		std::cout << "\n" << "New layout obtained: " << info.length / problem->getScale() << ". Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
+		writeNewLength(info.length, info.iteration, info.timestamp, info.seed);
+	}
+	else {
+		std::cout << "\n" << "New layout obtained: " << info.length / problem->getScale() << "x" << info.height / problem->getScale() << " ( area = " << (info.length * info.height) / (problem->getScale() * problem->getScale()) << "). Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
+		writeNewLength2D(info, info.iteration, info.timestamp, info.seed);
+	}
+	saveXMLSolution(solution, info);
 }
 
 void ConsolePackingLoader::updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed) {
@@ -225,14 +232,19 @@ void ConsolePackingLoader::updateUnclusteredProblem(const RASTERVORONOIPACKING::
 	std::cout << "\n" << "Undoing the initial clusters, returning to original problem. Current length:" << length / problem->getScale() << ". Elapsed time: " << elapsed << " secs" << "\n";
 }
 
-void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, int length, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime, uint seed) {
+void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution &bestSolution, const ExecutionSolutionInfo &info, int totalIt, qreal  curOverlap, qreal minOverlap, qreal totalTime) {
 	if (algorithmParamsBackup.isFixedLength()) 
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << totalTime;
-	else 
-		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << length / problem->getScale() << ". Elapsed time:" << totalTime;
-	writeNewLength(length, totalIt, totalTime, seed);
+	else {
+		if (!info.twodim) qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << info.length / problem->getScale() << ". Elapsed time:" << totalTime;
+		else qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum area =" << info.area / (problem->getScale() *problem->getScale()) << ". Elapsed time:" << totalTime;
+	}
+	
+	if(!info.twodim) writeNewLength(info.length, totalIt, totalTime, info.seed);
+	else writeNewLength2D(info, totalIt, totalTime, info.seed);
 
 	// Determine output file names
+	uint seed = info.seed;
 	QString processedOutputTXTFile = appendSeedToOutputFiles ? getSeedAppendedString(outputTXTFile, seed) : outputTXTFile;
 	QString processedOutputXMLFile = appendSeedToOutputFiles ? getSeedAppendedString(outputXMLFile, seed) : outputXMLFile;
 
@@ -242,9 +254,9 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << processedOutputTXTFile << ": " << qPrintable(file.errorString());
 		QTextStream out(&file);
 		if (!algorithmParamsBackup.isDoubleResolution())
-			out << problem->getScale() << " - " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
+			out << problem->getScale() << " - " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
 		else
-			out << problem->getScale() << " " << zoomProblem->getScale() << " " << length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
+			out << problem->getScale() << " " << zoomProblem->getScale() << " " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
 		file.close();
 	}
 	else {
@@ -265,11 +277,18 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		stream.setAutoFormatting(true);
 		stream.writeStartDocument();
 		stream.writeStartElement("layouts");
-		for (QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, qreal>>::iterator it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
+		for (QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>>::iterator it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
 			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> curSolution = (*it).first;
+			qreal realLength = (*it).second.length / problem->getScale();
 			if (algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count())
-				curSolution->save(stream, std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem(), (*it).second, true, seed);
-			else curSolution->save(stream, problem, (*it).second, true, seed);
+				curSolution->save(stream, std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem(), realLength, true, seed);
+			else {
+				if (!info.twodim) curSolution->save(stream, problem, realLength, true, seed);
+				else {
+					qreal realHeight = (*it).second.height / problem->getScale();
+					curSolution->save(stream, problem, realLength, realHeight, (*it).second.iteration, true, seed);
+				}
+			}
 		}
 		stream.writeEndElement(); // layouts
 		file.close();
@@ -277,7 +296,7 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 
 	// Print compiled results
 	auto bestResult = std::min_element(solutionInfoHistory[seed].begin(), solutionInfoHistory[seed].end(),
-		[](Solution2DInfo const & lhs, Solution2DInfo const & rhs) {
+		[](ExecutionSolutionInfo const & lhs, ExecutionSolutionInfo const & rhs) {
 		if (lhs.area == rhs.area) return lhs.iteration < rhs.iteration;
 		return lhs.area < rhs.area;
 	});
@@ -300,7 +319,7 @@ void ConsolePackingLoader::threadFinished() {
 	if (numProcesses == 0) emit quitApp();
 }
 
-void ConsolePackingLoader::writeNewLength2D(const Solution2DInfo &info, int totalItNum, qreal elapsed, uint threadSeed) {
+void ConsolePackingLoader::writeNewLength2D(const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint threadSeed) {
 	QString *threadOutlogContens = outlogContents[threadSeed];
 	if (!threadOutlogContens) { threadOutlogContens = new QString; outlogContents.insert(threadSeed, threadOutlogContens); }
 	QTextStream out(threadOutlogContens);
@@ -312,14 +331,14 @@ void ConsolePackingLoader::writeNewLength2D(const Solution2DInfo &info, int tota
 	solutionInfoHistory[threadSeed].push_back(info);
 }
 
-void ConsolePackingLoader::saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const Solution2DInfo &info, int totalItNum, qreal elapsed, uint threadSeed) {
+void ConsolePackingLoader::saveMinimumResult2D(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint threadSeed) {
 	std::cout << "\n" << "New layout obtained: (" << info.length / problem->getScale() << ", " << info.height / problem->getScale() << ") with density = " << (problem->getScale()*problem->getScale()*totalArea) / info.area << ". Area:" << info.area / (problem->getScale() *problem->getScale()) << ". Elapsed time: " << elapsed << " secs. Seed = " << threadSeed << "\n";
 	// Save only if it is the best solution
 	auto bestResult = std::min_element(solutionInfoHistory[threadSeed].begin(), solutionInfoHistory[threadSeed].end(),
-		[](Solution2DInfo const & lhs, Solution2DInfo const & rhs) {
+		[](ExecutionSolutionInfo const & lhs, ExecutionSolutionInfo const & rhs) {
 		if (lhs.area == rhs.area) return lhs.iteration < rhs.iteration;
 		return lhs.area < rhs.area;
 	});
-	if (solutionInfoHistory[threadSeed].isEmpty() || info.area < bestResult->area) saveXMLSolution(solution, info.height > info.length ? info.height : info.length, threadSeed);
+	if (solutionInfoHistory[threadSeed].isEmpty() || info.area < bestResult->area) saveXMLSolution(solution, info);
 	writeNewLength2D(info, totalItNum, elapsed, threadSeed);
 }

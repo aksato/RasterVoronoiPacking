@@ -18,6 +18,11 @@ void PackingThread::setInitialSolution(RASTERVORONOIPACKING::RasterPackingSoluti
     }
 }
 
+qreal PackingThread::getTimeStamp(int timeLimit, QDateTime &finalTime) {
+	qreal ans = (timeLimit * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0;
+	return ans;
+}
+
 void PackingThread::run()
 {
 	m_abort = false;
@@ -28,8 +33,8 @@ void PackingThread::run()
     int worseSolutionsCount = 0;
 	bool success = false;
 	int curLength = solver->getCurrentWidth();
-	int minSuccessfullLength = curLength;
-	qreal curRealLength = (qreal)minSuccessfullLength;
+	ExecutionSolutionInfo minSuccessfullSol(curLength, 0, seed);
+	qreal curRealLength = (qreal)minSuccessfullSol.length;
 	qreal rdec = 0.04; qreal rinc = 0.01;
 	qreal minOverlap = std::numeric_limits<qreal>::max();
 	qreal curOverlap = minOverlap;
@@ -47,8 +52,9 @@ void PackingThread::run()
 		// Generate initial bottom left solution and determine the initial length
 		solver->generateBottomLeftSolution(threadSolution, parameters);
 		curLength = solver->getCurrentWidth();
-		minSuccessfullLength = curLength;
-		emit minimumLenghtUpdated(threadSolution, minSuccessfullLength, 1, 0, seed);
+		minSuccessfullSol = ExecutionSolutionInfo(curLength, 1, seed);
+		emit minimumLenghtUpdated(threadSolution, ExecutionSolutionInfo(minSuccessfullSol.length, 0, 1, seed));
+		
 		// Execution the first container reduction
 		curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
 		curLength = qRound(curRealLength);
@@ -56,7 +62,7 @@ void PackingThread::run()
 	}
 	minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 	itNum++; totalItNum++;
-	emit solutionGenerated(threadSolution, curLength);
+	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(minSuccessfullSol.length, 1, seed));
 
 	qreal nextUpdateTime = QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 - UPDATEINTERVAL;
 	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
@@ -73,11 +79,10 @@ void PackingThread::run()
 				worseSolutionsCount = 0;
 			}
 			else worseSolutionsCount++;
-			//if(itNum % 10 == 0) {
 			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
 				nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
 				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit()*1000-QDateTime::currentDateTime().msecsTo(finalTime))/1000.0);
-				emit solutionGenerated(threadSolution, curLength);
+				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, totalItNum, seed));
 				emit weightsChanged();
 			}
 			itNum++; totalItNum++;
@@ -86,17 +91,17 @@ void PackingThread::run()
 			// Reduce or expand container
 			if(success) {
 				numLoops = 1;
-				bestSolution = threadSolution; minSuccessfullLength = curLength;
+				bestSolution = threadSolution; minSuccessfullSol = ExecutionSolutionInfo(curLength, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
 				curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
 				curLength = qRound(curRealLength);
-				emit minimumLenghtUpdated(bestSolution, minSuccessfullLength, totalItNum, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);
+				emit minimumLenghtUpdated(bestSolution, minSuccessfullSol);
 			}
 			else if (numLoops >= MAXLOOPSPERLENGTH) {
 				numLoops = 1;
-				if (qRound((1.0 + rinc)*curRealLength) >= minSuccessfullLength) {
-					curRealLength = (curRealLength + minSuccessfullLength) / 2;
-					if (qRound(curRealLength) == minSuccessfullLength)
-						curRealLength = minSuccessfullLength - 1;
+				if (qRound((1.0 + rinc)*curRealLength) >= minSuccessfullSol.length) {
+					curRealLength = (curRealLength + minSuccessfullSol.length) / 2;
+					if (qRound(curRealLength) == minSuccessfullSol.length)
+						curRealLength = minSuccessfullSol.length - 1;
 					if (curLength == qRound(curRealLength)) solver->generateRandomSolution(threadSolution, parameters);
 					curLength = qRound(curRealLength);
 				}
@@ -122,8 +127,8 @@ void PackingThread::run()
 		emit weightsChanged();
 	}
 	if (m_abort) {qDebug() << "Aborted!"; quit();}
-	solver->setContainerWidth(minSuccessfullLength, bestSolution, parameters);
-	emit finishedExecution(bestSolution, minSuccessfullLength, totalItNum, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0, seed);
+	solver->setContainerWidth(minSuccessfullSol.length, bestSolution, parameters);
+	emit finishedExecution(bestSolution, minSuccessfullSol, totalItNum, curOverlap, minOverlap, getTimeStamp(parameters.getTimeLimit(), finalTime));
 	quit();
 }
 

@@ -87,3 +87,29 @@ bool RasterPackingSolution::save(QXmlStreamWriter &stream, std::shared_ptr<Raste
 
 	return true;
 }
+
+bool RasterPackingSolution::save(QXmlStreamWriter &stream, std::shared_ptr<RasterPackingProblem> problem, qreal length, qreal height, int iteration, bool printSeed, uint seed) {
+	stream.writeStartElement("solution");
+	for (int i = 0; i < placements.size(); i++) {
+		stream.writeStartElement("placement");
+		stream.writeAttribute("boardNumber", "1");
+		stream.writeAttribute("x", QString::number(placements.at(i).getPos().x() / problem->getScale()));
+		stream.writeAttribute("y", QString::number(placements.at(i).getPos().y() / problem->getScale()));
+		stream.writeAttribute("idboard", problem->getContainerName());
+		stream.writeAttribute("idPiece", problem->getItem(i)->getPieceName());
+		stream.writeAttribute("angle", QString::number(problem->getItem(i)->getAngleValue(placements.at(i).getOrientation())));
+		stream.writeAttribute("mirror", "none");
+		stream.writeEndElement(); // placement
+	}
+	stream.writeStartElement("extraInfo");
+	stream.writeTextElement("length", QString::number(length));
+	stream.writeTextElement("height", QString::number(height));
+	stream.writeTextElement("area", QString::number(length*height));
+	stream.writeTextElement("iteration", QString::number(iteration));
+	stream.writeTextElement("scale", QString::number(problem->getScale()));
+	if (printSeed) stream.writeTextElement("seed", QString::number(seed));
+	stream.writeEndElement(); // extraInfo
+	stream.writeEndElement(); // solution
+
+	return true;
+}

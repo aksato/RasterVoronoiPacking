@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
 	case Method_ZoomGls: algorithmParams.setHeuristic(RASTERVORONOIPACKING::GLS); algorithmParams.setDoubleResolution(true); break;
 	}
 	algorithmParams.setFixedLength(!params.stripPacking);
+	if (params.rdec > 0 && params.rinc > 0) algorithmParams.setResizeChangeRatios(params.rdec, params.rinc);
 	algorithmParams.setTimeLimit(params.timeLimitValue); algorithmParams.setNmo(params.maxWorseSolutionsValue);
 	algorithmParams.setIterationsLimit(params.iterationsLimitValue);
 	if (params.initialSolutionType == Solution_Random) {

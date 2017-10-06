@@ -1,6 +1,9 @@
 #ifndef RASTERSTRIPPACKINGPARAMETERS_H
 #define RASTERSTRIPPACKINGPARAMETERS_H
 
+#define DEFAULT_RDEC 0.04
+#define DEFAULT_RINC 0.01
+
 namespace RASTERVORONOIPACKING {
 	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
 	enum Heuristic { NONE, GLS };
@@ -12,7 +15,7 @@ namespace RASTERVORONOIPACKING {
 	public:
 		RasterStripPackingParameters() :
 			Nmo(200), maxSeconds(600), heuristicType(GLS), doubleResolution(false),
-			fixedLength(false), maxIterations(0), rectangularPacking(false)
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
@@ -51,6 +54,10 @@ namespace RASTERVORONOIPACKING {
 		void setRectangularPackingMethod(EnclosedMethod method) { this->rectangularPackingMethod = method; }
 		EnclosedMethod getRectangularPackingMethod() { return this->rectangularPackingMethod; }
 
+		void setResizeChangeRatios(qreal _ratioDecrease, qreal _ratioIncrease) { this->rdec = _ratioDecrease; this->rinc = _ratioIncrease; }
+		qreal getRdec() { return this->rdec; }
+		qreal getRinc() { return this->rinc; }
+
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
 			setTimeLimit(source.getTimeLimit());
@@ -64,6 +71,7 @@ namespace RASTERVORONOIPACKING {
 			setClusterFactor(source.getClusterFactor());
 			setRectangularPacking(source.isRectangularPacking());
 			setRectangularPackingMethod(source.getRectangularPackingMethod());
+			setResizeChangeRatios(source.getRdec(), source.getRinc());
 		}
 
 	private:
@@ -75,6 +83,7 @@ namespace RASTERVORONOIPACKING {
 		bool doubleResolution, fixedLength, rectangularPacking;
 		EnclosedMethod rectangularPackingMethod;
 		qreal clusterFactor;
+		qreal rdec, rinc;
 	};
 }
 

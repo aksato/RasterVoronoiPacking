@@ -26,6 +26,7 @@ struct ConsolePackingArgs {
 	int iterationsLimitValue;
     qreal containerLenght;
 	qreal clusterFactor;
+	qreal rdec, rinc;
 
     bool originalContainerLenght;
 	bool stripPacking;

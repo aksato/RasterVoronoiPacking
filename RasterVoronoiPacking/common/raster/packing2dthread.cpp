@@ -100,7 +100,7 @@ void Packing2DThread::runSquare() {
 	int worseSolutionsCount = 0;
 	bool success = false;
 	int curDim;
-	qreal rdec = 0.10; qreal rinc = 0.01;
+	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
 	qreal areaDec = sqrt(1 - rdec), areaInc = sqrt(1 + rinc);
 	qreal minOverlap = std::numeric_limits<qreal>::max();
 	qreal curOverlap = minOverlap;
@@ -196,7 +196,7 @@ void Packing2DThread::runRectangle() {
 	int worseSolutionsCount = 0;
 	bool success = false;
 	int curLenght, curHeight;
-	qreal rdec = 0.10; qreal rinc = 0.01;
+	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
 	const qreal areaDec = 1 - rdec, areaInc = 1 + rinc;
 	qreal minOverlap = std::numeric_limits<qreal>::max();
 	qreal curOverlap = minOverlap;

@@ -35,7 +35,7 @@ void PackingThread::run()
 	int curLength = solver->getCurrentWidth();
 	ExecutionSolutionInfo minSuccessfullSol(curLength, 0, seed);
 	qreal curRealLength = (qreal)minSuccessfullSol.length;
-	qreal rdec = 0.04; qreal rinc = 0.01;
+	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
 	qreal minOverlap = std::numeric_limits<qreal>::max();
 	qreal curOverlap = minOverlap;
     RASTERVORONOIPACKING::RasterPackingSolution bestSolution = threadSolution;

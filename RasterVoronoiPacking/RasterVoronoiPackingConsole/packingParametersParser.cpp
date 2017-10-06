@@ -27,6 +27,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.addOption(valueMaxWorseSolutions);
     const QCommandLineOption valueTimeLimit("duration", "Time limit in seconds.", "value");
     parser.addOption(valueTimeLimit);
+	const QCommandLineOption valueRatios("ratios", "Ratios for container increase / decrease given in rdec;rinc form.", "value;value");
+	parser.addOption(valueRatios);
 	const QCommandLineOption valueIterationsLimit("maxits", "Maximum number of iterations.", "value");
 	parser.addOption(valueIterationsLimit);
     const QCommandLineOption valueLenght("length", "Container lenght.", "value");
@@ -239,6 +241,25 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		}
 	}
 	else params->clusterFactor = -1.0;
+
+	if (parser.isSet(valueRatios)) {
+		const QString ratiosStr = parser.value(valueRatios);
+		QStringList ratiosList = ratiosStr.split(";");
+		bool ok;
+		qreal rdec = ratiosList[0].toDouble(&ok);
+		qreal rinc = ratiosList[1].toDouble(&ok);
+		if (ok && rdec > 0 && rinc > 0) {
+			params->rdec = rdec;
+			params->rinc = rinc;
+		}
+		else {
+			*errorMessage = "Bad ratio value.";
+			return CommandLineError;
+		}
+	}
+	else {
+		params->rdec = -1.0; params->rinc = -1.0;
+	}
 
     return CommandLineOk;
 }

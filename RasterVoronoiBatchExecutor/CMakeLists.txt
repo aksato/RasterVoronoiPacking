@@ -8,7 +8,7 @@ project(RasterVoronoiBatchExecutor)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt5Widgets)
-find_package(CUDA QUIET REQUIRED)
+#find_package(CUDA QUIET REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 

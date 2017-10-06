@@ -14,6 +14,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueNumExecutions("executions", "Number of total executions of the algorithm per case.", "value"); parser.addOption(valueNumExecutions);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value"); parser.addOption(valueCluster);
 	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem. Choices: square, random, bagpipe.", "value"); parser.addOption(valueRectangular);
+	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
+	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);
 	const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -61,7 +63,16 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 		if (parseOk && clusterFactor >= 0 && clusterFactor <= 1.0) params->clusterFactor = clusterFactor;
 		else { *errorMessage = "Bad cluster factor value."; return CommandLineError; }
 	}
-
+	if (parser.isSet(valueRinc)) {
+		const float rincValue = parser.value(valueRinc).toFloat(&parseOk);
+		if (parseOk && rincValue > 0) params->rinc = rincValue;
+		else { *errorMessage = "Bad rinc value."; return CommandLineError; }
+	}
+	if (parser.isSet(valueRdec)) {
+		const float rdecValue = parser.value(valueRdec).toFloat(&parseOk);
+		if (parseOk && rdecValue > 0) params->rdec = rdecValue;
+		else { *errorMessage = "Bad rdec value."; return CommandLineError; }
+	}
 	if (parser.isSet(valueRectangular)) {
 		params->rectangular = true;
 		const QString methodType = parser.value(valueRectangular).toLower();

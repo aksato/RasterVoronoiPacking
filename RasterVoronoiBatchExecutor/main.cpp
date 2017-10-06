@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	
 	QProcess *myProcess = new QProcess;
 	myProcess->setProcessChannelMode(QProcess::MergedChannels);
-	for each (CaseExecutionParam curCase in cases)
+	foreach (CaseExecutionParam curCase , cases)
 	{
 		// Determine output files from folder
 		QDir outputDir(curCase.outputFolder);
@@ -123,6 +123,7 @@ int main(int argc, char *argv[])
 		arguments << "--initial=bottomleft" << "--duration=" + QString::number(curCase.timeLimit) << "--strippacking" << "--appendseed" << "--layout=" + xmlOutput << "--result=" + txtOutput;// << "--parallel=" + QString::number(params.threadCount);
 		if (params.clusterFactor > 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution
 		if (params.rectangular) arguments << "--rectpacking=" + params.rectMehod;
+		arguments << "--ratios=" + QString::number(params.rdec) + ";"  + QString::number(params.rinc);
 
 		if (pastExecutionCount >= params.executionCount) { qDebug() << "Skipping execution of fully processed case" << curCase.problemFileName; continue; }		
 		qDebug() << "Running Raster Packing Console with arguments" << arguments;

@@ -14,7 +14,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <memory>
-#include <windows.h>
+//#include <windows.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[])
 {
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < params.numThreads; i++) {
 		//PackingThread threadedPacker;
 		packingLoader.run();
-		Sleep(10000);
+		sleep(1);
 	}
     return app.exec();
 }

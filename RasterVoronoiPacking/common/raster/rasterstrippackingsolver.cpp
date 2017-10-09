@@ -45,7 +45,15 @@ void RasterStripPackingSolver::generateRandomSolution(RasterPackingSolution &sol
 }
 
 // --> Generate initial solution using the bottom left heuristic and resize the container accordingly
-void RasterStripPackingSolver::generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+void RasterStripPackingSolver::generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params, BottomLeftMode mode) {
+	switch(mode) {
+		case BL_STRIPPACKING: generateBottomLeftStripSolution(solution, params); break;
+		case BL_RECTANGULAR: generateBottomLeftRectangleSolution(solution, params); break;
+		case BL_SQUARE: generateBottomLeftSquareSolution(solution, params); break;
+	}
+}
+
+void RasterStripPackingSolver::generateBottomLeftStripSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
 	QVector<int> sequence;
 	for (int i = 0; i < originalProblem->count(); i++) sequence.append(i);
 	std::random_shuffle(sequence.begin(), sequence.end());

@@ -8,7 +8,7 @@
 
 bool Packing2DThread::getShrinkedDimension(int dim, int &newDim, bool length) {
 	// Get minimum dimension
-	int minimumDimension = length ? solver2d->getMinimumContainerWidth() : solver2d->getMinimumContainerHeight();
+	int minimumDimension = length ? solver->getMinimumContainerWidth() : solver->getMinimumContainerHeight();
 	
 	// Check if dimension is already minimum
 	if (dim == minimumDimension) return false;
@@ -59,16 +59,16 @@ void Packing2DThread::costShrinkContainerDimensions(int &curLenght, int &curHeig
 	// FIXME: What if both are not reduceable??
 
 	// Estimate cost in X
-	this->solver2d->setContainerDimensions(reducedLength, curHeight, tempSolution, parameters);
-	qreal costX = this->solver2d->getGlobalOverlap(tempSolution, parameters);
+	this->solver->setContainerDimensions(reducedLength, curHeight, tempSolution, parameters);
+	qreal costX = this->solver->getGlobalOverlap(tempSolution, parameters);
 
 	// Reset container and solution
-	this->solver2d->setContainerDimensions(curLenght, curHeight, tempSolution, parameters);
+	this->solver->setContainerDimensions(curLenght, curHeight, tempSolution, parameters);
 	tempSolution = currentSolution;
 
 	// Estimate cost in Y
-	this->solver2d->setContainerDimensions(curLenght, reducedHeight, tempSolution, parameters);
-	qreal costY = this->solver2d->getGlobalOverlap(tempSolution, parameters);
+	this->solver->setContainerDimensions(curLenght, reducedHeight, tempSolution, parameters);
+	qreal costY = this->solver->getGlobalOverlap(tempSolution, parameters);
 
 	// Determine new height and length
 	if (costX > costY) curHeight = reducedHeight;
@@ -105,7 +105,7 @@ void Packing2DThread::runSquare() {
 	qreal minOverlap = std::numeric_limits<qreal>::max();
 	qreal curOverlap = minOverlap;
 	QPair<RASTERVORONOIPACKING::RasterPackingSolution, int> lastFeasibleSolution, bestSolution;
-	solver2d->resetWeights();
+	solver->resetWeights();
 	int numLoops = 1;
 
 	// Determine time to finish
@@ -113,18 +113,18 @@ void Packing2DThread::runSquare() {
 	finalTime = finalTime.addSecs(parameters.getTimeLimit());
 
 	// Generate initial bottom left solution and determine the initial length
-	solver2d->generateBottomLeftSquareSolution(threadSolution, parameters);
-	curDim = solver2d->getCurrentWidth();
+	solver->generateBottomLeftSolution(threadSolution, parameters, RASTERVORONOIPACKING::BL_SQUARE);
+	curDim = solver->getCurrentWidth();
 	lastFeasibleSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, curDim);
 	bestSolution = lastFeasibleSolution;
 	// Create solution snapshot
 	ExecutionSolutionInfo minSuccessfullSol(curDim, curDim, 0, 1, seed);
 	emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
 	// Execution the first container reduction
-	curDim = qRound(areaDec * solver2d->getCurrentWidth());
-	solver2d->setContainerDimensions(curDim, curDim, threadSolution, parameters);
+	curDim = qRound(areaDec * solver->getCurrentWidth());
+	solver->setContainerDimensions(curDim, curDim, threadSolution, parameters);
 
-	minOverlap = solver2d->getGlobalOverlap(threadSolution, parameters);
+	minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 	itNum++; totalItNum++;
 	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curDim, curDim, 1, seed));
 
@@ -133,9 +133,9 @@ void Packing2DThread::runSquare() {
 		if (m_abort) break;
 		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 			if (m_abort) break;
-			solver2d->performLocalSearch(threadSolution, parameters);
-			solver2d->updateWeights(threadSolution, parameters);
-			curOverlap = solver2d->getGlobalOverlap(threadSolution, parameters);
+			solver->performLocalSearch(threadSolution, parameters);
+			solver->updateWeights(threadSolution, parameters);
+			curOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 			if (curOverlap < minOverlap || qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) {
 				minOverlap = curOverlap;
 				if (qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) { success = true; break; }
@@ -156,33 +156,33 @@ void Packing2DThread::runSquare() {
 			if (success) {
 				emit minimumLenghtUpdated(threadSolution, ExecutionSolutionInfo(curDim, curDim, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed));
 				numLoops = 1;
-				if (solver2d->getCurrentWidth() < bestSolution.second) {
-					minSuccessfullSol = ExecutionSolutionInfo(solver2d->getCurrentWidth(), solver2d->getCurrentWidth(), getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
-					bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, solver2d->getCurrentWidth());
+				if (solver->getCurrentWidth() < bestSolution.second) {
+					minSuccessfullSol = ExecutionSolutionInfo(solver->getCurrentWidth(), solver->getCurrentWidth(), getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
+					bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, solver->getCurrentWidth());
 				}
-				curDim = qRound(areaDec * solver2d->getCurrentWidth());
+				curDim = qRound(areaDec * solver->getCurrentWidth());
 				lastFeasibleSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, curDim);
 			}
 			else if (numLoops >= MAXLOOPSPERLENGTH) {
 				numLoops = 1;
-				curDim = std::ceil(areaInc * solver2d->getCurrentWidth());
+				curDim = std::ceil(areaInc * solver->getCurrentWidth());
 				// Failure
 				if (lastFeasibleSolution.second > curDim) {
-					solver2d->setContainerDimensions(lastFeasibleSolution.second, lastFeasibleSolution.second, threadSolution, parameters);
+					solver->setContainerDimensions(lastFeasibleSolution.second, lastFeasibleSolution.second, threadSolution, parameters);
 					threadSolution = lastFeasibleSolution.first;
 				}
 			}
 			else numLoops++;
 
-			solver2d->setContainerDimensions(curDim, curDim, threadSolution, parameters);
+			solver->setContainerDimensions(curDim, curDim, threadSolution, parameters);
 			success = false;
-			minOverlap = solver2d->getGlobalOverlap(threadSolution, parameters);
+			minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 		}
-		itNum = 0; worseSolutionsCount = 0; solver2d->resetWeights();
+		itNum = 0; worseSolutionsCount = 0; solver->resetWeights();
 		emit weightsChanged();
 	}
 	if (m_abort) { qDebug() << "Aborted!"; quit(); }
-	solver2d->setContainerWidth(bestSolution.second, bestSolution.first, parameters);
+	solver->setContainerWidth(bestSolution.second, bestSolution.first, parameters);
 	emit finishedExecution(bestSolution.first, minSuccessfullSol, totalItNum, curOverlap, minOverlap, getTimeStamp(parameters.getTimeLimit(), finalTime));
 	quit();
 }
@@ -201,7 +201,7 @@ void Packing2DThread::runRectangle() {
 	qreal minOverlap = std::numeric_limits<qreal>::max();
 	qreal curOverlap = minOverlap;
 	QPair<RASTERVORONOIPACKING::RasterPackingSolution, int> bestSolution;
-	solver2d->resetWeights();
+	solver->resetWeights();
 	int numLoops = 1;
 
 	// Determine time to finish
@@ -209,17 +209,17 @@ void Packing2DThread::runRectangle() {
 	finalTime = finalTime.addSecs(parameters.getTimeLimit());
 
 	// Generate initial bottom left solution and determine the initial length
-	solver2d->generateBottomLeftSolution(threadSolution, parameters);
-	curLenght = solver2d->getCurrentWidth(); curHeight = solver2d->getCurrentHeight();
+	solver->generateBottomLeftSolution(threadSolution, parameters, RASTERVORONOIPACKING::BL_RECTANGULAR);
+	curLenght = solver->getCurrentWidth(); curHeight = solver->getCurrentHeight();
 	bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, curLenght * curHeight);
 	ExecutionSolutionInfo minSuccessfullSol(curLenght, curHeight, 0, 1, seed);
 	// Create solution snapshot
 	emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
 	// Execution the first container reduction
 	randomChangeContainerDimensions(curLenght, curHeight, areaDec);
-	solver2d->setContainerDimensions(curLenght, curHeight, threadSolution, parameters);
+	solver->setContainerDimensions(curLenght, curHeight, threadSolution, parameters);
 
-	minOverlap = solver2d->getGlobalOverlap(threadSolution, parameters);
+	minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 	itNum++; totalItNum++;
 	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLenght, curHeight, 1, seed));
 
@@ -228,9 +228,9 @@ void Packing2DThread::runRectangle() {
 		if (m_abort) break;
 		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 			if (m_abort) break;
-			solver2d->performLocalSearch(threadSolution, parameters);
-			solver2d->updateWeights(threadSolution, parameters);
-			curOverlap = solver2d->getGlobalOverlap(threadSolution, parameters);
+			solver->performLocalSearch(threadSolution, parameters);
+			solver->updateWeights(threadSolution, parameters);
+			curOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 			if (curOverlap < minOverlap || qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) {
 				minOverlap = curOverlap;
 				if (qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) { success = true; break; }
@@ -246,7 +246,7 @@ void Packing2DThread::runRectangle() {
 			itNum++; totalItNum++;
 		}
 		// Reduce or expand container
-		int currentArea = solver2d->getCurrentWidth() * solver2d->getCurrentHeight();
+		int currentArea = solver->getCurrentWidth() * solver->getCurrentHeight();
 		if (success) {
 			emit minimumLenghtUpdated(threadSolution, ExecutionSolutionInfo(curLenght, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed));
 			numLoops = 1;
@@ -264,14 +264,14 @@ void Packing2DThread::runRectangle() {
 		}
 		else numLoops++;
 
-		solver2d->setContainerDimensions(curLenght, curHeight, threadSolution, parameters);
+		solver->setContainerDimensions(curLenght, curHeight, threadSolution, parameters);
 		success = false;
-		minOverlap = solver2d->getGlobalOverlap(threadSolution, parameters);
+		minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 
-		itNum = 0; worseSolutionsCount = 0; solver2d->resetWeights();
+		itNum = 0; worseSolutionsCount = 0; solver->resetWeights();
 		emit weightsChanged();
 	}
 	if (m_abort) { qDebug() << "Aborted!"; quit(); }
-	solver2d->setContainerDimensions(curLenght, curHeight, threadSolution, parameters);
+	solver->setContainerDimensions(curLenght, curHeight, threadSolution, parameters);
 	emit finishedExecution(bestSolution.first, minSuccessfullSol, totalItNum, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
 }

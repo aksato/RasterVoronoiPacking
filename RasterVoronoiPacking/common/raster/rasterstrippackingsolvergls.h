@@ -34,23 +34,6 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<GlsWeightSet> glsWeights;
 	};
 
-
-	class RasterStripPackingSolver2D : public RasterStripPackingSolverGLS {
-		friend class MainWindow;
-
-	public:
-		RasterStripPackingSolver2D(std::shared_ptr<RasterPackingProblem> _problem) : RasterStripPackingSolverGLS(_problem) {
-			currentHeight = this->originalProblem->getContainerHeight();
-			initialHeight = currentHeight;
-		}
-		void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		void generateBottomLeftSquareSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		bool setContainerDimensions(int &pixelWidthX, int &pixelWidthY, RasterPackingSolution &solution, RasterStripPackingParameters &params);
-	private:
-		int getItemMaxY(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
-		void updateMapsDimensions(int pixelWidth, int pixelHeight, RasterStripPackingParameters &params);
-	};
-
 	class RasterStripPackingSolverClusterGLS : public RasterStripPackingSolverGLS
 	{
 		friend class MainWindow;

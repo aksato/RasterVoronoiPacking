@@ -25,6 +25,7 @@ set(SRC
 	../common/packingproblem.cpp
 	../common/raster/totaloverlapmap.cpp
 	../common/raster/rasterstrippackingsolver.cpp
+	../common/raster/rasterstrippackingsolver2d.cpp
 	../common/raster/rasterstrippackingsolvergls.cpp
 	../common/raster/rasterstrippackingsolverdoublegls.cpp
 	../common/raster/rasterpackingsolution.cpp

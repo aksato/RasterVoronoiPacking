@@ -418,19 +418,10 @@ void MainWindow::executePacking() {
 
 	params.setClusterFactor(runConfig.getClusterFactor());
 	if (params.isRectangularPacking() || runConfig.getMinimalRectangleProblem()) {
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
-		if (runConfig.getMinimalRectangleProblem()) {
-			run2DThread.setParameters(params);
-			run2DThread.setSolver(solver2D);
-			run2DThread.setMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED);
-			run2DThread.start();
-		}
-		else {
-			run2DThread.setParameters(params);
-			run2DThread.setSolver(solver2D);
-			run2DThread.setMethod(RASTERVORONOIPACKING::SQUARE);
-			run2DThread.start();
-		}
+		run2DThread.setParameters(params);
+		run2DThread.setSolver(params.getHeuristic() == GLS ? solverGls : solver);
+		run2DThread.setMethod(runConfig.getMinimalRectangleProblem() ? RASTERVORONOIPACKING::RANDOM_ENCLOSED : RASTERVORONOIPACKING::SQUARE);
+		run2DThread.start();
 	}
 	else if (params.getClusterFactor() < 0) {
 		runThread.setParameters(params);
@@ -518,9 +509,8 @@ void MainWindow::changeContainerHeight() {
 		ui->statusBar->showMessage("Could not reduce container height.");
 		return;
 	}
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
 	int currentWidth = solver->getCurrentWidth();
-	solver2D->setContainerDimensions(currentWidth, scaledHeight, solution, params);
+	solver->setContainerDimensions(currentWidth, scaledHeight, solution, params);
 	ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth(), solver->getCurrentHeight());
 	ui->graphicsView->setCurrentSolution(solution);
 }
@@ -621,9 +611,8 @@ void MainWindow::showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterP
 			". Minimum overlap: " + QString::number(minOverlap / zoomscale) +
 			". Elapsed time: " + QString::number(elapsed) +
 			" secs. Solution area : " + QString::number((qreal)info.area / (rasterProblem->getScale()*rasterProblem->getScale())) + ".");
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver2D> solver2D = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterStripPackingSolver2D>(solver);
 		int minHeight = info.height;
-		solver2D->setContainerDimensions(minLength, minHeight, this->solution, params);
+		solver->setContainerDimensions(minLength, minHeight, this->solution, params);
 	}
 }
 

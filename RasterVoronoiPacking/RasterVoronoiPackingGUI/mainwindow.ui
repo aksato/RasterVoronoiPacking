@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1068</width>
-    <height>1991</height>
+    <width>1869</width>
+    <height>1383</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -477,7 +477,7 @@
         <item>
          <widget class="PackingViewer" name="graphicsView">
           <property name="enabled">
-           <bool>true</bool>
+           <bool>false</bool>
           </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
@@ -507,7 +507,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1068</width>
+     <width>1869</width>
      <height>31</height>
     </rect>
    </property>

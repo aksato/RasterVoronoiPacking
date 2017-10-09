@@ -15,6 +15,7 @@ struct ExecutionSolutionInfo {
 	ExecutionSolutionInfo(int _length, int _iteration, uint _seed) : length(_length), iteration(_iteration), timestamp(0.0), seed(_seed) { twodim = false; }
 	ExecutionSolutionInfo(int _length, int _height, int _iteration, uint _seed) : length(_length), height(_height), iteration(_iteration), timestamp(0.0), seed(_seed) { twodim = true; }
 	ExecutionSolutionInfo(int _length, qreal _timestamp, int _iteration, uint _seed) : length(_length), timestamp(_timestamp), iteration(_iteration), seed(_seed) { twodim = false; }
+	ExecutionSolutionInfo(int _length, qreal _area, qreal _timestamp, int _iteration, uint _seed) : length(_length), area(_area), timestamp(_timestamp), iteration(_iteration), seed(_seed) { twodim = false; }
 	ExecutionSolutionInfo(int _length, int _height, qreal _timestamp, int _iteration, uint _seed) : length(_length), height(_height), timestamp(_timestamp), iteration(_iteration), seed(_seed) { area = _length * _height; twodim = true; }
 	int length, height;
 	qreal area;

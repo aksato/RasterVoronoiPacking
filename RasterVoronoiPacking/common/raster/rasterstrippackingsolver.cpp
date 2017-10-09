@@ -16,18 +16,8 @@ void RasterStripPackingSolver::setProblem(std::shared_ptr<RasterPackingProblem> 
             // FIXME: Delete innerift polygons as they are used to release memomry
         }
     }
-    currentWidth = this->originalProblem->getContainerWidth();
-    initialWidth = currentWidth;
-}
-
-void RasterStripPackingSolver::determineMinimumOriginalIfpWidth(std::shared_ptr<RasterPackingProblem> _problem) {
-	this->minimumOriginalIfpWidth = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(0), 0)->width();
-	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
-		for (uint angle = 0; angle < originalProblem->getItem(itemId)->getAngleCount(); angle++) {
-			int curWidth = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(itemId), angle)->width();
-			if (curWidth < minimumOriginalIfpWidth) minimumOriginalIfpWidth = curWidth;
-		}
-	}
+	currentWidth = this->originalProblem->getContainerWidth(); currentHeight = this->originalProblem->getContainerHeight();
+	initialWidth = currentWidth; initialHeight = currentHeight;
 }
 
 // Basic Functions
@@ -151,7 +141,7 @@ void RasterStripPackingSolver::updateMapsLength(int pixelWidth, RasterStripPacki
 
 bool RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
 	// Check if size is smaller than smallest item width
-	if (minimumOriginalIfpWidth <= this->initialWidth - pixelWidth) { pixelWidth = this->currentWidth; return false; }
+	if (this->getMinimumContainerWidth() <= this->initialWidth - pixelWidth) { pixelWidth = this->currentWidth; return false; }
 
 	// Resize container
 	updateMapsLength(pixelWidth, params);

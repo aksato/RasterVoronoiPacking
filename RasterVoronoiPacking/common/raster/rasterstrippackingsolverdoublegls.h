@@ -19,9 +19,8 @@ namespace RASTERVORONOIPACKING {
 		RasterStripPackingSolverDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem) : RasterStripPackingSolverGLS(_searchProblem) {
 			this->originalProblem = _problem;
 			this->searchProblem = _searchProblem;
-			currentWidth = this->originalProblem->getContainerWidth();
-			initialWidth = currentWidth;
-			determineMinimumOriginalIfpWidth(_problem);
+			currentWidth = this->originalProblem->getContainerWidth(); currentHeight = this->originalProblem->getContainerHeight();
+			initialWidth = currentWidth; initialHeight = currentHeight;
 		}
 
 	private:

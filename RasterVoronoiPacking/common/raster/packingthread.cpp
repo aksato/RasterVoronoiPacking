@@ -70,7 +70,7 @@ void PackingThread::run()
 		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 			if(m_abort) break;
 			solver->performLocalSearch(threadSolution, parameters);
-			if (parameters.getHeuristic() == RASTERVORONOIPACKING::GLS)  solver->updateWeights(threadSolution, parameters);
+			solver->updateWeights(threadSolution, parameters);
 			curOverlap = solver->getGlobalOverlap(threadSolution, parameters);
 			if(curOverlap < minOverlap) {
 				minOverlap = curOverlap;

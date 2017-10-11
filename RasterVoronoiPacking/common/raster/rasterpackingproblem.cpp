@@ -221,7 +221,7 @@ void RasterPackingClusterProblem::convertSolution(RASTERVORONOIPACKING::RasterPa
 					// Find mirror rotation. FIXME: Only works with increments of 90 degrees
 					if (this->originalProblem->getItem(item.id)->getAngleCount() == 1) newOrientation = 0;
 					else {
-						for (int i = 0; i < this->originalProblem->getItem(item.id)->getAngleCount(); i++) {
+						for (unsigned int i = 0; i < this->originalProblem->getItem(item.id)->getAngleCount(); i++) {
 							if ((qAbs(newAngle - 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))
 								|| ((newAngle + 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))) {
 								newOrientation = i;

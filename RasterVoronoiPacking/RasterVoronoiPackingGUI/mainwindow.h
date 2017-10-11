@@ -4,8 +4,6 @@
 #include "raster/rasterpackingproblem.h"
 #include "raster/rasterpackingsolution.h"
 #include "raster/rasterstrippackingsolver.h"
-#include "raster/rasterstrippackingsolvergls.h"
-#include "raster/rasterstrippackingsolverdoublegls.h"
 #include "raster/packingthread.h"
 #include "raster/packing2dthread.h"
 #include "raster/packingclusterthread.h"
@@ -79,9 +77,8 @@ private:
     Ui::MainWindow *ui;
     std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;
     RASTERVORONOIPACKING::RasterPackingSolution solution;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS> solverGls;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS> solverDoubleGls;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver, solverGls, solverDoubleGls;
+	std::shared_ptr<RASTERVORONOIPACKING::GlsWeightSet> weights;
 	RASTERVORONOIPACKING::RasterStripPackingParameters params;
 
     ZoomedMapViewDialog zoomedMapViewer;

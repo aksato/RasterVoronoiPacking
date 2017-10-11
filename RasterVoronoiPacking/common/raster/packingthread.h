@@ -4,7 +4,6 @@
 #include <memory>
 #include "rasterpackingsolution.h"
 #include "rasterstrippackingsolver.h"
-#include "rasterstrippackingsolvergls.h"
 
 #include <QThread>
 #include <QMutex>

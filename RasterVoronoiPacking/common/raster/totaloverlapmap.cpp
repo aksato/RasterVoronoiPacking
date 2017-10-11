@@ -6,11 +6,11 @@
 
 using namespace RASTERVORONOIPACKING;
 
-TotalOverlapMapSet::TotalOverlapMapSet(){
+TotalOverlapMapSet::TotalOverlapMapSet() : shrinkVal(0) {
     numAngles = 4;
 }
 
-TotalOverlapMapSet::TotalOverlapMapSet(int numberOfOrientations) : numAngles(numberOfOrientations) {}
+TotalOverlapMapSet::TotalOverlapMapSet(int numberOfOrientations) : shrinkVal(0), numAngles(numberOfOrientations) {}
 
 void TotalOverlapMapSet::addOverlapMap(int orbitingPieceId, int orbitingAngleId, std::shared_ptr<TotalOverlapMap> ovm) {
     int orbitingKey =  orbitingPieceId*numAngles + orbitingAngleId;
@@ -22,17 +22,17 @@ std::shared_ptr<TotalOverlapMap> TotalOverlapMapSet::getOverlapMap(int orbitingP
     return mapSet[orbitingKey];
 }
 
-TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp) {
+TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp) : originalWidth(ifp->width()), originalHeight(ifp->height()) {
 //    init(ifp->getImage().width(), ifp->getImage().height());
     init(ifp->width(), ifp->height());
     reference = ifp->getOrigin();
 }
 
-TotalOverlapMap::TotalOverlapMap(int width, int height) {
+TotalOverlapMap::TotalOverlapMap(int width, int height) : originalWidth(width), originalHeight(height) {
     init(width, height);
 }
 
-TotalOverlapMap::TotalOverlapMap(QRect &boundingBox) {
+TotalOverlapMap::TotalOverlapMap(QRect &boundingBox) : originalWidth(boundingBox.width()), originalHeight(boundingBox.height()) {
 	init(boundingBox.width(), boundingBox.height());
 	reference = -boundingBox.topLeft();
 }

@@ -15,7 +15,7 @@ int RasterStripPackingSolver::getItemMaxY(int posY, int angle, int itemId, std::
 }
 
 // --> Generate initial solution using the bottom left heuristic and resize the container accordingly
-void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
+void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPackingSolution &solution) {
 	QVector<int> sequence;
 	for (int i = 0; i < originalProblem->count(); i++) sequence.append(i);
 	std::random_shuffle(sequence.begin(), sequence.end());
@@ -65,18 +65,17 @@ void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPacking
 		layoutHeight = curBestLayoutHeight;
 	}
 	//setContainerWidth(layoutLength, solution, params);
-	setContainerDimensions(layoutLength, layoutHeight, solution, params);
+	setContainerDimensions(layoutLength, layoutHeight, solution);
 }
 
-void RasterStripPackingSolver::generateBottomLeftSquareSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	generateBottomLeftSolution(solution, params);
+void RasterStripPackingSolver::generateBottomLeftSquareSolution(RasterPackingSolution &solution) {
+	generateBottomLeftSolution(solution);
 	int largestDim = currentWidth > currentHeight ? currentWidth : currentHeight;
-	setContainerDimensions(largestDim, largestDim, solution, params);
+	setContainerDimensions(largestDim, largestDim, solution);
 }
 
-bool RasterStripPackingSolver::setContainerDimensions(int &pixelWidthX, int &pixelWidthY, RasterPackingSolution &solution, RasterStripPackingParameters &params) {
-	// Resize container
-	updateMapsDimensions(pixelWidthX, pixelWidthY, params);
+bool RasterStripPackingSolver::setContainerDimensions(int &pixelWidthX, int &pixelWidthY, RasterPackingSolution &solution) {
+	if (!setContainerDimensions(pixelWidthX, pixelWidthY)) return false;
 
 	// Detect extruding items and move them horizontally back inside the container
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
@@ -92,15 +91,15 @@ bool RasterStripPackingSolver::setContainerDimensions(int &pixelWidthX, int &pix
 	return true;
 }
 
-// --> Change container size
-void RasterStripPackingSolver::updateMapsDimensions(int pixelWidth, int pixelHeight, RasterStripPackingParameters &params) {
-	int deltaPixelsX = this->currentWidth - pixelWidth;
-	int deltaPixelsY = this->currentHeight - pixelHeight;
-	for (int itemId = 0; itemId < originalProblem->count(); itemId++)
-	for (uint angle = 0; angle < originalProblem->getItem(itemId)->getAngleCount(); angle++) {
-		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
-		curMap->shrink2D(deltaPixelsX, deltaPixelsY);
+bool RasterStripPackingSolver::setContainerDimensions(int &pixelWidthX, int &pixelWidthY) {
+	// Check if size is smaller than smallest item width
+	if (this->getMinimumContainerWidth() <= this->initialWidth - pixelWidthX || this->getMinimumContainerHeight() <= this->initialHeight - pixelWidthY) {
+		pixelWidthX = this->currentWidth; pixelWidthY = this->currentHeight;
+		return false;
 	}
-	currentWidth = pixelWidth;
-	currentHeight = pixelHeight;
+
+	// Resize container
+	overlapEvaluator->updateMapsDimensions(pixelWidthX, pixelWidthY);
+	this->currentWidth = pixelWidthX; this->currentHeight = pixelWidthY;
+	return true;
 }

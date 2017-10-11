@@ -29,10 +29,10 @@ void PackingClusterThread::run() {
 	finalTime = finalTime.addSecs(parameters.getTimeLimit());
 
 	// Generate initial solution
-	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) solver->generateRandomSolution(threadSolution, parameters);
+	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) solver->generateRandomSolution(threadSolution);
 	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::BOTTOMLEFT)  {
 		// Generate initial bottom left solution and determine the initial length
-		solver->generateBottomLeftSolution(threadSolution, parameters);
+		solver->generateBottomLeftSolution(threadSolution);
 		curLength = solver->getCurrentWidth();
 		minSuccessfullSol = ExecutionSolutionInfo(curLength, (qreal)curLength * (qreal)solver->getCurrentHeight(), 0, 1, seed);
 		bestSolution = threadSolution;
@@ -41,9 +41,9 @@ void PackingClusterThread::run() {
 		// Execution the first container reduction
 		curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
 		curLength = qRound(curRealLength);
-		solver->setContainerWidth(curLength, threadSolution, parameters);
+		solver->setContainerWidth(curLength, threadSolution);
 	}
-	minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
+	minOverlap = solver->getGlobalOverlap(threadSolution);
 	itNum++; totalItNum++;
 	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(minSuccessfullSol.length, 1, seed));
 
@@ -59,15 +59,15 @@ void PackingClusterThread::run() {
 				// Convert solution
 				clusterSolver->declusterSolution(threadSolution);
 				solver = originalSolver;
-				originalSolver->setContainerWidth(curLength, threadSolution, parameters);
+				originalSolver->setContainerWidth(curLength, threadSolution);
 				reverseCluster = true;
 				emit unclustered(threadSolution, curLength, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
 				break;
 			}
 			
-			solver->performLocalSearch(threadSolution, parameters);
-			if (parameters.getHeuristic() == RASTERVORONOIPACKING::GLS)  solver->updateWeights(threadSolution, parameters);
-			curOverlap = solver->getGlobalOverlap(threadSolution, parameters);
+			solver->performLocalSearch(threadSolution);
+			if (parameters.getHeuristic() == RASTERVORONOIPACKING::GLS)  solver->updateWeights(threadSolution);
+			curOverlap = solver->getGlobalOverlap(threadSolution);
 			if (curOverlap < minOverlap) {
 				minOverlap = curOverlap;
 				if (parameters.isFixedLength()) {
@@ -101,7 +101,7 @@ void PackingClusterThread::run() {
 					curRealLength = (curRealLength + minSuccessfullSol.length) / 2;
 					if (qRound(curRealLength) == minSuccessfullSol.length)
 						curRealLength = minSuccessfullSol.length - 1;
-					if (curLength == qRound(curRealLength)) solver->generateRandomSolution(threadSolution, parameters);
+					if (curLength == qRound(curRealLength)) solver->generateRandomSolution(threadSolution);
 					curLength = qRound(curRealLength);
 				}
 				else {
@@ -111,14 +111,14 @@ void PackingClusterThread::run() {
 			}
 			else numLoops++;
 
-			solver->setContainerWidth(curLength, threadSolution, parameters);
+			solver->setContainerWidth(curLength, threadSolution);
 			success = false;
-			minOverlap = solver->getGlobalOverlap(threadSolution, parameters);
+			minOverlap = solver->getGlobalOverlap(threadSolution);
 		}
 		else {
 			if (success) break;
 			else {
-				if (numLoops > MAXLOOPSPERLENGTH) { solver->generateRandomSolution(threadSolution, parameters); numLoops = 1; }
+				if (numLoops > MAXLOOPSPERLENGTH) { solver->generateRandomSolution(threadSolution); numLoops = 1; }
 				else numLoops++;
 			}
 		}
@@ -126,7 +126,7 @@ void PackingClusterThread::run() {
 		emit weightsChanged();
 	}
 	if (m_abort) { qDebug() << "Aborted!"; quit(); }
-	solver->setContainerWidth(minSuccessfullSol.length, bestSolution, parameters);
+	solver->setContainerWidth(minSuccessfullSol.length, bestSolution);
 	emit finishedExecution(bestSolution, minSuccessfullSol, totalItNum, curOverlap, minOverlap, getTimeStamp(parameters.getTimeLimit(), finalTime));
 	quit();
 }

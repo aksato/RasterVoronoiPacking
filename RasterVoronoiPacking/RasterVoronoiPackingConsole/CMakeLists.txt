@@ -26,8 +26,9 @@ set(SRC
 	../common/raster/totaloverlapmap.cpp
 	../common/raster/rasterstrippackingsolver.cpp
 	../common/raster/rasterstrippackingsolver2d.cpp
-	../common/raster/rasterstrippackingsolvergls.cpp
-	../common/raster/rasterstrippackingsolverdoublegls.cpp
+	../common/raster/rasteroverlapevaluator.cpp
+	../common/raster/rasteroverlapevaluatorgls.cpp
+	../common/raster/rasteroverlapevaluatordoublegls.cpp
 	../common/raster/rasterpackingsolution.cpp
 	../common/raster/rasterpackingproblem.cpp
 	../common/raster/rasternofitpolygon.cpp
@@ -44,8 +45,7 @@ set(HEADERS
 	../common/packingproblem.h
 	../common/raster/totaloverlapmap.h
 	../common/raster/rasterstrippackingsolver.h
-	../common/raster/rasterstrippackingsolvergls.h
-	../common/raster/rasterstrippackingsolverdoublegls.h
+	../common/raster/rasteroverlapevaluator.h
 	../common/raster/rasterpackingsolution.h
 	../common/raster/rasterstrippackingparameters.h
 	../common/raster/rasterpackingproblem.h

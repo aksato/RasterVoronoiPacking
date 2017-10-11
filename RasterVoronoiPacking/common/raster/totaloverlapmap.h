@@ -18,66 +18,25 @@ namespace RASTERVORONOIPACKING {
         void init(uint _width, uint _height);
         void reset();
 
-		void setWidth(int _width) {
-			if (_width > this->width) {
-				// Expanding the map buffer
-				delete[] data;
-				init(_width, this->height);
-			}
-			this->width = _width;
-		}
-
 		void setDimensions(int _width, int _height) {
+			Q_ASSERT_X(_width > 0 && _height > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
 			if (_width > this->width || _height > this->height) {
 				// Expanding the map buffer
 				delete[] data;
 				init(_width, _height);
 			}
-			this->width = _width;
-			this->width = _height;
+			this->width = _width; this->height = _height;
 		}
-
-        void shrink(int pixels) {
-            Q_ASSERT_X(width-pixels > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
-            this->width = width-pixels;
-			if (pixels < 0) {
-				//qWarning() << "Expansion over limit not yet implemented!"; return;
-				// FIXME: Expand GPU innerift polygon buffer!
-				delete[] data;
-				init(this->width, this->height);
-				return;
-			}
-            std::fill(data, data+width*height, (float)0.0);
-        }
-        // Does not expand more than the initial container!
-        void expand(int pixels) {
-            //#ifdef QT_DEBUG
-            //    Q_ASSERT_X(width-pixels <= initialWidth, "TotalOverlapMap::expand", "Container larger than the inital lenght");
-            //#endif
-            shrink(-pixels);
-        }
-
-		void shrink2D(int pixelsX, int pixelsY) {
-			Q_ASSERT_X(width - pixelsX > 0 || height - pixelsY > 0, "TotalOverlapMap::shrink2D", "Item does not fit the container");
-			this->width = width - pixelsX;
-			this->height = height - pixelsY;
-			if (pixelsX < 0 || pixelsY < 0) {
-				//qWarning() << "Expansion over limit not yet implemented!"; return;
-				// FIXME: Expand GPU innerift polygon buffer!
-				delete[] data;
-				init(this->width, this->height);
-				return;
-			}
-			std::fill(data, data + width*height, (float)0.0);
-		}
-		void expand2D(int pixelsX, int pixelsY) {
-			shrink2D(-pixelsX, -pixelsY);
-		}
+		void setWidth(int _width) { setDimensions(_width, this->height); }
+		void setRelativeWidth(int deltaPixels) { setWidth(this->originalWidth - deltaPixels); }
+		void setRelativeDimensions(int deltaPixelsX, int deltaPixelsY) { setDimensions(this->originalWidth - deltaPixelsX, this->originalHeight - deltaPixelsY); }
 
         void setReferencePoint(QPoint _ref) {reference = _ref;}
         QPoint getReferencePoint() {return reference;}
         int getWidth() {return width;}
         int getHeight() {return height;}
+		const int getOriginalWidth() {return originalWidth;}
+		const int getOriginalHeight() { return originalHeight; }
 		QRect getRect() { return QRect(-reference, QSize(width, height)); }
         float getValue(const QPoint &pt) {return getLocalValue(pt.x()+reference.x(),pt.y()+reference.y());}
         void setValue(const QPoint &pt, float value) {setLocalValue(pt.x()+reference.x(), pt.y()+reference.y(), value);}
@@ -97,6 +56,7 @@ namespace RASTERVORONOIPACKING {
         float *data;
         int width;
         int height;
+		const int originalWidth, originalHeight;
 
     private:
         float *scanLine(int y);
@@ -122,9 +82,11 @@ namespace RASTERVORONOIPACKING {
         QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cbegin() {return mapSet.cbegin();}
         QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cend() {return mapSet.cend();}
 
+		void setShrinkVal(int val) { this->shrinkVal = val; }
+		int getShrinkVal() { return this->shrinkVal; }
     private:
         QHash<int, std::shared_ptr<TotalOverlapMap>> mapSet;
-        int numAngles;
+        int numAngles, shrinkVal;
     };
 
 }

@@ -9,7 +9,7 @@ public:
 	PackingClusterThread(QObject *parent = 0) {};
 	~PackingClusterThread() {};
 
-	void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver, std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _clusterSolver) {
+	void setSolver(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> _solver, std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver> _clusterSolver) {
 		PackingThread::setSolver(_clusterSolver);
 		clusterSolver = _clusterSolver;
 		originalSolver = _solver;
@@ -19,7 +19,7 @@ signals:
 	void unclustered(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed);
 
 protected:
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> clusterSolver;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver> clusterSolver;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> originalSolver;
 
 	void run();

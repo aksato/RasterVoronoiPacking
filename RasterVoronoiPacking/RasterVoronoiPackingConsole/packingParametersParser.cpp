@@ -200,6 +200,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		if (methodType == "cost") params->rectMehod = COST_EVALUATION;
 		if (methodType == "bagpipe") params->rectMehod = BAGPIPE;
 	}
+	else params->rectangularPacking = false;
 
 	if (parser.isSet(valueNumThreads)) {
 		const QString threadsString = parser.value(valueNumThreads);

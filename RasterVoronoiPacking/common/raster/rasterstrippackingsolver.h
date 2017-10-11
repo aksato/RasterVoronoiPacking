@@ -2,6 +2,7 @@
 #define RASTERSTRIPPACKINGSOLVER_H
 #include <memory>
 #include "rasterpackingproblem.h"
+#include "rasteroverlapevaluator.h"
 #include "rasterpackingsolution.h"
 #include "rasterstrippackingparameters.h"
 #include "totaloverlapmap.h"
@@ -19,45 +20,38 @@ namespace RASTERVORONOIPACKING {
 		friend class MainWindow;
 
 	public:
-		RasterStripPackingSolver(std::shared_ptr<RasterPackingProblem> _problem) { setProblem(_problem);}
+		static std::shared_ptr<RasterStripPackingSolver> createRasterPackingSolver(std::vector<std::shared_ptr<RasterPackingProblem>> problems, RasterStripPackingParameters &parameters, int initialWidth = -1, int initialHeight = -1);
+
+		RasterStripPackingSolver(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterOverlapEvaluator> _overlapEvaluator);
 
 		// Info Functions
 		int getNumItems() { return originalProblem->count(); }
 		int getCurrentWidth() { return currentWidth; }
 		int getCurrentHeight() { return currentHeight; }
 		// Basic Functions
-		void generateRandomSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		void generateBottomLeftSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params, BottomLeftMode mode = BL_STRIPPACKING);
+		void generateRandomSolution(RasterPackingSolution &solution);
+		void generateBottomLeftSolution(RasterPackingSolution &solution, BottomLeftMode mode = BL_STRIPPACKING);
 		// --> Get layout overlap (sum of individual overlap values)
-		qreal getGlobalOverlap(RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		qreal getGlobalOverlap(RasterPackingSolution &solution);
 		// --> Local search
-		void performLocalSearch(RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		void performLocalSearch(RasterPackingSolution &solution);
 		// --> Change container size
-		bool setContainerWidth(int &pixelWidth, RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		bool setContainerDimensions(int &pixelWidthX, int &pixelWidthY, RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		bool setContainerWidth(int &pixelWidth, RasterPackingSolution &solution);
+		bool setContainerWidth(int &pixelWidth);
+		bool setContainerDimensions(int &pixelWidthX, int &pixelWidthY, RasterPackingSolution &solution);
+		bool setContainerDimensions(int &pixelWidthX, int &pixelWidthY);
 		// --> Guided Local Search functions
-		virtual void updateWeights(RasterPackingSolution &solution, RasterStripPackingParameters &params) {};
-		virtual void resetWeights() {};
-		// --> Cluster
-		virtual void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {};
+		virtual void updateWeights(RasterPackingSolution &solution) { overlapEvaluator->updateWeights(solution); };
+		virtual void resetWeights() { overlapEvaluator->resetWeights(); };
 		// Size information function
 		int getMinimumContainerWidth() { return originalProblem->getMaxWidth(); }
 		int getMinimumContainerHeight() { return originalProblem->getMaxHeight(); }
 
 	protected:
-		virtual void updateMapsLength(int pixelWidth, RasterStripPackingParameters &params);
-		virtual void updateMapsDimensions(int pixelWidth, int pixelHeight, RasterStripPackingParameters &params);
-
 		void setProblem(std::shared_ptr<RasterPackingProblem> _problem);
 
 		// --> Get two items overlap
-		qreal getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, std::shared_ptr<RasterPackingProblem> problem);
-		bool detectOverlap(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, std::shared_ptr<RasterPackingProblem> problem);
-		qreal getItemTotalOverlap(int itemId, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem);
-		virtual qreal getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem);
-
-		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value, RasterStripPackingParameters &params);
-		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value);
 
 		int getItemMaxX(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
 		int getItemMaxY(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
@@ -65,19 +59,29 @@ namespace RASTERVORONOIPACKING {
 		bool detectItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem);
 
 		// Debug only functions
-		// --> Get layout overlap with individual values (sum of individual overlap values)
-		qreal getGlobalOverlap(RasterPackingSolution &solution, QVector<qreal> &individualOverlaps, RasterStripPackingParameters &params);
 		// --> Get absolute minimum overlap position
 		QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value, PositionChoice placementHeuristic);
 
 		std::shared_ptr<RasterPackingProblem> originalProblem;
-		TotalOverlapMapSet maps;
 		int currentWidth, currentHeight, initialWidth, initialHeight;
+		std::shared_ptr<RasterOverlapEvaluator> overlapEvaluator;
 
 	private:
-		void generateBottomLeftStripSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		void generateBottomLeftRectangleSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
-		void generateBottomLeftSquareSolution(RasterPackingSolution &solution, RasterStripPackingParameters &params);
+		void generateBottomLeftStripSolution(RasterPackingSolution &solution);
+		void generateBottomLeftRectangleSolution(RasterPackingSolution &solution);
+		void generateBottomLeftSquareSolution(RasterPackingSolution &solution);
+	};
+
+	class RasterStripPackingClusterSolver : public RasterStripPackingSolver {
+	public:
+		RasterStripPackingClusterSolver(std::shared_ptr<RasterPackingClusterProblem> _problem, std::shared_ptr<RasterOverlapEvaluator> _overlapEvaluator) : RasterStripPackingSolver(_problem, _overlapEvaluator) { this->originalClusterProblem = _problem; }
+		// --> Cluster
+		void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {
+			if (solution.getNumItems() == originalClusterProblem->getOriginalProblem()->count()) return;
+			originalClusterProblem->convertSolution(solution);
+		};
+	private:
+		std::shared_ptr<RasterPackingClusterProblem> originalClusterProblem;
 	};
 }
 

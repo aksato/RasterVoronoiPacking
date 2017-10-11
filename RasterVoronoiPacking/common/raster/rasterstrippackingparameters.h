@@ -18,6 +18,11 @@ namespace RASTERVORONOIPACKING {
 			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters
 
+		RasterStripPackingParameters(Heuristic _heuristicType, bool _doubleResolution) :
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), doubleResolution(_doubleResolution),
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
+		{} // Default parameters with specific solver parameters
+
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
 		int getNmo() { return this->Nmo; }
 

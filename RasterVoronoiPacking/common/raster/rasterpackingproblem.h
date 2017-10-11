@@ -71,11 +71,12 @@ namespace RASTERVORONOIPACKING {
         QString getContainerName() {return containerName;}
         qreal getScale() {return scale;}
 
-		static void getProblemGPUMemRequirements(RASTERPACKING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem);
+		// Processing of nfp values
+		qreal getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		bool areOverlapping(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		void getIfpBoundingBox(int itemId, int orientation, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY);
 
     protected:
-//        QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<QPair<int,int>, int> &pieceAngleMap);
-
         int containerWidth, containerHeight;
 		int maxWidth, maxHeight;
         QString containerName;
@@ -84,6 +85,10 @@ namespace RASTERVORONOIPACKING {
         std::shared_ptr<RasterNoFitPolygonSet> noFitPolygons;
         std::shared_ptr<RasterNoFitPolygonSet> innerFitPolygons;
         qreal scale;
+
+	private:
+		int getNfpIndexedValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		qreal getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, bool &isZero);
     };
 
 	struct RasterPackingClusterItem {

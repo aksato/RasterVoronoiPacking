@@ -132,30 +132,6 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     return true;
 }
 
-void RasterPackingProblem::getProblemGPUMemRequirements(RASTERPACKING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem) {
-	unsigned int ifpCount = 0; ifpTotalMem = 0;  ifpMaxMem = 0;
-	for (QList<std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
-		std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIfp = *it;
-		// Create image. FIXME: Use data file instead?
-		QImage curImage(curRasterIfp->getFileName());
-
-		// Determine memory space
-		size_t curIfpMemSize = curImage.width()*curImage.height()*sizeof(qreal);
-		if (ifpMaxMem == 0 || curIfpMemSize > ifpMaxMem) ifpMaxMem = curIfpMemSize; 
-		ifpTotalMem += curIfpMemSize; ifpCount++;
-	}
-
-	unsigned int nfpCount = 0; nfpTotalMem = 0;
-	for (QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
-		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
-		// Create image. FIXME: Use data file instead?
-		QImage curImage(curRasterNfp->getFileName());
-
-		// Determine memory space
-		nfpTotalMem += curImage.width()*curImage.height()*sizeof(int); nfpCount++;
-	}
-}
-
 bool RasterPackingClusterProblem::load(RASTERPACKING::PackingProblem &problem) {
 	if (!RasterPackingProblem::load(problem)) return false;
 
@@ -255,4 +231,50 @@ void RasterPackingClusterProblem::convertSolution(RASTERVORONOIPACKING::RasterPa
 		solution.setPosition(currCluster.first().id, oldSolution.getPosition(it.key()));
 		solution.setOrientation(currCluster.first().id, oldSolution.getOrientation(it.key()));
 	}
+}
+
+
+qreal RasterPackingProblem::getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2) {
+	qreal value1Static2Orbiting, value2Static1Orbiting; 
+	bool feasible;
+	
+	value1Static2Orbiting = getNfpValue(itemId1, pos1, orientation1, itemId2, pos2, orientation2, feasible);
+	if (feasible) return 0.0;
+	value2Static1Orbiting = getNfpValue(itemId2, pos2, orientation2, itemId1, pos1, orientation1, feasible);
+	if (feasible) return 0.0;
+
+	// FIXME: Values should be equal!
+	return value1Static2Orbiting < value2Static1Orbiting ? value1Static2Orbiting : value2Static1Orbiting;
+}
+
+bool RasterPackingProblem::areOverlapping(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2) {
+	if (getNfpIndexedValue(itemId1, pos1, orientation1, itemId2, pos2, orientation2) == 0) return false;
+	if (getNfpIndexedValue(itemId2, pos2, orientation2, itemId1, pos1, orientation1) == 0) return false;
+	return true;
+}
+
+int RasterPackingProblem::getNfpIndexedValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2) {
+	std::shared_ptr<RasterNoFitPolygon> curNfp = noFitPolygons->getRasterNoFitPolygon(getItemType(itemId1), orientation1, getItemType(itemId2), orientation2);
+	QPoint relPos = pos2 - pos1 + curNfp->getOrigin();
+
+	if (relPos.x() < 0 || relPos.x() > curNfp->width() - 1 || relPos.y() < 0 || relPos.y() > curNfp->height() - 1) return 0;
+	return curNfp->getPixel(relPos.x(), relPos.y());
+}
+
+qreal RasterPackingProblem::getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, bool &isZero) {
+	isZero = false;
+	std::shared_ptr<RasterNoFitPolygon> curNfp;
+	int indexValue = getNfpIndexedValue(itemId1, pos1, orientation1, itemId2, pos2, orientation2);
+	if (indexValue == 0) { isZero = true; return 0.0; }
+	curNfp = noFitPolygons->getRasterNoFitPolygon(getItemType(itemId1), orientation1, getItemType(itemId2), orientation2);
+	return 1.0 + (curNfp->getMaxD() - 1.0)*((qreal)indexValue - 1.0) / 254.0;
+}
+
+// TODO: Use QRect
+void RasterPackingProblem::getIfpBoundingBox(int itemId, int orientation, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY) {
+	std::shared_ptr<RasterNoFitPolygon> ifp = innerFitPolygons->getRasterNoFitPolygon(-1, -1, getItemType(itemId), orientation);
+	bottomLeftX = -ifp->getOriginX();
+	bottomLeftY = -ifp->getOriginY();
+	topRightX = bottomLeftX + ifp->width() - 1;
+	topRightY = bottomLeftY + ifp->height() - 1;
 }

@@ -29,7 +29,7 @@ void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPacking
 			//qDebug() << "Item" << k << "Angle" << angle;
 			// Get IFP bounding box
 			int  minIfpX, minIfpY, maxIfpX, maxIfpY;
-			getIfpBoundingBox(shuffledId, angle, minIfpX, minIfpY, maxIfpX, maxIfpY, originalProblem);
+			originalProblem->getIfpBoundingBox(shuffledId, angle, minIfpX, minIfpY, maxIfpX, maxIfpY);
 			QPoint curPos(minIfpX, minIfpY);
 			int i = 0;
 			while (1) {
@@ -38,16 +38,16 @@ void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPacking
 				for (int j = 0; j < i; j++){
 					curPos = QPoint(minIfpX + i, minIfpY + aux);
 					//qDebug() << curPos;
-					if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution, originalProblem)) { exit = true;  break; }
+					if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution)) { exit = true;  break; }
 					curPos = QPoint(minIfpX + aux, minIfpY + i);
 					//qDebug() << curPos;
-					if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution, originalProblem)) { exit = true;  break; }
+					if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution)) { exit = true;  break; }
 					aux++;
 				}
 				if (exit) break;
 				curPos = QPoint(minIfpX + i, minIfpY + i);
 				//qDebug() << curPos;
-				if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution, originalProblem)) break;
+				if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution)) break;
 				i++;
 			}
 			// Check minimum X and Y coordinate

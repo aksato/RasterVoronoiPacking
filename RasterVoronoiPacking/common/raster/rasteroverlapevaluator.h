@@ -11,54 +11,73 @@ class MainWindow;
 
 namespace RASTERVORONOIPACKING {
 
-	class RasterOverlapEvaluator
+	// --> Class that performs determine overlap operations for solver
+	class RasterTotalOverlapMapEvaluator
 	{
 	public:
-		RasterOverlapEvaluator(std::shared_ptr<RasterPackingProblem> _problem);
+		// --> Default constructor
+		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem);
+
+		// --> Determines the item total overlap map
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+
 		// --> Guided Local Search functions
 		virtual void updateWeights(RasterPackingSolution &solution) = 0;
 		virtual void resetWeights() = 0;
 		virtual std::shared_ptr<GlsWeightSet> getGlsWeights() { return nullptr; }
+
+		// --> Container size update functions
 		virtual void updateMapsLength(int pixelWidth);
 		virtual void updateMapsDimensions(int pixelWidth, int pixelHeight);
-		qreal getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, std::shared_ptr<RasterPackingProblem> problem);
-		bool detectOverlap(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, std::shared_ptr<RasterPackingProblem> problem);
-		qreal getItemTotalOverlap(int itemId, RasterPackingSolution &solution, std::shared_ptr<RasterPackingProblem> problem);
-		qreal getGlobalOverlap(RasterPackingSolution &solution, QVector<qreal> &individualOverlaps);
 
 	protected:
-		qreal getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		// --> Pointer to problem
 		std::shared_ptr<RasterPackingProblem> problem;
+
+		// --> Set of all item total overlap maps
 		TotalOverlapMapSet maps;
 	};
 
-	class RasterOverlapEvaluatorGLS : public RasterOverlapEvaluator
+	// --> Overlap evaluator class with guided local search metaheuristic
+	class RasterTotalOverlapMapEvaluatorGLS : public RasterTotalOverlapMapEvaluator
 	{
 		friend class MainWindow;
 
 	public:
-		RasterOverlapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem) : RasterOverlapEvaluator(_problem) { glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); }
-		RasterOverlapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterOverlapEvaluator(_problem), glsWeights(_glsWeights) {}
+		// --> Default constructor
+		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem) : RasterTotalOverlapMapEvaluator(_problem) { glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); }
 
+		// --> Constructor using a custom weights
+		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluator(_problem), glsWeights(_glsWeights) {}
+
+		// --> Determines the item total overlap map with guided local search
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
-		//void getTotalOverlapMap(std::shared_ptr<TotalOverlapMap> currrentPieceMap, int itemId, int orientation, RasterPackingSolution &solution);
+		
+		// --> Update guided local search weights
 		void updateWeights(RasterPackingSolution &solution);
+
+		// --> Reset guided local search weights
 		void resetWeights();
 
 	protected:
+		// Guided local search weights
+		std::shared_ptr<GlsWeightSet> glsWeights;
+
+	private:
+		// Debug functions
 		void setgetGlsWeights(std::shared_ptr<GlsWeightSet> _glsWeights) { this->glsWeights = _glsWeights; }
 		std::shared_ptr<GlsWeightSet> getGlsWeights() { return glsWeights; }
-		std::shared_ptr<GlsWeightSet> glsWeights;
+		
 	};
 
-	class RasterOverlapEvaluatorDoubleGLS : public RasterOverlapEvaluatorGLS
+	// --> Overlap evaluator class with dual resolution approach and support for guided local search metaheuristic
+	class RasterTotalOverlapMapEvaluatorDoubleGLS : public RasterTotalOverlapMapEvaluatorGLS
 	{
 		friend class MainWindow;
 
 	public:
-		RasterOverlapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem) : RasterOverlapEvaluatorGLS(_searchProblem) { this->problem = _problem; this->searchProblem = _searchProblem; }
-		RasterOverlapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterOverlapEvaluatorGLS(_searchProblem, _glsWeights) { this->problem = _problem; this->searchProblem = _searchProblem; }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem) { this->problem = _problem; this->searchProblem = _searchProblem; }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem, _glsWeights) { this->problem = _problem; this->searchProblem = _searchProblem; }
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
 		void updateMapsLength(int pixelWidth);
 		void updateMapsDimensions(int pixelWidth, int pixelHeight);

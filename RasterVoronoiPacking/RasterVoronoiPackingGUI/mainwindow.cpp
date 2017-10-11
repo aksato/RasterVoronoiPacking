@@ -223,6 +223,9 @@ void MainWindow::loadZoomedPuzzle() {
 		solverDoubleGls = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem, rasterZoomedProblem }, RasterStripPackingParameters(RASTERVORONOIPACKING::GLS, true), solver->getCurrentWidth());
 		std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterOverlapEvaluatorGLS>(solverDoubleGls->overlapEvaluator)->setgetGlsWeights(weights);
 
+		int zoomSquareSize = ZOOMNEIGHBORHOOD * qRound(this->rasterProblem->getScale() / this->rasterZoomedProblem->getScale());
+		zoomedMapViewer.getMapView()->init(zoomSquareSize, this->rasterZoomedProblem->getScale() / this->rasterProblem->getScale());
+
         ui->pushButton_16->setEnabled(true);
         ui->pushButton_17->setEnabled(true);
         ui->pushButton_18->setEnabled(true);
@@ -434,13 +437,14 @@ void MainWindow::changeContainerHeight() {
 }
 
 void MainWindow::showZoomedMap() {
-	int zoomSquareSize = 3 * qRound(this->rasterProblem->getScale() / this->rasterZoomedProblem->getScale());
+	int zoomSquareSize = ZOOMNEIGHBORHOOD * qRound(this->rasterProblem->getScale() / this->rasterZoomedProblem->getScale());
     ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterOverlapEvaluatorDoubleGLS> overlapEvaluatorDoubleGLS = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterOverlapEvaluatorDoubleGLS>(solverDoubleGls->overlapEvaluator);
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = overlapEvaluatorDoubleGLS->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution);
-    QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
-    zoomedMapViewer.setImage(zoomImage);
+    //QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
+    //zoomedMapViewer.setImage(zoomImage);
+	zoomedMapViewer.getMapView()->updateMap(zoomMap, solution.getPosition(itemId));
     zoomedMapViewer.show();
 }
 
@@ -463,7 +467,8 @@ void MainWindow::translateCurrentToMinimumZoomedPosition() {
 
     ui->graphicsView->setCurrentSolution(solution);
     QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
-    zoomedMapViewer.setImage(zoomImage);
+    //zoomedMapViewer.setImage(zoomImage);
+	zoomedMapViewer.getMapView()->updateMap(zoomMap, solution.getPosition(itemId));
     zoomedMapViewer.show();
 }
 

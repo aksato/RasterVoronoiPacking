@@ -29,6 +29,31 @@ void ZoomedMapView::mousePressEvent(QMouseEvent * event) {
     QGraphicsView::mousePressEvent(event);
 }
 
+void ZoomedMapView::updateMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> map, QPoint &centerPoint) {
+	int deltaX = -map->getReferencePoint().x() + size / 2 - centerPoint.x();
+	int deltaY = -map->getReferencePoint().y() + size / 2 - centerPoint.y();
+	QPixmap pixMap = QPixmap::fromImage(map->getZoomImage(size, size, QPoint(deltaX, deltaY)));
+	setImage(pixMap);
+	QPoint refPoint = map->getReferencePoint();
+	for (int i = 0; i < size; i++)
+		for (int j = 0; j < size; j++)
+			cells[QPair<int, int>(i, j)]->setToolTip("(" + QString::number(ratio *(-refPoint.x() + i - deltaX)) + ", " + QString::number(ratio *(-refPoint.y() + j - deltaY)) + ")");
+}
+
+void ZoomedMapView::init(int mapSize, qreal _ratio) {
+	size = mapSize;
+	this->ratio = _ratio;
+	for (int i = 0; i < mapSize; i++) {
+		for (int j = 0; j < mapSize; j++) {
+			GraphicsIndexedRectItem *curCell = new GraphicsIndexedRectItem(QRectF(i, j, 1, 1), i, j);
+			curCell->setPen(QPen(Qt::black, 0));
+			curCell->setBrush(Qt::NoBrush);
+			curCell->setParentItem(curMap);
+			cells.insert(QPair<int, int>(i, j), curCell);
+		}
+	}
+}
+
 void ZoomedMapView::setImage(QPixmap _pmap){
     pmap = _pmap.copy();
     curMap->setPixmap(pmap);

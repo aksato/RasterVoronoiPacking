@@ -226,6 +226,41 @@ QPoint TotalOverlapMap::getMinimum(float &minVal, PositionChoice placementHeuris
         }
         return image;
     }
+
+	QImage TotalOverlapMap::getZoomImage(int _width, int _height, QPoint &displacement) {
+		float maxD = 0;
+		for (int pixelY = 0; pixelY < height; pixelY++) {
+			float *mapLine = scanLine(pixelY);
+			for (int pixelX = 0; pixelX < width; pixelX++) {
+				if (*mapLine > maxD) maxD = *mapLine;
+				mapLine++;
+			}
+		}
+
+		QImage image(_width, _height, QImage::Format_Indexed8);
+		image.fill(255);
+		setColormap(image);
+		image.setColor(255, qRgba(0, 0, 0, 0));
+		for (int pixelY = 0; pixelY < _height; pixelY++) {
+			uchar *resultLine = (uchar *)image.scanLine(pixelY);
+			int mapPixelY = pixelY - displacement.y(); if (mapPixelY < 0 || mapPixelY >= height) continue;
+			float *mapLine = scanLine(mapPixelY);
+
+			int pixelX = 0;
+			int mapPixelX = pixelX - displacement.x();
+			while (mapPixelX < 0) resultLine++, mapPixelX++, pixelX++;
+			for (; pixelX < _width; pixelX++, resultLine++, mapLine++, mapPixelX++) {
+				if (mapPixelX >= width) break;
+				if (*mapLine == 0)
+					*resultLine = 0;
+				else {
+					int index = (int)((*mapLine - 1) * 253 / (maxD - 1) + 1);
+					*resultLine = index;
+				}
+			}
+		}
+		return image;
+	}
 #endif
 
 //QImage TotalOverlapMap::getImage2() {

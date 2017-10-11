@@ -48,6 +48,7 @@ namespace RASTERVORONOIPACKING {
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes
+			QImage getZoomImage(int _width, int _height, QPoint &displacement); // For debug purposes
         #endif
 
 		void setData(float *_data) { delete[] data; data = _data; }

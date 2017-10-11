@@ -1,6 +1,8 @@
 #ifndef RASTEROVERLAPEVALUATOR_H
 #define RASTEROVERLAPEVALUATOR_H
 
+#define ZOOMNEIGHBORHOOD 3
+
 #include "rasterpackingproblem.h"
 #include "totaloverlapmap.h"
 #include "glsweightset.h"

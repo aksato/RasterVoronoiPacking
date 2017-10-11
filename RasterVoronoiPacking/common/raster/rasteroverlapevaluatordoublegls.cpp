@@ -3,8 +3,6 @@
 
 using namespace RASTERVORONOIPACKING;
 
-#define ZOOMNEIGHBORHOOD 3
-
 void getScaledSolution(RasterPackingSolution &originalSolution, RasterPackingSolution &newSolution, qreal scaleFactor) {
 	newSolution = RasterPackingSolution(originalSolution.getNumItems());
 	for (int i = 0; i < originalSolution.getNumItems(); i++) {

@@ -125,7 +125,7 @@ void PackingThread::run()
 			}
 		}
 		itNum = 0; worseSolutionsCount = 0; solver->resetWeights();
-		emit weightsChanged();
+		//emit weightsChanged();
 	}
 	if (m_abort) {qDebug() << "Aborted!"; quit();}
 	solver->setContainerWidth(minSuccessfullSol.length, bestSolution);

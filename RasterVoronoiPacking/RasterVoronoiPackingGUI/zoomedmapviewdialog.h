@@ -3,6 +3,9 @@
 
 #include <QDialog>
 #include <QPixmap>
+#include "../common/raster/totaloverlapmap.h"
+#include <memory>
+#include "viewer/zoomedmapview.h"
 
 namespace Ui {
 class ZoomedMapViewDialog;
@@ -16,7 +19,9 @@ public:
     explicit ZoomedMapViewDialog(QWidget *parent = 0);
     ~ZoomedMapViewDialog();
 
-    void setImage(QPixmap _pmap);
+	ZoomedMapView *getMapView();
+    //void init(int size);
+	//void updateMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> map);
     void setValidArea(QRect validArea);
 
 private:

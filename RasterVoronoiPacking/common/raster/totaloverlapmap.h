@@ -82,11 +82,13 @@ namespace RASTERVORONOIPACKING {
         QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cbegin() {return mapSet.cbegin();}
         QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cend() {return mapSet.cend();}
 
-		void setShrinkVal(int val) { this->shrinkVal = val; }
-		int getShrinkVal() { return this->shrinkVal; }
+		void setShrinkVal(int val) { this->shrinkValX = val; }
+		void setShrinkVal(int valX, int valY) { this->shrinkValX = valX; this->shrinkValY = valY; }
+		int getShrinkValX() { return this->shrinkValX; }
+		int getShrinkValY() { return this->shrinkValY; }
     private:
         QHash<int, std::shared_ptr<TotalOverlapMap>> mapSet;
-        int numAngles, shrinkVal;
+		int numAngles, shrinkValX, shrinkValY;
     };
 
 }

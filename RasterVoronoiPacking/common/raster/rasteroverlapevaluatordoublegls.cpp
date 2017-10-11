@@ -49,7 +49,7 @@ std::shared_ptr<TotalOverlapMap> RasterOverlapEvaluatorDoubleGLS::getTotalOverla
 std::shared_ptr<TotalOverlapMap> RasterOverlapEvaluatorDoubleGLS::getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution) {
 	// Determine zoomed area inside the innerfit polygon
 	std::shared_ptr<RasterNoFitPolygon> curIfp = this->problem->getIfps()->getRasterNoFitPolygon(-1, -1, this->problem->getItemType(itemId), orientation);
-	QRect curIfpBoundingBox(QPoint(-curIfp->getOriginX(), -curIfp->getOriginY()), QSize(curIfp->width() - maps.getShrinkVal(), curIfp->height()));
+	QRect curIfpBoundingBox(QPoint(-curIfp->getOriginX(), -curIfp->getOriginY()), QSize(curIfp->width() - maps.getShrinkValX(), curIfp->height() - maps.getShrinkValY()));
 	QRect zoomSquareRect(QPoint(pos.x() - width / 2, pos.y() - height / 2), QSize(width, height));
 	zoomSquareRect = zoomSquareRect.intersected(curIfpBoundingBox);
 
@@ -62,44 +62,36 @@ std::shared_ptr<TotalOverlapMap> RasterOverlapEvaluatorDoubleGLS::getRectTotalOv
 	return curZoomedMap;
 }
 
-void RasterOverlapEvaluatorDoubleGLS::updateMapsLength(int pixelWidth) {
-	int deltaPixel = problem->getContainerWidth() - pixelWidth;
-	maps.setShrinkVal(deltaPixel);
+int getRoughShrinkage(int deltaPixels, qreal scaleRatio) {
+	qreal fracDeltaPixelsX = scaleRatio*(qreal)(deltaPixels);
+	if (qFuzzyCompare(1.0 + fracDeltaPixelsX, 1.0 + qRound(fracDeltaPixelsX))) return qRound(fracDeltaPixelsX);
+	return qRound(fracDeltaPixelsX);
+}
 
-	//int deltaPixelsRough;
-	//qreal sizeRatio = this->searchProblem->getScale() / this->problem->getScale();
-	//qreal fracDeltaPixelsX = sizeRatio*(qreal)(problem->getContainerWidth() - pixelWidth);
-	//if (qFuzzyCompare(1.0 + fracDeltaPixelsX, 1.0 + qRound(fracDeltaPixelsX))) deltaPixelsRough = qRound(fracDeltaPixelsX);
-	//else deltaPixelsRough = qFloor(fracDeltaPixelsX);
+void RasterOverlapEvaluatorDoubleGLS::updateMapsLength(int pixelWidth) {
+	int deltaPixels = problem->getContainerWidth() - pixelWidth;
+	maps.setShrinkVal(deltaPixels);
+	int deltaPixelsRough = getRoughShrinkage(deltaPixels, this->searchProblem->getScale() / this->problem->getScale());
 
 	for (int itemId = 0; itemId < problem->count(); itemId++)
 	for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
-		//curMap->setRelativeWidth(deltaPixelsRough);
-		std::shared_ptr<RasterNoFitPolygon> curIfp = this->problem->getIfps()->getRasterNoFitPolygon(-1, -1, this->problem->getItemType(itemId), angle);
-		int leftMostPointX = curIfp->width() - curIfp->getOriginX() - 1 - deltaPixel;
-		int newLeftMostPointX = qCeil(leftMostPointX*this->searchProblem->getScale() / this->problem->getScale());
-		int newTotalOverlapMapWidth = newLeftMostPointX + curMap->getReferencePoint().x() + 1;
-		curMap->setWidth(newTotalOverlapMapWidth);
+		curMap->setRelativeWidth(deltaPixelsRough);
 	}
 }
 
 void RasterOverlapEvaluatorDoubleGLS::updateMapsDimensions(int pixelWidth, int pixelHeight) {
-	// TODO: Implement 2D double GLS
+	int deltaPixelsX = problem->getContainerWidth() - pixelWidth;
+	int deltaPixelsY = problem->getContainerHeight() - pixelHeight;
+	maps.setShrinkVal(deltaPixelsX, deltaPixelsY);
+	int deltaPixelsRoughX = getRoughShrinkage(deltaPixelsX, this->searchProblem->getScale() / this->problem->getScale());
+	int deltaPixelsRoughY = getRoughShrinkage(deltaPixelsY, this->searchProblem->getScale() / this->problem->getScale());
 
-	//int deltaPixelsX, deltaPixelsY;
-	//qreal sizeRatio = this->searchProblem->getScale() / this->problem->getScale();
-
-	//qreal fracDeltaPixelsX = sizeRatio*(qreal)(problem->getContainerWidth() - pixelWidth);
-	//if (qFuzzyCompare(1.0 + fracDeltaPixelsX, 1.0 + qRound(fracDeltaPixelsX))) deltaPixelsX = qRound(fracDeltaPixelsX);
-	//else deltaPixelsX = qFloor(fracDeltaPixelsX);
-
-	////int deltaPixelsY = qRound(sizeRatio*(problem->getContainerHeight() - pixelHeight));
-	//for (int itemId = 0; itemId < problem->count(); itemId++)
-	//for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
-	//	std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
-	//	curMap->setRelativeDimensions(deltaPixelsX, deltaPixelsY);
-	//}
+	for (int itemId = 0; itemId < problem->count(); itemId++)
+	for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
+		curMap->setRelativeDimensions(deltaPixelsRoughX, deltaPixelsRoughY);
+	}
 }
 
 qreal RasterOverlapEvaluatorDoubleGLS::getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution) {

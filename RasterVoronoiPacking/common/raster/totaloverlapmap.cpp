@@ -23,7 +23,6 @@ std::shared_ptr<TotalOverlapMap> TotalOverlapMapSet::getOverlapMap(int orbitingP
 }
 
 TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp) : originalWidth(ifp->width()), originalHeight(ifp->height()) {
-//    init(ifp->getImage().width(), ifp->getImage().height());
     init(ifp->width(), ifp->height());
     reference = ifp->getOrigin();
 }
@@ -70,132 +69,47 @@ bool TotalOverlapMap::getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight
 void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
     QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
     QRect intersection;
-//    if(!getLimits(relativeOrigin, nfp->getImage().width(), nfp->getImage().height(), intersection)) return;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
 
-    for(int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++)
-        for(int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
-            int indexValue = nfp->getPixel(i-relativeOrigin.x(), j-relativeOrigin.y());
-//            int indexValue = nfp->getImage().pixelIndex(i-relativeOrigin.x(), j-relativeOrigin.y());
-            float distanceValue = 0.0;
-            //if(indexValue != 0) distanceValue = 1.0 + (nfp->getMaxD()-1.0)*((float)indexValue-1.0)/254.0;
-            //data[j*width+i] += distanceValue;
-			data[j*width + i] += indexValue;
-//            data[j*width+i] += nfp->getImage().pixelIndex(i-relativeOrigin.x(), j-relativeOrigin.y());
-        }
-
+	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
+		float *dataPt = scanLine(j) + intersection.bottomLeft().x();
+		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++) {
+			int indexValue = nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
+			float distanceValue = 0.0;
+			*dataPt += indexValue;
+		}
+	}
 }
 
 void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight) {
     QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
     QRect intersection;
-//    if(!getLimits(relativeOrigin, nfp->getImage().width(), nfp->getImage().height(), intersection)) return;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
 
-    for(int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++)
-        for(int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
-            int indexValue = nfp->getPixel(i-relativeOrigin.x(), j-relativeOrigin.y());
-//            int indexValue = nfp->getImage().pixelIndex(i-relativeOrigin.x(), j-relativeOrigin.y());
-            float distanceValue = 0.0;
-            //if(indexValue != 0) distanceValue = 1.0 + (nfp->getMaxD()-1.0)*((float)indexValue-1.0)/254.0;
-            //data[j*width+i] += weight*distanceValue;
-			data[j*width + i] += weight*(float)indexValue;
-        }
+	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
+		float *dataPt = scanLine(j) + intersection.bottomLeft().x();
+		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++) {
+			int indexValue = nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
+			float distanceValue = 0.0;
+			*dataPt += weight * (float)indexValue;
+		}
+	}
 }
 
-//void TotalOverlapMap::setZoomedMap(QPoint nonZoomedpos, float zoomFactor) {
-//    QPoint bottomLeft = QPoint(qRound(nonZoomedpos.x()*zoomFactor), qRound(nonZoomedpos.y()*zoomFactor));
-//    for(int j = bottomLeft.y; j < bottomLeft.y+width; j++)
-//        for(int i = bottomLeft.x; i < bottomLeft.x+width; i++)
-
-//}
-
-QPoint TotalOverlapMap::getMinimum(float &minVal, PositionChoice placementHeuristic) {
-	QVector<QPoint> minPointSet;
-    float *curPt = data;
-    minVal = *curPt;
-	minPointSet.push_back(QPoint(0,0));
-	for (int j = 0; j < height; j++) {
-		for (int i = 0; i < width; i++, curPt++) {
-			float curVal = *curPt;
-			if (qFuzzyCompare(1.0 + curVal, 1.0 + minVal)) {
-				minPointSet.push_back(QPoint(i, j));
-			}
-			else if (curVal < minVal) {
-				minVal = curVal;
-				minPointSet.clear(); minPointSet.push_back(QPoint(i, j));
-			}
+float TotalOverlapMap::getMinimum(QPoint &minPt) {
+	float *curPt = data;
+	float minVal = *curPt;
+	minPt = QPoint(0, 0);
+	int numVals = height*width;
+	for (int id = 0; id < numVals; id++, curPt++) {
+		float curVal = *curPt;
+		if (curVal < minVal) {
+			minVal = curVal;
+			minPt = QPoint(id % width, id / width);
+			if (qFuzzyCompare(1.0 + minVal, 1.0 + 0.0)) return minVal;
 		}
 	}
-
-	// Heuristics to choose between equally overlaped positions
-	int index = 0;
-	switch(placementHeuristic) {
-		case BOTTOMLEFT_POS:
-		{
-		   index = 0;
-		}
-		break;
-
-		case RANDOM_POS: 
-		{
-			index = rand() % minPointSet.size();
-		}
-		break;
-
-		case LIMITS_POS:
-		{
-			int blIndex, lbIndex, tlIndex, ltIndex;
-			int brIndex, rbIndex, trIndex, rtIndex;
-			blIndex = 0; lbIndex = 0; tlIndex = 0; ltIndex = 0;
-			brIndex = 0; rbIndex = 0; trIndex = 0; rtIndex = 0;
-			for (int i = 1; i < minPointSet.size(); i++) {
-				QPoint curPoint = minPointSet[i];
-				if (curPoint.y() < minPointSet[blIndex].y() || (curPoint.y() == minPointSet[blIndex].y() && curPoint.x() < minPointSet[blIndex].x())) blIndex = i;
-				if (curPoint.x() < minPointSet[lbIndex].x() || (curPoint.x() == minPointSet[lbIndex].x() && curPoint.y() < minPointSet[lbIndex].y())) lbIndex = i;
-				if (curPoint.y() > minPointSet[tlIndex].y() || (curPoint.y() == minPointSet[tlIndex].y() && curPoint.x() < minPointSet[tlIndex].x())) tlIndex = i;
-				if (curPoint.x() < minPointSet[ltIndex].x() || (curPoint.x() == minPointSet[ltIndex].x() && curPoint.y() > minPointSet[ltIndex].y())) ltIndex = i;
-
-				if (curPoint.y() < minPointSet[brIndex].y() || (curPoint.y() == minPointSet[brIndex].y() && curPoint.x() > minPointSet[brIndex].x())) brIndex = i;
-				if (curPoint.x() > minPointSet[rbIndex].x() || (curPoint.x() == minPointSet[rbIndex].x() && curPoint.y() < minPointSet[rbIndex].y())) rbIndex = i;
-				if (curPoint.y() > minPointSet[trIndex].y() || (curPoint.y() == minPointSet[trIndex].y() && curPoint.x() > minPointSet[trIndex].x())) trIndex = i;
-				if (curPoint.x() > minPointSet[rtIndex].x() || (curPoint.x() == minPointSet[rtIndex].x() && curPoint.y() > minPointSet[rtIndex].y())) rtIndex = i;
-			}
-			int d8 = rand() % 8;
-			if (d8 == 0) index = blIndex;
-			else if (d8 == 1) index = lbIndex;
-			else if (d8 == 2) index = tlIndex;
-			else if (d8 == 3) index = ltIndex;
-			else if (d8 == 4) index = brIndex;
-			else if (d8 == 5) index = rbIndex;
-			else if (d8 == 6) index = trIndex;
-			else if (d8 == 7) index = rtIndex;
-		}
-		break;
-
-		case CONTOUR_POS:
-		{
-			QVector<int> contourPtsIndex;
-			for (int i = 0; i < minPointSet.size(); i++) {
-				QPoint curPoint = minPointSet[i];
-				// Check if it is in the contour
-				if (curPoint.x() == 0 || curPoint.x() == width - 1 || curPoint.y() == 0 || curPoint.y() == height - 1) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() - 1, curPoint.y() - 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x(), curPoint.y() - 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() + 1, curPoint.y() - 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() - 1, curPoint.y()), 1.0 + minVal)) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() + 1, curPoint.y()), 1.0 + minVal)) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() - 1, curPoint.y() + 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x(), curPoint.y() + 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
-				else if (!qFuzzyCompare(1.0 + getLocalValue(curPoint.x() + 1, curPoint.y() + 1), 1.0 + minVal)) contourPtsIndex.push_back(i);
-			}
-			//for (int i = 0; i < contourPtsIndex.size(); i++) qDebug() << minPointSet[contourPtsIndex[i]];
-			index = contourPtsIndex[rand() % contourPtsIndex.size()];
-		}
-		break;
-	}
-
-	return minPointSet[index];
+	return minVal;
 }
 
 #ifndef CONSOLE

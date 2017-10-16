@@ -84,12 +84,6 @@ int main(int argc, char *argv[])
 	else if (params.initialSolutionType == Bottom_Left){
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::BOTTOMLEFT);
 	}
-	switch (params.placementType) {
-		case Pos_BottomLeft: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::BOTTOMLEFT_POS); break;
-		case Pos_Random: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::RANDOM_POS); break;
-		case Pos_Limits: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::LIMITS_POS); break;
-		case Pos_Contour: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::CONTOUR_POS); break;
-	}
 	algorithmParams.setClusterFactor(params.clusterFactor);
 	algorithmParams.setRectangularPacking(params.rectangularPacking);
 	switch (params.rectMehod) {

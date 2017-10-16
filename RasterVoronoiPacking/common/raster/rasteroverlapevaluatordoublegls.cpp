@@ -20,26 +20,25 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTot
 
 // --> Get absolute minimum overlap position
 QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution) {
+	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
+	QPoint minRelativePos;
+	map->getMinimum(minRelativePos);
+
+	// Rescale position before returning
+	return (this->problem->getScale() / this->searchProblem->getScale()) *(minRelativePos - map->getReferencePoint());
+}
+
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution) {
 	// Scale solution to seach scale
 	RasterPackingSolution roughSolution;
 	qreal zoomFactor = this->problem->getScale() / this->searchProblem->getScale();
 	getScaledSolution(solution, roughSolution, 1.0 / zoomFactor);
 
-	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, roughSolution);
-	//float fvalue = value;
-	float fvalue;
-	QPoint minRelativePos = map->getMinimum(fvalue);
-
-	// Rescale position before returning
-	return zoomFactor*(minRelativePos - map->getReferencePoint());
-}
-
-std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution) {
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
 	currrentPieceMap->reset();
 	for (int i = 0; i < searchProblem->count(); i++) {
 		if (i == itemId) continue;
-		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), roughSolution.getOrientation(i), searchProblem->getItemType(itemId), orientation), roughSolution.getPosition(i), glsWeights->getWeight(itemId, i));
 	}
 	return currrentPieceMap;
 }

@@ -29,7 +29,7 @@ public:
     ~PackingViewer();
 
     void createGraphicItems(RASTERPACKING::PackingProblem &problem);
-    void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
+    //void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
     void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution);
 	void showTotalOverlapMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> newMap, qreal scale = 1);
 

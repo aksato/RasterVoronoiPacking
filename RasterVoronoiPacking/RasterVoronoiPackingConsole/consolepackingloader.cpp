@@ -125,7 +125,7 @@ void ConsolePackingLoader::run() {
 	else {
 		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver> clusterSolverGls;
 		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> originalSolverGls;
-		std::shared_ptr<RASTERVORONOIPACKING::RasterOverlapEvaluator> clusterOverlapEvaluator, originalOverlapEvaluator;
+		std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> clusterOverlapEvaluator, originalOverlapEvaluator;
 		// Get pointer to cluster problem
 		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem);
 		if (algorithmParamsBackup.isDoubleResolution()) {
@@ -133,14 +133,14 @@ void ConsolePackingLoader::run() {
 			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterSearchProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(zoomProblem);
 			//clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS(clusterProblem, clusterSearchProblem));
 			//originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
-			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterOverlapEvaluator>(new RASTERVORONOIPACKING::RasterOverlapEvaluatorDoubleGLS(clusterProblem, clusterSearchProblem));
-			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterOverlapEvaluator>(new RASTERVORONOIPACKING::RasterOverlapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
+			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem, clusterSearchProblem));
+			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
 		}
 		else {
 			//clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS(clusterProblem));
 			//originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(clusterProblem->getOriginalProblem()));
-			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterOverlapEvaluator>(new RASTERVORONOIPACKING::RasterOverlapEvaluatorGLS(clusterProblem));
-			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterOverlapEvaluator>(new RASTERVORONOIPACKING::RasterOverlapEvaluatorGLS(clusterProblem->getOriginalProblem()));
+			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem));
+			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem->getOriginalProblem()));
 		}
 		clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver>(new RASTERVORONOIPACKING::RasterStripPackingClusterSolver(clusterProblem, clusterOverlapEvaluator));
 		originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(clusterProblem->getOriginalProblem(), originalOverlapEvaluator));
@@ -177,7 +177,6 @@ void ConsolePackingLoader::run() {
 	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) qDebug() << "Length:" << algorithmParamsBackup.getInitialLenght();
 	qDebug() << "Solver method:" << algorithmParamsBackup.getHeuristic();
 	qDebug() << "Inital solution:" << algorithmParamsBackup.getInitialSolMethod();
-	qDebug() << "Minimum overlap placement heuristic:" << algorithmParamsBackup.getPlacementCriteria();
 	if (!algorithmParamsBackup.isFixedLength()) qDebug() << "Strip packing version";
 	qDebug() << "Solver parameters: Nmo =" << algorithmParamsBackup.getNmo() << "; Time Limit:" << algorithmParamsBackup.getTimeLimit();
 	if (algorithmParamsBackup.getClusterFactor() > 0) qDebug() << "Cluster factor:" << algorithmParamsBackup.getClusterFactor();

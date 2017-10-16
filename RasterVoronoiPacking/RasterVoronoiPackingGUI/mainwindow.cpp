@@ -477,7 +477,7 @@ void MainWindow::translateCurrentToMinimumZoomedPosition() {
 }
 
 void MainWindow::generateCurrentTotalSearchOverlapMap() {
-	ui->graphicsView->getCurrentSolution(solution, this->rasterZoomedProblem->getScale());
+	ui->graphicsView->getCurrentSolution(solution);
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS> overlapEvaluatorDoubleGLS = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS>(solverDoubleGls->overlapEvaluator);

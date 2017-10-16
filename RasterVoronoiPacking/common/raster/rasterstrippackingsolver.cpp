@@ -168,9 +168,8 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 // --> Get absolute minimum overlap position
 QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value) {
 	std::shared_ptr<TotalOverlapMap> map = overlapEvaluator->getTotalOverlapMap(itemId, orientation, solution);
-	float fvalue;
-	QPoint minRelativePos = map->getMinimum(fvalue);
-	value = fvalue;
+	QPoint minRelativePos;
+	value = map->getMinimum(minRelativePos);
 	return minRelativePos - map->getReferencePoint();
 }
 

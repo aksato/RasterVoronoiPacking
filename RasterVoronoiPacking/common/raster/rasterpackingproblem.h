@@ -36,6 +36,20 @@ namespace RASTERVORONOIPACKING {
 		void getBoundingBox(int &_minX, int &_maxX, int &_minY, int &_maxY) {
 			_minX = this->minX; _maxX = this->maxX; _minY = this->minY; _maxY = this->maxY;
 		}
+		int getMaxX(int orientation) {
+			if (getAngleValue(orientation) == 0) return this->maxX;
+			if (getAngleValue(orientation) == 90) return -this->minY;
+			if (getAngleValue(orientation) == 180) return -this->minX;
+			if (getAngleValue(orientation) == 270) return this->maxY;
+			return 0; // FIXME: Implement continuous rotations?
+		}
+		int getMaxY(int orientation) {
+			if (getAngleValue(orientation) == 0) return this->maxY;
+			if (getAngleValue(orientation) == 90) return this->maxX;
+			if (getAngleValue(orientation) == 180) return -this->minY;
+			if (getAngleValue(orientation) == 270) return -this->minX;
+			return 0; // FIXME: Implement continuous rotations?
+		}
 
     private:
         unsigned int id;

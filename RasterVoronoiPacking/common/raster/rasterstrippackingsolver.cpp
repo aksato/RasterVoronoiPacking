@@ -87,7 +87,7 @@ void RasterStripPackingSolver::generateBottomLeftStripSolution(RasterPackingSolu
 				curPos.setY(curPos.y() + 1); if (curPos.y() > maxIfpY) { curPos.setY(minIfpY); curPos.setX(curPos.x() + 1); }
 			}
 			// Check minimum X coordinate
-			int maxItemX = getItemMaxX(curPos.x(), angle, shuffledId, originalProblem);
+			int maxItemX = curPos.x() + qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxX(angle));
 			if (angle == 0 || maxItemX < minMaxItemX) {
 				minMaxItemX = maxItemX;
 				solution.setPosition(shuffledId, curPos); solution.setOrientation(shuffledId, angle);
@@ -110,18 +110,6 @@ bool RasterStripPackingSolver::detectItemPartialOverlap(QVector<int> sequence, i
 	return false;
 }
 
-// FIXME: use discretization from nfp/ifp
-int RasterStripPackingSolver::getItemMaxX(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem) {
-	int itemMinX, itemMaxX, itemMinY, itemMaxY; problem->getItem(itemId)->getBoundingBox(itemMinX, itemMaxX, itemMinY, itemMaxY);
-	int realItemMaxX;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 0) realItemMaxX = itemMaxX;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 90) realItemMaxX = -itemMinY;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 180) realItemMaxX = -itemMinX;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 270) realItemMaxX = itemMaxY;
-	return posX + qRound((qreal)realItemMaxX*problem->getScale());
-
-}
-
 // --> Get layout overlap (sum of individual overlap values)
 qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution) {
     qreal totalOverlap = 0;
@@ -129,13 +117,6 @@ qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution
 		totalOverlap += getItemTotalOverlap(itemId, solution);
     }
     return totalOverlap;
-}
-
-// --> Get absolute minimum overlap position
-QPoint RasterStripPackingSolver::getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value, PositionChoice placementHeuristic) {
-	float fvalue = value;
-	QPoint minRelativePos = map->getMinimum(fvalue, placementHeuristic);
-    return minRelativePos - map->getReferencePoint();
 }
 
 bool RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingSolution &solution) {
@@ -187,7 +168,6 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 // --> Get absolute minimum overlap position
 QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value) {
 	std::shared_ptr<TotalOverlapMap> map = overlapEvaluator->getTotalOverlapMap(itemId, orientation, solution);
-	//float fvalue = value;
 	float fvalue;
 	QPoint minRelativePos = map->getMinimum(fvalue);
 	value = fvalue;

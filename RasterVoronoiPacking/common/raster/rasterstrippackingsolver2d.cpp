@@ -2,18 +2,6 @@
 
 using namespace RASTERVORONOIPACKING;
 
-// FIXME: use discretization from nfp/ifp
-int RasterStripPackingSolver::getItemMaxY(int posY, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem) {
-	int itemMinX, itemMaxX, itemMinY, itemMaxY; problem->getItem(itemId)->getBoundingBox(itemMinX, itemMaxX, itemMinY, itemMaxY);
-	int realItemMaxY;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 0) realItemMaxY = itemMaxY;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 90) realItemMaxY = itemMaxX;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 180) realItemMaxY = -itemMinY;
-	if (problem->getItem(itemId)->getAngleValue(angle) == 270) realItemMaxY = -itemMinX;
-	return posY + qRound((qreal)realItemMaxY*problem->getScale());
-
-}
-
 // --> Generate initial solution using the bottom left heuristic and resize the container accordingly
 void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPackingSolution &solution) {
 	QVector<int> sequence;
@@ -51,8 +39,8 @@ void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPacking
 				i++;
 			}
 			// Check minimum X and Y coordinate
-			int maxItemY = getItemMaxY(curPos.y(), angle, shuffledId, originalProblem);
-			int maxItemX = getItemMaxX(curPos.x(), angle, shuffledId, originalProblem);
+			int maxItemY = curPos.y()*qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxY(angle));
+			int maxItemX = curPos.x()*qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxX(angle));
 			int curArea = qMax(maxItemX, layoutLength) * qMax(maxItemY, layoutHeight);
 			if (angle == 0 || curArea < minItemArea) {
 				minItemArea = curArea;

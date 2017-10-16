@@ -22,7 +22,7 @@ namespace RASTERVORONOIPACKING {
 
 		RasterStripPackingSolver(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterTotalOverlapMapEvaluator> _overlapEvaluator);
 
-		// Info Functions
+		// --> Getter Functions
 		int getNumItems() { return originalProblem->count(); }
 		int getCurrentWidth() { return currentWidth; }
 		int getCurrentHeight() { return currentHeight; }
@@ -41,27 +41,19 @@ namespace RASTERVORONOIPACKING {
 		// --> Guided Local Search functions
 		virtual void updateWeights(RasterPackingSolution &solution) { overlapEvaluator->updateWeights(solution); };
 		virtual void resetWeights() { overlapEvaluator->resetWeights(); };
-		// Size information function
+		// --> Size information function
 		int getMinimumContainerWidth() { return originalProblem->getMaxWidth(); }
 		int getMinimumContainerHeight() { return originalProblem->getMaxHeight(); }
 
 	protected:
-		void setProblem(std::shared_ptr<RasterPackingProblem> _problem);
-
-		// --> Get two items overlap
+		// --> Get minimum overlap position for item
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value);
-
-		int getItemMaxX(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
-		int getItemMaxY(int posX, int angle, int itemId, std::shared_ptr<RasterPackingProblem> problem);
 
 		// --> Overlap determination functions
 		bool detectItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution);
 		qreal getItemTotalOverlap(int itemId, RasterPackingSolution &solution);
 
-		// Debug only functions
-		// --> Get absolute minimum overlap position
-		QPoint getMinimumOverlapPosition(std::shared_ptr<TotalOverlapMap> map, qreal &value, PositionChoice placementHeuristic);
-
+		// --> Pointer to problem, size variables and total map evaluator
 		std::shared_ptr<RasterPackingProblem> originalProblem;
 		int currentWidth, currentHeight, initialWidth, initialHeight;
 		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator;
@@ -75,7 +67,7 @@ namespace RASTERVORONOIPACKING {
 	class RasterStripPackingClusterSolver : public RasterStripPackingSolver {
 	public:
 		RasterStripPackingClusterSolver(std::shared_ptr<RasterPackingClusterProblem> _problem, std::shared_ptr<RasterTotalOverlapMapEvaluator> _overlapEvaluator) : RasterStripPackingSolver(_problem, _overlapEvaluator) { this->originalClusterProblem = _problem; }
-		// --> Cluster
+		// --> Convert solution to unclustered version
 		void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {
 			if (solution.getNumItems() == originalClusterProblem->getOriginalProblem()->count()) return;
 			originalClusterProblem->convertSolution(solution);

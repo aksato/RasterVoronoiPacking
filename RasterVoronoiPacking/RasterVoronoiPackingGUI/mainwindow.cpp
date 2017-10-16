@@ -292,7 +292,7 @@ void MainWindow::translateCurrentToMinimumPosition() {
     int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->overlapEvaluator->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution);
-	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal, BOTTOMLEFT_POS);
+	QPoint minPos = solver->getMinimumOverlapPosition(itemId, solution.getOrientation(itemId), solution, minVal);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
     ui->graphicsView->setCurrentSolution(solution);
@@ -383,7 +383,7 @@ void MainWindow::translateCurrentToGlsWeightedMinimumPosition() {
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solverGls->overlapEvaluator->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution);
-	QPoint minPos = solver->getMinimumOverlapPosition(curMap, minVal, BOTTOMLEFT_POS);
+	QPoint minPos = solver->getMinimumOverlapPosition(itemId, solution.getOrientation(itemId), solution, minVal);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
 	ui->graphicsView->setCurrentSolution(solution);

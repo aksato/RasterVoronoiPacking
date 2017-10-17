@@ -133,8 +133,8 @@ void ConsolePackingLoader::run() {
 			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterSearchProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(zoomProblem);
 			//clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS(clusterProblem, clusterSearchProblem));
 			//originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
-			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem, clusterSearchProblem));
-			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
+			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem, clusterSearchProblem, algorithmParamsBackup.getZoomMethod()));
+			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem(), algorithmParamsBackup.getZoomMethod()));
 		}
 		else {
 			//clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS(clusterProblem));

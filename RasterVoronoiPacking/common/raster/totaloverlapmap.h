@@ -43,6 +43,7 @@ namespace RASTERVORONOIPACKING {
 
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight);
+		void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight, int zoomFactorInt);
 		virtual float getMinimum(QPoint &minPt);
 
         #ifndef CONSOLE
@@ -63,6 +64,7 @@ namespace RASTERVORONOIPACKING {
         float getLocalValue(int i, int j) {return data[j*width+i];}
         void setLocalValue(int i, int j, float value) {data[j*width+i] = value;}
         bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);
+		bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection, int zoomFactorInt);
 
         #ifdef QT_DEBUG
         int initialWidth;

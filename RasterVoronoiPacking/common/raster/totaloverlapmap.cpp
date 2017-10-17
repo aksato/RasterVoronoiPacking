@@ -66,6 +66,17 @@ bool TotalOverlapMap::getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight
     return true;
 }
 
+bool TotalOverlapMap::getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection, int zoomFactorInt) {
+	intersection.setCoords(relativeOrigin.x() < 0 ? 0 : relativeOrigin.x(),
+		relativeOrigin.y() + vmHeight > zoomFactorInt*getHeight() ? zoomFactorInt*getHeight() - 1 : relativeOrigin.y() + vmHeight - 1,
+		relativeOrigin.x() + vmWidth > zoomFactorInt*getWidth() ? zoomFactorInt*getWidth() - 1 : relativeOrigin.x() + vmWidth - 1,
+		relativeOrigin.y() < 0 ? 0 : relativeOrigin.y());
+
+	if (intersection.topRight().x() < 0 || intersection.topRight().y() < 0 ||
+		intersection.bottomLeft().x() > zoomFactorInt*getWidth() || intersection.bottomLeft().y() > zoomFactorInt*getHeight()) return false;
+	return true;
+}
+
 void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
     QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
     QRect intersection;
@@ -89,6 +100,26 @@ void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint
 	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
 		float *dataPt = scanLine(j) + intersection.bottomLeft().x();
 		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++) {
+			int indexValue = nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
+			float distanceValue = 0.0;
+			*dataPt += weight * (float)indexValue;
+		}
+	}
+}
+
+void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight, int zoomFactorInt) {
+	//QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
+	QPoint relativeOrigin = zoomFactorInt * getReferencePoint() + pos - nfp->getOrigin();
+	QRect intersection;
+	if (!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection, zoomFactorInt)) return;
+
+	int initialY = intersection.bottomLeft().y() % zoomFactorInt == 0 ? intersection.bottomLeft().y() : zoomFactorInt * ((intersection.bottomLeft().y() / zoomFactorInt) + 1);
+	//int initialY = intersection.bottomLeft().y();
+	for (int j = initialY; j <= intersection.topRight().y(); j += zoomFactorInt) {
+		int initialX = intersection.bottomLeft().x() % zoomFactorInt == 0 ? intersection.bottomLeft().x() : zoomFactorInt * ((intersection.bottomLeft().x() / zoomFactorInt) + 1);
+		//int initialX = intersection.bottomLeft().x();
+		float *dataPt = scanLine(j/5) + initialX/5;
+		for (int i = initialX; i <= intersection.topRight().x(); i += zoomFactorInt, dataPt++) {
 			int indexValue = nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
 			float distanceValue = 0.0;
 			*dataPt += weight * (float)indexValue;

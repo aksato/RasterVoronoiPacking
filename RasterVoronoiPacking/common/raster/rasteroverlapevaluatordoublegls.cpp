@@ -20,7 +20,13 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTot
 
 // --> Get absolute minimum overlap position
 QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution) {
-	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
+	std::shared_ptr<TotalOverlapMap> map;
+	switch (searchMethod) {
+		case DOUBLE_ROUND: map = getTotalOverlapSearchMapRounded(itemId, orientation, solution); break;
+		case DOUBLE_DISTRIBUTED: map = getTotalOverlapSearchMapDistributed(itemId, orientation, solution); break;
+		case DOUBLE_WEIGHTED: map = getTotalOverlapSearchMapWeighted(itemId, orientation, solution); break;
+		case SPACED_SINGLE: map = getTotalOverlapSearchMapSpacedSingle(itemId, orientation, solution); break;
+	}
 	QPoint minRelativePos;
 	map->getMinimum(minRelativePos);
 
@@ -28,7 +34,7 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(
 	return (this->problem->getScale() / this->searchProblem->getScale()) *(minRelativePos - map->getReferencePoint());
 }
 
-std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution) {
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMapRounded(int itemId, int orientation, RasterPackingSolution &solution) {
 	// Scale solution to seach scale
 	RasterPackingSolution roughSolution;
 	qreal zoomFactor = this->problem->getScale() / this->searchProblem->getScale();
@@ -39,6 +45,114 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTot
 	for (int i = 0; i < searchProblem->count(); i++) {
 		if (i == itemId) continue;
 		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), roughSolution.getOrientation(i), searchProblem->getItemType(itemId), orientation), roughSolution.getPosition(i), glsWeights->getWeight(itemId, i));
+	}
+	return currrentPieceMap;
+}
+
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMapDistributed(int itemId, int orientation, RasterPackingSolution &solution) {
+	QPoint pos1, pos2, pos3, pos4; 
+	qreal zoomFactor = this->searchProblem->getScale() / this->problem->getScale();
+
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	currrentPieceMap->reset();
+	for (int i = 0; i < searchProblem->count(); i++) {
+		if (i == itemId) continue;
+
+		// Check if podition is exactly on a rough grid point
+		QPointF curPos = QPointF(zoomFactor * (qreal)solution.getPosition(i).x(), zoomFactor * (qreal)solution.getPosition(i).y());
+		int curPosXround = qRound(curPos.x()); int curPosYround = qRound(curPos.y());
+		bool exactX = qFuzzyCompare(1.0 + curPos.x(), 1.0 + qRound(curPos.x())); bool exactY = qFuzzyCompare(1.0 + curPos.y(), 1.0 + qRound(curPos.y()));
+		if (exactX || exactY) {
+			if (exactX && exactY) {
+				currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), QPoint(curPosXround, curPosYround), glsWeights->getWeight(itemId, i));
+				continue;
+			}
+			if (exactX) {
+				pos1 = QPoint(curPosXround, qFloor(curPos.y()));
+				pos2 = QPoint(curPosXround, qCeil(curPos.y()));
+			}
+			if (exactY) {
+				pos1 = QPoint(qFloor(curPos.x()), curPosYround);
+				pos2 = QPoint(qCeil(curPos.x()), curPosYround);
+			}
+			currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos1, 0.5*glsWeights->getWeight(itemId, i));
+			currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos2, 0.5*glsWeights->getWeight(itemId, i));
+			continue;
+		}
+		
+		// Process general case
+		pos1 = QPoint(qFloor(curPos.x()), qFloor(curPos.y()));
+		pos2 = QPoint(qFloor(curPos.x()), qCeil(curPos.y()));
+		pos3 = QPoint(qCeil(curPos.x()), qFloor(curPos.y()));
+		pos4 = QPoint(qCeil(curPos.x()), qCeil(curPos.y()));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos1, 0.25*glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos2, 0.25*glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos3, 0.25*glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos4, 0.25*glsWeights->getWeight(itemId, i));
+	}
+
+	return currrentPieceMap;
+}
+
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMapWeighted(int itemId, int orientation, RasterPackingSolution &solution) {
+	QPoint pos1, pos2, pos3, pos4;
+	qreal dist1, dist2, dist3, dist4, totalDistInv;
+	qreal zoomFactor = this->searchProblem->getScale() / this->problem->getScale();
+
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	currrentPieceMap->reset();
+	for (int i = 0; i < searchProblem->count(); i++) {
+		if (i == itemId) continue;
+
+		// Check if podition is exactly on a rough grid point
+		QPointF curPos = QPointF(zoomFactor * (qreal)solution.getPosition(i).x(), zoomFactor * (qreal)solution.getPosition(i).y());
+		int curPosXround = qRound(curPos.x()); int curPosYround = qRound(curPos.y());
+		bool exactX = qFuzzyCompare(1.0 + curPos.x(), 1.0 + qRound(curPos.x())); bool exactY = qFuzzyCompare(1.0 + curPos.y(), 1.0 + qRound(curPos.y()));
+		if (exactX || exactY) {
+			if (exactX && exactY) {
+				currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), QPoint(curPosXround, curPosYround), glsWeights->getWeight(itemId, i));
+				continue;
+			}
+			if (exactX) {
+				dist1 = 1.0 / (curPos.y() - (qreal)qFloor(curPos.y()));
+				dist2 = 1.0 / ((qreal)qCeil(curPos.y()) - curPos.y());
+				pos1 = QPoint(curPosXround, qFloor(curPos.y()));
+				pos2 = QPoint(curPosXround, qCeil(curPos.y()));
+			}
+			if (exactY) {
+				dist1 = 1.0 / (curPos.x() - (qreal)qFloor(curPos.x()));
+				dist2 = 1.0 / ((qreal)qCeil(curPos.x()) - curPos.x());
+				pos1 = QPoint(qFloor(curPos.x()), curPosYround);
+				pos2 = QPoint(qCeil(curPos.x()), curPosYround);
+			}
+			totalDistInv = 1.0 / (dist1 + dist2);
+			currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos1, totalDistInv*dist1*glsWeights->getWeight(itemId, i));
+			currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos2, totalDistInv*dist2*glsWeights->getWeight(itemId, i));
+			continue;
+		}
+
+		// Process general case
+		pos1 = QPoint(qFloor(curPos.x()), qFloor(curPos.y())); dist1 = 1.0 / (curPos - pos1).manhattanLength();
+		pos2 = QPoint(qFloor(curPos.x()), qCeil(curPos.y())); dist2 = 1.0 / (curPos - pos2).manhattanLength();
+		pos3 = QPoint(qCeil(curPos.x()), qFloor(curPos.y())); dist3 = 1.0 / (curPos - pos3).manhattanLength();
+		pos4 = QPoint(qCeil(curPos.x()), qCeil(curPos.y())); dist4 = 1.0 / (curPos - pos4).manhattanLength();
+		totalDistInv = 1.0 / (dist1 + dist2 + dist3 + dist4);
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos1, totalDistInv*dist1*glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos2, totalDistInv*dist2*glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos3, totalDistInv*dist3*glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), pos4, totalDistInv*dist4*glsWeights->getWeight(itemId, i));
+	}
+
+	return currrentPieceMap;
+}
+
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMapSpacedSingle(int itemId, int orientation, RasterPackingSolution &solution) {
+	int zoomFactorInt = this->problem->getScale() / this->searchProblem->getScale();
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	currrentPieceMap->reset();
+	for (int i = 0; i < searchProblem->count(); i++) {
+		if (i == itemId) continue;
+		currrentPieceMap->addVoronoi(problem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), solution.getOrientation(i), searchProblem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i), zoomFactorInt);
 	}
 	return currrentPieceMap;
 }

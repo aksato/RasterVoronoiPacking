@@ -41,6 +41,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(valueCluster);
 	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, cost, bagpipe", "value");
 	parser.addOption(valueRectangularPacking);
+	const QCommandLineOption typeZoomMethod("zoom-method", "Zoom approach search method. Choices: rounded, distributed, weighted, single", "type");
+	parser.addOption(typeZoomMethod);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -246,6 +248,19 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	else {
 		params->rdec = -1.0; params->rinc = -1.0;
 	}
+
+	if (parser.isSet(typeZoomMethod)) {
+		const QString typeZoomMethodStr = parser.value(typeZoomMethod).toLower();
+		if (typeZoomMethodStr != "rounded" && typeZoomMethodStr != "distributed" && typeZoomMethodStr != "weighted" && typeZoomMethodStr != "single") {
+			*errorMessage = "Invalid method type! Avaible methods: 'rounded', 'distributed', 'weighted' and 'single'.";
+			return CommandLineError;
+		}
+		if (typeZoomMethodStr == "rounded") params->zoomMethod = Zoom_Rounded;
+		if (typeZoomMethodStr == "distributed") params->zoomMethod = Zoom_Distributed;
+		if (typeZoomMethodStr == "weighted") params->zoomMethod = Zoom_Weighted;
+		if (typeZoomMethodStr == "single") params->zoomMethod = Zoom_Single;
+	}
+	else params->zoomMethod = Zoom_Rounded;
 
     return CommandLineOk;
 }

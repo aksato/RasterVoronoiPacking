@@ -76,18 +76,24 @@ namespace RASTERVORONOIPACKING {
 		friend class MainWindow;
 
 	public:
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem) { this->problem = _problem; this->searchProblem = _searchProblem; }
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem, _glsWeights) { this->problem = _problem; this->searchProblem = _searchProblem; }
+		//RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem), searchMethod(DOUBLE_ROUND) { this->problem = _problem; this->searchProblem = _searchProblem; }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem, DoubleResolutionMethod _searchMethod) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem), searchMethod(_searchMethod) { this->problem = _problem; this->searchProblem = _searchProblem; }
+		//RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem, _glsWeights), searchMethod(DOUBLE_ROUND) { this->problem = _problem; this->searchProblem = _searchProblem; }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterPackingProblem> _searchProblem, std::shared_ptr<GlsWeightSet> _glsWeights, DoubleResolutionMethod _searchMethod) : RasterTotalOverlapMapEvaluatorGLS(_searchProblem, _glsWeights), searchMethod(_searchMethod) { this->problem = _problem; this->searchProblem = _searchProblem; }
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
 		void updateMapsLength(int pixelWidth);
 		void updateMapsDimensions(int pixelWidth, int pixelHeight);
 
 	private:
-		std::shared_ptr<TotalOverlapMap> getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution);
+		std::shared_ptr<TotalOverlapMap> getTotalOverlapSearchMapRounded(int itemId, int orientation, RasterPackingSolution &solution);
+		std::shared_ptr<TotalOverlapMap> getTotalOverlapSearchMapDistributed(int itemId, int orientation, RasterPackingSolution &solution);
+		std::shared_ptr<TotalOverlapMap> getTotalOverlapSearchMapWeighted(int itemId, int orientation, RasterPackingSolution &solution);
+		std::shared_ptr<TotalOverlapMap> getTotalOverlapSearchMapSpacedSingle(int itemId, int orientation, RasterPackingSolution &solution);
 		std::shared_ptr<TotalOverlapMap> getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution);
 		qreal getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution);
 		QPoint getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution);
 		std::shared_ptr<RasterPackingProblem> searchProblem;
+		DoubleResolutionMethod searchMethod;
 	};
 }
 

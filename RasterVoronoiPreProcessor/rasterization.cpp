@@ -300,7 +300,7 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
 		if (iti + 1 == polygon.cend()) itj = polygon.cbegin();
 		else itj = iti + 1;
-		if (abs((*iti).y() - (*itj).y()) < RASTER_EPS && abs((*iti).y() - (int)(*iti).y()) < RASTER_EPS) {
+		if (abs((*iti).y() - (*itj).y()) < RASTER_EPS && abs((*iti).y() - std::round((*iti).y())) < RASTER_EPS) {
 			qreal left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
 			qreal right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
 			int initCoord, endCoord;

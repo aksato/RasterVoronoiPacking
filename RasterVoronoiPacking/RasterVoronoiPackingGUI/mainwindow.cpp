@@ -29,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSave_Solution, SIGNAL(triggered()), this, SLOT(saveSolution()));
 	connect(ui->actionSave_Zoomed_Solution, SIGNAL(triggered()), this, SLOT(saveZoomedSolution()));
     connect(ui->actionExport_Solution_to_SVG, SIGNAL(triggered()), this, SLOT(exportSolutionToSvg()));
+	connect(ui->actionExport_Solution_to_Tikz, SIGNAL(triggered()), this, SLOT(exportSolutionTikz()));
 	connect(ui->actionShow_density, SIGNAL(triggered()), this, SLOT(printDensity()));
     connect(ui->comboBox, SIGNAL(currentIndexChanged(int)), ui->graphicsView, SLOT(setSelectedItem(int)));
     connect(ui->graphicsView, SIGNAL(selectedItemChanged(int)), ui->comboBox, SLOT(setCurrentIndex(int)));
@@ -663,6 +664,11 @@ void MainWindow::exportSolutionToSvg() {
      ui->graphicsView->disableItemSelection();
      ui->graphicsView->scene()->render( &painter );
      ui->graphicsView->enableItemSelection();
+}
+
+void MainWindow::exportSolutionTikz() {
+	QString  fileName = QFileDialog::getSaveFileName(this, tr("Export solution"), "", tr("Portable Graphics Format (*.pgf)"));
+	solution.exportToPgf(fileName, this->rasterProblem, solver->getCurrentWidth(), solver->getCurrentHeight());
 }
 
 void MainWindow::printDensity() {

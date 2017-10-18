@@ -14,8 +14,7 @@ class MainWindow;
 namespace RASTERVORONOIPACKING {
     class RasterPackingItem {
     public:
-        RasterPackingItem() {}
-        RasterPackingItem(unsigned int _id, unsigned int pType, unsigned int aCount) : id(_id), pieceType(pType), angleCount(aCount) {}
+		RasterPackingItem(unsigned int _id, unsigned int pType, unsigned int aCount, std::shared_ptr<QPolygonF> pol) : id(_id), pieceType(pType), angleCount(aCount), polygon(pol) {}
         ~RasterPackingItem() {}
 
         void setId(unsigned int _id) {this->id = _id;}
@@ -24,6 +23,7 @@ namespace RASTERVORONOIPACKING {
         unsigned int getPieceType() {return this->pieceType;}
         void setAngleCount(unsigned int aCount) {this->angleCount = aCount;}
         unsigned int getAngleCount() {return this->angleCount;}
+		std::shared_ptr<QPolygonF> getPolygon() { return this->polygon; }
 
         void setPieceName(QString pName) {this->pieceName = pName;}
         QString getPieceName() {return this->pieceName;}
@@ -59,6 +59,7 @@ namespace RASTERVORONOIPACKING {
 
         QString pieceName;
         QVector<int> angleValues;
+		std::shared_ptr<QPolygonF> polygon; // For output purposes
     };
 
     class RasterPackingProblem

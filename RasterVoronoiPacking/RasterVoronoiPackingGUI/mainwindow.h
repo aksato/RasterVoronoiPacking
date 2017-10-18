@@ -67,6 +67,7 @@ private slots:
 	void saveZoomedSolution();
     void loadSolution();
     void exportSolutionToSvg();
+	void exportSolutionTikz();
 
 	void switchToOriginalProblem();
 	void updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed);

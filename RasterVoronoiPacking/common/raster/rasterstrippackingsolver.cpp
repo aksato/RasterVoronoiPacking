@@ -138,7 +138,7 @@ bool RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingS
 
 bool RasterStripPackingSolver::setContainerWidth(int &pixelWidth) {
 	// Check if size is smaller than smallest item width
-	if (this->getMinimumContainerWidth() <= this->initialWidth - pixelWidth) { pixelWidth = this->currentWidth; return false; }
+	if (pixelWidth < this->getMinimumContainerWidth()) { pixelWidth = this->currentWidth; return false; }
 
 	// Resize container
 	overlapEvaluator->updateMapsLength(pixelWidth);

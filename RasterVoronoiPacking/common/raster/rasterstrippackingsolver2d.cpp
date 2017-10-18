@@ -81,7 +81,7 @@ bool RasterStripPackingSolver::setContainerDimensions(int &pixelWidthX, int &pix
 
 bool RasterStripPackingSolver::setContainerDimensions(int &pixelWidthX, int &pixelWidthY) {
 	// Check if size is smaller than smallest item width
-	if (this->getMinimumContainerWidth() <= this->initialWidth - pixelWidthX || this->getMinimumContainerHeight() <= this->initialHeight - pixelWidthY) {
+	if (pixelWidthX < this->getMinimumContainerWidth() || pixelWidthY < this->getMinimumContainerHeight()) {
 		pixelWidthX = this->currentWidth; pixelWidthY = this->currentHeight;
 		return false;
 	}

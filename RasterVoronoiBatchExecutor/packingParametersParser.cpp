@@ -14,7 +14,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueNumExecutions("executions", "Number of total executions of the algorithm per case.", "value"); parser.addOption(valueNumExecutions);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value"); parser.addOption(valueCluster);
 	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem. Choices: square, random, bagpipe.", "value"); parser.addOption(valueRectangular);
-	const QCommandLineOption valueZoom("zoom-method", "Zoom approach search method. Choices: rounded, distributed, weighted, single", "value"); parser.addOption(valueRectangular);
+	const QCommandLineOption valueZoom("zoom-method", "Zoom approach search method. Choices: rounded, distributed, weighted, single", "value"); parser.addOption(valueZoom);
 	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
 	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);
 	const QCommandLineOption helpOption = parser.addHelpOption();

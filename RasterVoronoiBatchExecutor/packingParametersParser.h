@@ -5,7 +5,7 @@ class QCommandLineParser;
 class QString;
 
 struct PackingBatchExecutorArgs {
-	PackingBatchExecutorArgs() : executionCount(100), threadCount(1), clusterFactor(-1.0), rdec(0.1), rinc(0.01), zoomMethod("rounded") {}
+	PackingBatchExecutorArgs() : executionCount(100), threadCount(1), clusterFactor(-1.0), rdec(0.1), rinc(0.01), zoomMethod("rounded"), rectangular(false) {}
 	QString executablePath;
     QString inputFilePath;
 	int executionCount;

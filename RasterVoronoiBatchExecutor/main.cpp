@@ -118,9 +118,12 @@ int main(int argc, char *argv[])
 		// Create argument list
 		QStringList arguments;
 		arguments << curCase.problemFileName;
-		if (curCase.searchProblemFileName.isEmpty()) arguments << "--method=gls";
+		if (curCase.searchProblemFileName.isEmpty()) {
+			arguments << "--method=gls";
+			if (params.zoomValue > 0) arguments << "--zoom=" + QString::number(params.zoomValue);
+		}
 		else {
-			arguments << "--method=zoomgls" << "--zoom=" + curCase.searchProblemFileName << "--zoom-method=" + params.zoomMethod;
+			arguments << "--method=zoomgls" << "--zoom=" + curCase.searchProblemFileName;
 		}
 		arguments << "--initial=bottomleft" << "--duration=" + QString::number(curCase.timeLimit) << "--strippacking" << "--appendseed" << "--layout=" + xmlOutput << "--result=" + txtOutput;// << "--parallel=" + QString::number(params.threadCount);
 		if (params.clusterFactor > 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution

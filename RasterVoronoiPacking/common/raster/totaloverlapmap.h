@@ -12,6 +12,7 @@ namespace RASTERVORONOIPACKING {
     public:
         TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp);
         TotalOverlapMap(int width, int height);
+		TotalOverlapMap(int width, int height, QPoint _reference);
 		TotalOverlapMap(QRect &boundingBox);
 		virtual ~TotalOverlapMap() { delete[] data; }
 

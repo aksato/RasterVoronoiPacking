@@ -48,8 +48,7 @@ private slots:
 
 	void generateCurrentTotalSearchOverlapMap();
 	void generateCurrentTotalSearchOverlapMap2();
-	void generateCurrentTotalSearchOverlapMap3();
-	void generateCurrentTotalSearchOverlapMap4();
+	void setExplicityZoomValue();
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();
     void zoomedlocalSearch();
@@ -92,7 +91,7 @@ private:
 	Packing2DThread run2DThread;
 	PackingClusterThread runClusterThread;
 
-    int accContainerShrink;
+    int accContainerShrink, explicityZoomValue;
 	qreal totalArea; qreal containerWidth;
 	RASTERPACKING::PackingProblem originalProblem;
 };

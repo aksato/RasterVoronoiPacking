@@ -14,7 +14,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueNumExecutions("executions", "Number of total executions of the algorithm per case.", "value"); parser.addOption(valueNumExecutions);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value"); parser.addOption(valueCluster);
 	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem. Choices: square, random, bagpipe.", "value"); parser.addOption(valueRectangular);
-	const QCommandLineOption valueZoom("zoom-method", "Zoom approach search method. Choices: rounded, distributed, weighted, single", "value"); parser.addOption(valueZoom);
+	const QCommandLineOption valueZoom("zoom", "Explicity zoom value. Does not override zoom input file parameter.", "value"); parser.addOption(valueZoom);
 	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
 	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);
 	const QCommandLineOption helpOption = parser.addHelpOption();
@@ -84,12 +84,9 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 		params->rectMehod = methodType;
 	}
 	if (parser.isSet(valueZoom)) {
-		const QString zomMethod = parser.value(valueZoom).toLower();
-		if (zomMethod != "rounded" && zomMethod != "distributed" && zomMethod != "weighted" && zomMethod != "single") {
-			*errorMessage = "Invalid method type! Avaible methods: 'rounded', 'distributed', 'weighted' and 'single'.";
-			return CommandLineError;
-		}
-		params->zoomMethod = zomMethod;
+		const int zoom = parser.value(valueZoom).toInt(&parseOk);
+		if (parseOk && zoom > 0) params->zoomValue = zoom;
+		else { *errorMessage = "Bad zoom value."; return CommandLineError; }
 	}
     return CommandLineOk;
 }

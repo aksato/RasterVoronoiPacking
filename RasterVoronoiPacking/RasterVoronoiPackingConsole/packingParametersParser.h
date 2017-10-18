@@ -7,7 +7,7 @@ class QString;
 enum RasterPackingMethods {Method_Default, Method_Gls, Method_Zoom, Method_ZoomGls};
 enum InitialSolutionGenerator {Solution_Random, Bottom_Left};
 enum RectangularMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
-enum ZoomMethod { Zoom_Rounded, Zoom_Distributed, Zoom_Weighted, Zoom_Single };
+enum ZoomMethod { Zoom_Rounded, Zoom_Single };
 
 struct ConsolePackingArgs {
 	ConsolePackingArgs() {}
@@ -21,6 +21,7 @@ struct ConsolePackingArgs {
     InitialSolutionGenerator initialSolutionType;
 	RectangularMethod rectMehod;
 	ZoomMethod zoomMethod;
+	int zoomValue;
     int maxWorseSolutionsValue;
     int timeLimitValue;
 	int iterationsLimitValue;

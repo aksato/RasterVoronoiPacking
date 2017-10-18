@@ -31,6 +31,10 @@ TotalOverlapMap::TotalOverlapMap(int width, int height) : originalWidth(width), 
     init(width, height);
 }
 
+TotalOverlapMap::TotalOverlapMap(int width, int height, QPoint _reference) : originalWidth(width), originalHeight(height), reference(_reference) {
+	init(width, height);
+}
+
 TotalOverlapMap::TotalOverlapMap(QRect &boundingBox) : originalWidth(boundingBox.width()), originalHeight(boundingBox.height()) {
 	init(boundingBox.width(), boundingBox.height());
 	reference = -boundingBox.topLeft();

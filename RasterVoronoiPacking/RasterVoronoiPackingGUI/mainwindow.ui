@@ -387,27 +387,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Display Search Overlap Map v2</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_22">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Display Search Overlap Map v3</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_23">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Display Search Overlap Map v4</string>
+             <string>Display Search Overlap Map Single</string>
             </property>
            </widget>
           </item>
@@ -438,6 +418,16 @@
             </property>
             <property name="text">
              <string>Local Search</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_22">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Set Explicity Zoom Value</string>
             </property>
            </widget>
           </item>

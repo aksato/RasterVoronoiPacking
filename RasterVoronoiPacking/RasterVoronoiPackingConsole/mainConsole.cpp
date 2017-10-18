@@ -94,9 +94,7 @@ int main(int argc, char *argv[])
 	}
 	switch (params.zoomMethod) {
 	case Zoom_Rounded: algorithmParams.setZoomMethod(RASTERVORONOIPACKING::DOUBLE_ROUND); break;
-	case Zoom_Distributed: algorithmParams.setZoomMethod(RASTERVORONOIPACKING::DOUBLE_DISTRIBUTED); break;
-	case Zoom_Weighted: algorithmParams.setZoomMethod(RASTERVORONOIPACKING::DOUBLE_WEIGHTED); break;
-	case Zoom_Single: algorithmParams.setZoomMethod(RASTERVORONOIPACKING::SPACED_SINGLE); break;
+	case Zoom_Single: algorithmParams.setZoomMethod(RASTERVORONOIPACKING::SPACED_SINGLE, params.zoomValue); break;
 	}
 
 	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);

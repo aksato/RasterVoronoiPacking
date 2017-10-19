@@ -58,8 +58,8 @@ void PackingClusterThread::run() {
 			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < parameters.getTimeLimit() * parameters.getClusterFactor() && !reverseCluster) {
 				// Convert solution
 				clusterSolver->declusterSolution(threadSolution);
-				solver = originalSolver;
-				originalSolver->setContainerWidth(curLength, threadSolution);
+				solver = clusterSolver->getOriginalSolver();
+				solver->setContainerWidth(curLength, threadSolution);
 				reverseCluster = true;
 				emit unclustered(threadSolution, curLength, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
 				break;

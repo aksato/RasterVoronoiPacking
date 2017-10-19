@@ -85,15 +85,13 @@ private:
     ZoomedMapViewDialog zoomedMapViewer;
     GlsWeightViewerDialog weightViewer;
     RunConfigurationsDialog runConfig;
-	PackingThread runThread;
-	Packing2DThread run2DThread;
-	PackingClusterThread runClusterThread;
 
 	int accContainerShrink;
 	qreal searchScale;
 	qreal totalArea, containerWidth;
 	RASTERPACKING::PackingProblem originalProblem;
 	int currentContainerWidth, currentContainerHeight;
+	std::shared_ptr<PackingThread> packer;
 };
 
 #endif // MAINWINDOW_H

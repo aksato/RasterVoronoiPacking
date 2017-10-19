@@ -60,27 +60,27 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	qRegisterMetaType<ExecutionSolutionInfo>("ExecutionSolutionInfo");
     qRegisterMetaType<RASTERVORONOIPACKING::RasterPackingSolution>("RASTERVORONOIPACKING::RasterPackingSolution");
-	connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-    connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-	connect(&runThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	connect(&runThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
-	connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
+	//connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	//connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
+	//connect(&runThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
+	//connect(&runThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	//connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
+	//connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
 
-	connect(&run2DThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	connect(&run2DThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-	connect(&run2DThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	connect(&run2DThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	connect(&run2DThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
-	connect(ui->pushButton_2, SIGNAL(clicked()), &run2DThread, SLOT(abort()));
+	//connect(&run2DThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	//connect(&run2DThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
+	//connect(&run2DThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
+	//connect(&run2DThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	//connect(&run2DThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
+	//connect(ui->pushButton_2, SIGNAL(clicked()), &run2DThread, SLOT(abort()));
 
-	connect(&runClusterThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	connect(&runClusterThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-	connect(&runClusterThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	connect(&runClusterThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	connect(&runClusterThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
-	connect(ui->pushButton_2, SIGNAL(clicked()), &runClusterThread, SLOT(abort()));
-	connect(&runClusterThread, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
+	//connect(&runClusterThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	//connect(&runClusterThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
+	//connect(&runClusterThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
+	//connect(&runClusterThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	//connect(&runClusterThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
+	//connect(ui->pushButton_2, SIGNAL(clicked()), &runClusterThread, SLOT(abort()));
+	//connect(&runClusterThread, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
 
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
 	connect(ui->pushButton_18, SIGNAL(clicked()), this, SLOT(generateCurrentTotalSearchOverlapMap()));
@@ -664,6 +664,7 @@ void MainWindow::switchToOriginalProblem() {
 	clusterProblem->convertSolution(solution);
 	// Recreate items and container graphics
 	ui->graphicsView->createGraphicItems(originalProblem); ui->graphicsView->scale(1.0, -1.0);
+	ui->graphicsView->recreateContainerGraphics(currentContainerWidth);
 	ui->spinBox->setMaximum(rasterProblem->count() - 1);
 	// Update ui
 	ui->graphicsView->setCurrentSolution(solution);
@@ -700,66 +701,42 @@ void MainWindow::executePacking() {
 	if (runConfig.getInitialSolution() == 0) params.setInitialSolMethod(KEEPSOLUTION);
 	if (runConfig.getInitialSolution() == 1) params.setInitialSolMethod(RANDOMFIXED);
 	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
-
-	
 	params.setClusterFactor(runConfig.getClusterFactor());
-	if (params.isRectangularPacking() || runConfig.getMinimalRectangleProblem()) {
-		run2DThread.setParameters(params);
-		run2DThread.setSolver(RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem }, params));
-		run2DThread.setMethod(runConfig.getMinimalRectangleProblem() ? RASTERVORONOIPACKING::RANDOM_ENCLOSED : RASTERVORONOIPACKING::SQUARE);
-		run2DThread.start();
+	params.setInitialLenght(runConfig.getLenght());
+
+	// Determine initial width
+	int initialWidth;
+	switch (params.getInitialSolMethod()) {
+		case RANDOMFIXED: initialWidth = qRound(params.getInitialLenght()*rasterProblem->getScale()); currentContainerWidth = initialWidth;  break;
+		case BOTTOMLEFT: initialWidth = -1; break;
+		case KEEPSOLUTION: initialWidth = currentContainerWidth;
 	}
-	else if (params.getClusterFactor() < 0) {
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-		runThread.setParameters(params);
-		solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem }, params);
-		runThread.setSolver(solver);
 
-		// Resize container
-		if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
-			int newLength = qRound(runConfig.getLenght()*ui->graphicsView->getScale());
-			solver->setContainerWidth(newLength, solution);
-			runThread.setInitialSolution(solution);
-		}
-		ui->graphicsView->recreateContainerGraphics(solver->getCurrentWidth());
-
-		runThread.start();
+	// Determine execution type
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver(rasterProblem, params, initialWidth);
+	bool clusterExecution = params.getClusterFactor() > 0;
+	if (!clusterExecution) {
+		if (params.isRectangularPacking()) packer = std::shared_ptr<Packing2DThread>(new Packing2DThread);
+		else packer = std::shared_ptr<PackingThread>(new PackingThread);
 	}
 	else {
-		if (params.getHeuristic() != GLS) {
-			qDebug() << "Non-GLS unsupported for cluster at the moment!";
-			return;
-		}
-
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver> clusterSolverGls;
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> originalSolverGls;
-		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(rasterProblem);
-		std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> clusterOverlapEvaluator, originalOverlapEvaluator;
-		if (params.getSearchScale() > 0) {
-			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem, params.getSearchScale(), weights));
-			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), params.getSearchScale(), weights));
-		}
-		else {
-			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem, weights));
-			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem->getOriginalProblem(), weights));
-		}
-		
-		clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver>(new RASTERVORONOIPACKING::RasterStripPackingClusterSolver(clusterProblem, clusterOverlapEvaluator));
-		originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(clusterProblem->getOriginalProblem(), originalOverlapEvaluator));
-
-		// Configure Thread
-		runClusterThread.setParameters(params);
-		runClusterThread.setSolver(originalSolverGls, clusterSolverGls);
-
-		// Resize container
-		if (runConfig.getInitialSolution() == 0 || runConfig.getInitialSolution() == 1) {
-			int newLength = qRound(runConfig.getLenght()*ui->graphicsView->getScale());
-			clusterSolverGls->setContainerWidth(newLength, solution);
-			originalSolverGls->setContainerWidth(newLength, solution);
-			runClusterThread.setInitialSolution(solution);
-		}
-		ui->graphicsView->recreateContainerGraphics(currentContainerWidth);
-
-		runClusterThread.start();
+		packer = std::shared_ptr<PackingClusterThread>(new PackingClusterThread);
+		std::shared_ptr<PackingClusterThread> packerCluster = std::dynamic_pointer_cast<PackingClusterThread>(packer);
+		connect(&*packerCluster, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
 	}
+
+	// Set initial solution
+	if (params.getInitialSolMethod() == KEEPSOLUTION) packer->setInitialSolution(solution);
+
+	// Configure packer object
+	connect(&*packer, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	connect(&*packer, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	connect(&*packer, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
+	connect(&*packer, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
+	connect(&*packer, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
+	connect(&*packer, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
+	connect(ui->pushButton_2, SIGNAL(clicked()), &*packer, SLOT(abort()));
+	packer->setSolver(solver);
+	packer->setParameters(params);
+	packer->start();
 }

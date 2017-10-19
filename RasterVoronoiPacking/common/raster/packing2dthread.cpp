@@ -77,7 +77,7 @@ void Packing2DThread::costShrinkContainerDimensions(int &curLenght, int &curHeig
 
 void Packing2DThread::run() {
 
-	switch (method) {
+	switch (parameters.getRectangularPackingMethod()) {
 	case RASTERVORONOIPACKING::SQUARE:
 		runSquare();
 		break;
@@ -254,13 +254,13 @@ void Packing2DThread::runRectangle() {
 				minSuccessfullSol = ExecutionSolutionInfo(curLenght, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
 				bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, currentArea);
 			}
-			if (method == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaDec);
-			else if (method == RASTERVORONOIPACKING::COST_EVALUATION) costShrinkContainerDimensions(curLenght, curHeight, threadSolution, areaDec);
+			if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaDec);
+			else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::COST_EVALUATION) costShrinkContainerDimensions(curLenght, curHeight, threadSolution, areaDec);
 		}
 		else if (numLoops >= MAXLOOPSPERLENGTH) {
 			numLoops = 1;
-			if (method == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaInc);
-			else  if (method == RASTERVORONOIPACKING::COST_EVALUATION) expandSmallerDimension(curLenght, curHeight, areaInc);
+			if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaInc);
+			else  if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::COST_EVALUATION) expandSmallerDimension(curLenght, curHeight, areaInc);
 		}
 		else numLoops++;
 

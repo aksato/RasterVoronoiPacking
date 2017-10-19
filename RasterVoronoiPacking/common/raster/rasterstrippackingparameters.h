@@ -14,12 +14,12 @@ namespace RASTERVORONOIPACKING {
 	public:
 		RasterStripPackingParameters() :
 			Nmo(200), maxSeconds(600), heuristicType(GLS), searchScale(-1),
-			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
 		{} // Default parameters
 
 		RasterStripPackingParameters(Heuristic _heuristicType, qreal _searchScale) :
 			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), searchScale(_searchScale),
-			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
 		{} // Default parameters with specific solver parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }

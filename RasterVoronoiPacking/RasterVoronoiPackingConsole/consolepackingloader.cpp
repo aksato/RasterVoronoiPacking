@@ -75,53 +75,18 @@ void ConsolePackingLoader::run() {
 	std::shared_ptr<PackingThread> threadedPacker;
 
 	// Create solver object
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
+	int initialWidth = algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED ? qRound(algorithmParamsBackup.getInitialLenght()*problem->getScale()) : -1;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver(problem, algorithmParamsBackup, initialWidth);
 	bool clusterExecution = algorithmParamsBackup.getClusterFactor() > 0;
 	if (!clusterExecution) {
-		int initialWidth = algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED ? qRound(algorithmParamsBackup.getInitialLenght()*problem->getScale()) : -1;
-		solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ problem }, algorithmParamsBackup, initialWidth);
-		if (algorithmParamsBackup.isRectangularPacking()) {
-			threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
-			std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
-			threadedPacker2D->setSolver(solver);
-			threadedPacker2D->setMethod(algorithmParamsBackup.getRectangularPackingMethod());
-		}
-		else {
-			threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
-			threadedPacker->setSolver(solver);
-		}
+		if (algorithmParamsBackup.isRectangularPacking()) threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
+		else threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
 	}
 	else {
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver> clusterSolverGls;
-		std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> originalSolverGls;
-		std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> clusterOverlapEvaluator, originalOverlapEvaluator;
-		// Get pointer to cluster problem
-		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem);
-		if (algorithmParamsBackup.getSearchScale() > 0 && algorithmParamsBackup.getSearchScale() < problem->getScale()) {
-			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem, algorithmParamsBackup.getSearchScale()));
-			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), algorithmParamsBackup.getSearchScale()));
-		}
-		else {
-			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem));
-			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem->getOriginalProblem()));
-		}
-		clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingClusterSolver>(new RASTERVORONOIPACKING::RasterStripPackingClusterSolver(clusterProblem, clusterOverlapEvaluator));
-		originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(clusterProblem->getOriginalProblem(), originalOverlapEvaluator));
-		// Configure Thread
 		threadedPacker = std::shared_ptr<PackingClusterThread>(new PackingClusterThread);
 		std::shared_ptr<PackingClusterThread> threadedClusterPacker = std::dynamic_pointer_cast<PackingClusterThread>(threadedPacker);
-		threadedClusterPacker->setSolver(originalSolverGls, clusterSolverGls);
 		connect(&*threadedClusterPacker, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
 	}
-	
-	//// Resize container to initial length
-	//RASTERVORONOIPACKING::RasterPackingSolution solution = RASTERVORONOIPACKING::RasterPackingSolution(problem->count());
-	//qreal length;
-	//if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) {
-	//	length = algorithmParamsBackup.getInitialLenght();
-	//	int initialWidth = qRound(length*problem->getScale());
-	//	solver->setContainerWidth(initialWidth, solution, algorithmParamsBackup);
-	//}
 
 	// Configure packer object
 	threadVector.push_back(threadedPacker);
@@ -131,6 +96,7 @@ void ConsolePackingLoader::run() {
 	connect(&*threadedPacker, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), SLOT(saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
 	connect(&*threadedPacker, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), SLOT(saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
 	connect(&*threadedPacker, SIGNAL(finished()), SLOT(threadFinished()));
+	threadedPacker->setSolver(solver);
 	threadedPacker->setParameters(algorithmParamsBackup);
 
 	// Print configurations

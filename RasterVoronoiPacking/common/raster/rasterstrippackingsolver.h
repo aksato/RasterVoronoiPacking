@@ -18,7 +18,7 @@ namespace RASTERVORONOIPACKING {
 		friend class MainWindow;
 
 	public:
-		static std::shared_ptr<RasterStripPackingSolver> createRasterPackingSolver(std::vector<std::shared_ptr<RasterPackingProblem>> problems, RasterStripPackingParameters &parameters, int initialWidth = -1, int initialHeight = -1);
+		static std::shared_ptr<RasterStripPackingSolver> createRasterPackingSolver(std::shared_ptr<RasterPackingProblem> problem, RasterStripPackingParameters &parameters, int initialWidth = -1, int initialHeight = -1);
 
 		RasterStripPackingSolver(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<RasterTotalOverlapMapEvaluator> _overlapEvaluator);
 
@@ -66,14 +66,18 @@ namespace RASTERVORONOIPACKING {
 
 	class RasterStripPackingClusterSolver : public RasterStripPackingSolver {
 	public:
-		RasterStripPackingClusterSolver(std::shared_ptr<RasterPackingClusterProblem> _problem, std::shared_ptr<RasterTotalOverlapMapEvaluator> _overlapEvaluator) : RasterStripPackingSolver(_problem, _overlapEvaluator) { this->originalClusterProblem = _problem; }
+		RasterStripPackingClusterSolver(std::shared_ptr<RasterPackingClusterProblem> _problem, std::shared_ptr<RasterTotalOverlapMapEvaluator> _overlapEvaluator, std::shared_ptr<RasterStripPackingSolver> _originalSolver) : RasterStripPackingSolver(_problem, _overlapEvaluator)  {
+			this->originalClusterProblem = _problem; this->originalSolver = _originalSolver;
+		}
 		// --> Convert solution to unclustered version
 		void declusterSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {
 			if (solution.getNumItems() == originalClusterProblem->getOriginalProblem()->count()) return;
 			originalClusterProblem->convertSolution(solution);
 		};
+		std::shared_ptr<RasterStripPackingSolver> getOriginalSolver() { return this->originalSolver; }
 	private:
 		std::shared_ptr<RasterPackingClusterProblem> originalClusterProblem;
+		std::shared_ptr<RasterStripPackingSolver> originalSolver;
 	};
 }
 

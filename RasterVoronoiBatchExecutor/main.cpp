@@ -9,7 +9,6 @@
 
 struct CaseExecutionParam {
 	QString problemFileName;
-	QString searchProblemFileName;
 	int timeLimit;
 	QString outputFolder;
 };
@@ -51,7 +50,6 @@ QList<CaseExecutionParam> parseCasesFile(QString fileName, QString *errorMessage
 		int numParametersPerEntry = lineParameters[caseNum];
 		CaseExecutionParam curCase;
 		curCase.problemFileName = caseFileStringList[paramNum++];
-		if (numParametersPerEntry == 4) curCase.searchProblemFileName = caseFileStringList[paramNum++];
 		bool ok; curCase.timeLimit = caseFileStringList[paramNum++].toInt(&ok);
 		if (!ok) {
 			*errorMessage = "Could not parse time limit for case " + QString::number(caseNum+1) + ".";
@@ -118,13 +116,8 @@ int main(int argc, char *argv[])
 		// Create argument list
 		QStringList arguments;
 		arguments << curCase.problemFileName;
-		if (curCase.searchProblemFileName.isEmpty()) {
-			arguments << "--method=gls";
-			if (params.zoomValue > 0) arguments << "--zoom=" + QString::number(params.zoomValue);
-		}
-		else {
-			arguments << "--method=zoomgls" << "--zoom=" + curCase.searchProblemFileName;
-		}
+		arguments << "--method=gls";
+		if (params.zoomValue > 0) arguments << "--zoom=" + QString::number(params.zoomValue);
 		arguments << "--initial=bottomleft" << "--duration=" + QString::number(curCase.timeLimit) << "--strippacking" << "--appendseed" << "--layout=" + xmlOutput << "--result=" + txtOutput;// << "--parallel=" + QString::number(params.threadCount);
 		if (params.clusterFactor > 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution
 		if (params.rectangular) arguments << "--rectpacking=" + params.rectMehod;
@@ -135,7 +128,7 @@ int main(int argc, char *argv[])
 		for (int i = pastExecutionCount; i < params.executionCount; i += params.threadCount) {
 			// Check the number of necessary threads to reach desired execution count
 			int executionsCount = i + params.threadCount > params.executionCount ? params.executionCount - i : params.threadCount;
-			qDebug() << "Executions" << i + 1 << "-" << i + executionsCount << "of" << (curCase.searchProblemFileName.isEmpty() ? "case" : "zoom case") << curCase.problemFileName;
+			qDebug() << "Executions" << i + 1 << "-" << i + executionsCount << "of" << (params.zoomValue < 0 ? "case" : "zoom case") << curCase.problemFileName;
 			QStringList curArguments = QStringList() << arguments << "--parallel=" + QString::number(executionsCount);
 
 			// Start process

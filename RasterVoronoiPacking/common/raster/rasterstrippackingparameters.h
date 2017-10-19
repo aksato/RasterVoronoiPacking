@@ -8,24 +8,18 @@ namespace RASTERVORONOIPACKING {
 	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
 	enum Heuristic { NONE, GLS };
 	enum EnclosedMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
-	enum DoubleResolutionMethod { DOUBLE_ROUND, SPACED_SINGLE };
 
 	class RasterStripPackingParameters
 	{
 	public:
 		RasterStripPackingParameters() :
-			Nmo(200), maxSeconds(600), heuristicType(GLS), doubleResolution(false), explicityZoomValue(1),
-			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), zoomMethod(DOUBLE_ROUND)
+			Nmo(200), maxSeconds(600), heuristicType(GLS), searchScale(-1),
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters
 
-		RasterStripPackingParameters(Heuristic _heuristicType, bool _doubleResolution) :
-			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), doubleResolution(_doubleResolution), explicityZoomValue(1), 
-			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), zoomMethod(DOUBLE_ROUND)
-		{} // Default parameters with specific solver parameters
-
-		RasterStripPackingParameters(Heuristic _heuristicType, bool _doubleResolution, int _explicityZoomValue) :
-			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), doubleResolution(_doubleResolution), explicityZoomValue(_explicityZoomValue),
-			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), zoomMethod(DOUBLE_ROUND)
+		RasterStripPackingParameters(Heuristic _heuristicType, qreal _searchScale) :
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), searchScale(_searchScale),
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters with specific solver parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
@@ -39,9 +33,6 @@ namespace RASTERVORONOIPACKING {
 
 		void setHeuristic(Heuristic _heuristicType) { this->heuristicType = _heuristicType; }
 		Heuristic getHeuristic() { return this->heuristicType; }
-
-		void setDoubleResolution(bool val) { this->doubleResolution = val; }
-		bool isDoubleResolution() { return this->doubleResolution; }
 
 		void setFixedLength(bool val) { this->fixedLength = val; }
 		bool isFixedLength() { return this->fixedLength; }
@@ -61,9 +52,8 @@ namespace RASTERVORONOIPACKING {
 		void setRectangularPackingMethod(EnclosedMethod method) { this->rectangularPackingMethod = method; }
 		EnclosedMethod getRectangularPackingMethod() { return this->rectangularPackingMethod; }
 
-		void setZoomMethod(DoubleResolutionMethod method, int _explicityZoomValue = 1) { this->zoomMethod = method; this->explicityZoomValue = _explicityZoomValue; }
-		DoubleResolutionMethod getZoomMethod() { return this->zoomMethod; }
-		int getExplicityZoomValue() { return this->explicityZoomValue; }
+		void setSearchScale(qreal _searchScale) { this->searchScale = _searchScale; }
+		qreal getSearchScale() { return this->searchScale; }
 
 		void setResizeChangeRatios(qreal _ratioDecrease, qreal _ratioIncrease) { this->rdec = _ratioDecrease; this->rinc = _ratioIncrease; }
 		qreal getRdec() { return this->rdec; }
@@ -74,14 +64,13 @@ namespace RASTERVORONOIPACKING {
 			setTimeLimit(source.getTimeLimit());
 			setIterationsLimit(source.getIterationsLimit());
 			setHeuristic(source.getHeuristic());
-			setDoubleResolution(source.isDoubleResolution());
 			setFixedLength(source.isFixedLength());
 			setInitialSolMethod(source.getInitialSolMethod());
 			if (getInitialSolMethod() == RANDOMFIXED) setInitialLenght(source.getInitialLenght());
 			setClusterFactor(source.getClusterFactor());
 			setRectangularPacking(source.isRectangularPacking());
 			setRectangularPackingMethod(source.getRectangularPackingMethod());
-			setZoomMethod(source.getZoomMethod(), source.getExplicityZoomValue());
+			setSearchScale(source.getSearchScale());
 			setResizeChangeRatios(source.getRdec(), source.getRinc());
 		}
 
@@ -90,10 +79,9 @@ namespace RASTERVORONOIPACKING {
 		Heuristic heuristicType;
 		ConstructivePlacement initialSolMethod;
 		qreal initialLenght; // Only used with RANDOMFIXED initial solution
-		bool doubleResolution, fixedLength, rectangularPacking;
+		bool fixedLength, rectangularPacking;
 		EnclosedMethod rectangularPackingMethod;
-		DoubleResolutionMethod zoomMethod;
-		int explicityZoomValue;
+		qreal searchScale;
 		qreal clusterFactor;
 		qreal rdec, rinc;
 	};

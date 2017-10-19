@@ -19,7 +19,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	const QCommandLineOption boolOutputSeed("appendseed", "Automatically append seed value to output file names.");
 	parser.addOption(boolOutputSeed);
 
-    const QCommandLineOption typeMethod("method", "Raster packing method choices: default, gls, zoom, zoomgls.", "type");
+    const QCommandLineOption typeMethod("method", "Raster packing method choices: default, gls.", "type");
     parser.addOption(typeMethod);
     const QCommandLineOption typeInitialSolution("initial", "Initial solution choices: random, bottomleft.", "type");
     parser.addOption(typeInitialSolution);
@@ -70,17 +70,14 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     if (parser.isSet(nameZoomedInput)) {
         const QString inputName = parser.value(nameZoomedInput);
 		bool ok;
-		const int zoomValue = inputName.toInt(&ok);
-		if (!ok) {
-			params->zoomedInputFilePath = inputName;
-			params->zoomMethod = Zoom_Rounded;
+		const qreal zoomValue = inputName.toDouble(&ok);
+		if (!ok || zoomValue < 0) {
+			*errorMessage = "Bad zoom value.";
+			return CommandLineError;
 		}
-		else {
-			params->zoomMethod = Zoom_Single;
-			params->zoomValue = zoomValue;
-		}
-		zoomedInputFileSet = true;
+		params->zoomValue = zoomValue;
     }
+	else params->zoomValue = -1.0;
 
     if (parser.isSet(nameOutputTXT)) {
         const QString outputName = parser.value(nameOutputTXT);
@@ -97,25 +94,12 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
     if (parser.isSet(typeMethod)) {
         const QString methodType = parser.value(typeMethod).toLower();
-        if(methodType != "default" && methodType != "gls" && methodType != "zoom" && methodType != "zoomgls") {
-            *errorMessage = "Invalid method type! Avaible methods: 'default', 'gls', 'zoom' and 'zoomgls'.";
+        if(methodType != "default" && methodType != "gls") {
+            *errorMessage = "Invalid method type! Avaible methods: 'default', 'gls'.";
             return CommandLineError;
         }
         if(methodType == "default") params->methodType = Method_Default;
         if(methodType == "gls") params->methodType = Method_Gls;
-        if(methodType == "zoom") params->methodType = Method_Zoom;
-        if(methodType == "zoomgls") params->methodType = Method_ZoomGls;
-
-        if(zoomedInputFileSet && (methodType == "default" || methodType == "gls"))
-            qWarning() << "Warning: Method does not use zoom input file, ignoring the specified zoom problem.";
-        if(!zoomedInputFileSet && methodType == "zoom") {
-            qWarning() << "Warning: No zoom input file specified, changing method to 'default'";
-            params->methodType = Method_Default;
-        }
-        if(!zoomedInputFileSet && methodType == "zoomgls") {
-            qWarning() << "Warning: No zoom input file specified, changing method to 'gls'";
-            params->methodType = Method_Gls;
-        }
     }
     else {
         qWarning() << "Warning: Method not specified, set to default (no zoom, no gls).";

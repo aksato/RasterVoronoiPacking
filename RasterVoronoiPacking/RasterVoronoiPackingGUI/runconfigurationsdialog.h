@@ -17,6 +17,7 @@ public:
 
     int getInitialSolution();
     int getMetaheuristic();
+	qreal getSearchScale();
     int getMaxWorse();
     int getMaxSeconds();
     qreal getLenght();
@@ -27,8 +28,13 @@ public:
 	qreal getClusterFactor();
 
     void setInitialLenght(qreal lenght, qreal step);
+	void setInitialSearchScale(qreal scale);
 	void enableCluster();
 	void disableCluster();
+
+private slots:
+	void changeSearchScaleEnable(int heuristicIndex);
+
 private:
     Ui::RunConfigurationsDialog *ui;
 };

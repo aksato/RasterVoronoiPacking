@@ -28,7 +28,6 @@ public:
 
 private slots:
     void loadPuzzle();
-    void loadZoomedPuzzle();
     void updateAngleComboBox(int id);
     void updatePositionValues(QPointF pos);
     void printCurrentSolution();
@@ -58,12 +57,9 @@ private slots:
 	void showExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed);
 	void showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed);
 	void showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info);
-	//void showCurrent2DSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);
-	//void showCurrent2DSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, int height);
 	void showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint seed);
 
     void saveSolution();
-	void saveZoomedSolution();
     void loadSolution();
     void exportSolutionToSvg();
 	void exportSolutionTikz();
@@ -74,13 +70,15 @@ private slots:
 	void printDensity();
 
 private:
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createBasicSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createGLSSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createDoubleGLSSolver();
     void createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale);
 	int logposition(qreal value);
 
     Ui::MainWindow *ui;
-    std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;
+    std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem;
     RASTERVORONOIPACKING::RasterPackingSolution solution;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver, solverGls, solverDoubleGls;
 	std::shared_ptr<RASTERVORONOIPACKING::GlsWeightSet> weights;
 	RASTERVORONOIPACKING::RasterStripPackingParameters params;
 
@@ -91,9 +89,11 @@ private:
 	Packing2DThread run2DThread;
 	PackingClusterThread runClusterThread;
 
-    int accContainerShrink, explicityZoomValue;
-	qreal totalArea; qreal containerWidth;
+	int accContainerShrink;
+	qreal searchScale;
+	qreal totalArea, containerWidth;
 	RASTERPACKING::PackingProblem originalProblem;
+	int currentContainerWidth, currentContainerHeight;
 };
 
 #endif // MAINWINDOW_H

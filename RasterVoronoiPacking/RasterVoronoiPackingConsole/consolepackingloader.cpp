@@ -71,34 +71,6 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTX
 	qDebug() << "Problem file read successfully";
 }
 
-// Create problem objects and initial solution using given parameters
-void ConsolePackingLoader::setParameters(QString inputFilePath, QString zoomedInputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams, bool appendSeed) {
-	// FIXME: Is it necessary?
-	algorithmParamsBackup.Copy(algorithmParams); this->outputTXTFile = outputTXTFile; this->outputXMLFile = outputXMLFile; this->appendSeedToOutputFiles = appendSeed;
-
-	// Create solution and problem 
-	RASTERVORONOIPACKING::RasterPackingSolution solution;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-	RASTERPACKING::PackingProblem preProblem;
-	GpuMemoryRequirements gpuMemReq;
-	qDebug() << "Program execution started.";
-
-	// Load input files
-	qDebug() << "Loading problem file...";
-	qDebug() << "Input file:" << inputFilePath;
-	if (!zoomedInputFilePath.isEmpty()) qDebug() << "Zoom Input file:" << zoomedInputFilePath;
-	else qDebug() << "Manual Zoom.";
-	QString originalPath = QDir::currentPath();
-	QDir::setCurrent(QFileInfo(inputFilePath).absolutePath());
-	loadInputFile(inputFilePath, &problem);
-	if (!zoomedInputFilePath.isEmpty()) {
-		QDir::setCurrent(QFileInfo(zoomedInputFilePath).absolutePath());
-		loadInputFile(zoomedInputFilePath, &zoomProblem);
-	}
-	QDir::setCurrent(originalPath);
-	qDebug() << "Problem file read successfully";
-}
-
 void ConsolePackingLoader::run() {
 	std::shared_ptr<PackingThread> threadedPacker;
 
@@ -106,14 +78,8 @@ void ConsolePackingLoader::run() {
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
 	bool clusterExecution = algorithmParamsBackup.getClusterFactor() > 0;
 	if (!clusterExecution) {
-		//if (algorithmParamsBackup.getHeuristic() == RASTERVORONOIPACKING::NONE) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver>(new RASTERVORONOIPACKING::RasterStripPackingSolver(problem));
-		//else {
-		//	if (!algorithmParamsBackup.isDoubleResolution()) solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(problem));
-		//	else solver = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(problem, zoomProblem));
-		//}
-		// Get container initial length
 		int initialWidth = algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED ? qRound(algorithmParamsBackup.getInitialLenght()*problem->getScale()) : -1;
-		solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ problem, zoomProblem }, algorithmParamsBackup, initialWidth);
+		solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ problem }, algorithmParamsBackup, initialWidth);
 		if (algorithmParamsBackup.isRectangularPacking()) {
 			threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
 			std::shared_ptr<Packing2DThread> threadedPacker2D = std::dynamic_pointer_cast<Packing2DThread>(threadedPacker);
@@ -131,23 +97,11 @@ void ConsolePackingLoader::run() {
 		std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> clusterOverlapEvaluator, originalOverlapEvaluator;
 		// Get pointer to cluster problem
 		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem);
-		if (algorithmParamsBackup.isDoubleResolution()) {
-			// Get pointer to cluster zoomed problem
-			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem> clusterSearchProblem = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(zoomProblem);
-			//clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterDoubleGLS(clusterProblem, clusterSearchProblem));
-			//originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
-			if (algorithmParamsBackup.getZoomMethod() == RASTERVORONOIPACKING::DOUBLE_ROUND) {
-				clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem, clusterSearchProblem));
-				originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), clusterSearchProblem->getOriginalProblem()));
-			}
-			else {
-				clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLSSingle(clusterProblem, algorithmParamsBackup.getExplicityZoomValue()));
-				originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLSSingle(clusterProblem->getOriginalProblem(), algorithmParamsBackup.getExplicityZoomValue()));
-			}
+		if (algorithmParamsBackup.getSearchScale() > 0 && algorithmParamsBackup.getSearchScale() < problem->getScale()) {
+			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem, algorithmParamsBackup.getSearchScale()));
+			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS(clusterProblem->getOriginalProblem(), algorithmParamsBackup.getSearchScale()));
 		}
 		else {
-			//clusterSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverClusterGLS(clusterProblem));
-			//originalSolverGls = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS>(new RASTERVORONOIPACKING::RasterStripPackingSolverGLS(clusterProblem->getOriginalProblem()));
 			clusterOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem));
 			originalOverlapEvaluator = std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator>(new RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS(clusterProblem->getOriginalProblem()));
 		}
@@ -181,9 +135,9 @@ void ConsolePackingLoader::run() {
 
 	// Print configurations
 	qDebug() << "Solver configured. The following parameters were set:";
-	if (!algorithmParamsBackup.isDoubleResolution()) qDebug() << "Problem Scale:" << problem->getScale();
-	else if (algorithmParamsBackup.getZoomMethod() == RASTERVORONOIPACKING::DOUBLE_ROUND) qDebug() << "Problem Scale:" << problem->getScale() << ". Auxiliary problem scale:" << zoomProblem->getScale();
-	else qDebug() << "Problem Scale:" << problem->getScale() << ". Auxiliary problem scale:" << problem->getScale() / algorithmParamsBackup.getExplicityZoomValue();
+	if (algorithmParamsBackup.getSearchScale() > 0 && algorithmParamsBackup.getSearchScale() < problem->getScale()) 
+		qDebug() << "Problem Scale:" << problem->getScale() << ". Auxiliary problem scale:" << algorithmParamsBackup.getSearchScale(); 
+	else qDebug() << "Problem Scale:" << problem->getScale();
 	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) qDebug() << "Length:" << algorithmParamsBackup.getInitialLenght();
 	qDebug() << "Solver method:" << algorithmParamsBackup.getHeuristic();
 	qDebug() << "Inital solution:" << algorithmParamsBackup.getInitialSolMethod();
@@ -197,14 +151,12 @@ void ConsolePackingLoader::run() {
 }
 
 void ConsolePackingLoader::printExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed) {
-	if (!algorithmParamsBackup.isDoubleResolution())
+	if (algorithmParamsBackup.getSearchScale() > 0 && algorithmParamsBackup.getSearchScale() < problem->getScale())
 		std::cout << std::fixed << std::setprecision(2) << "\r" << "L: " << curLength / problem->getScale() <<
-		". It: " << totalItNum << " (" << worseSolutionsCount << "). Min overlap: " << minOverlap / problem->getScale() << ". Time: " << elapsed << " s.";
-	else {
-		int zoomProblemScale = algorithmParamsBackup.getZoomMethod() == RASTERVORONOIPACKING::DOUBLE_ROUND ? zoomProblem->getScale() : problem->getScale() / algorithmParamsBackup.getExplicityZoomValue();
+			". It: " << totalItNum << " (" << worseSolutionsCount << "). Min overlap: " << minOverlap / (qreal)algorithmParamsBackup.getSearchScale() << ". Time: " << elapsed << " s.";
+	else
 		std::cout << std::fixed << std::setprecision(2) << "\r" << "L: " << curLength / problem->getScale() <<
-			". It: " << totalItNum << " (" << worseSolutionsCount << "). Min overlap: " << minOverlap / (qreal) zoomProblemScale << ". Time: " << elapsed << " s.";
-	}
+		". It: " << totalItNum << " (" << worseSolutionsCount << "). Min overlap: " << minOverlap / problem->getScale() << ". Time: " << elapsed << " s."; 
 }
 
 QString getSeedAppendedString(QString originalString, uint seed) {
@@ -217,24 +169,20 @@ void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elap
 	QString *threadOutlogContens = outlogContents[threadSeed]; 
 	if (!threadOutlogContens) { threadOutlogContens = new QString; outlogContents.insert(threadSeed, threadOutlogContens); }
 	QTextStream out(threadOutlogContens);
-	if (!algorithmParamsBackup.isDoubleResolution())
+	if (algorithmParamsBackup.getSearchScale() > 0 && algorithmParamsBackup.getSearchScale() < problem->getScale())
+		out << problem->getScale() << " " << algorithmParamsBackup.getSearchScale() << " " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
+	else 
 		out << problem->getScale() << " - " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
-	else {
-		int zoomProblemScale = algorithmParamsBackup.getZoomMethod() == RASTERVORONOIPACKING::DOUBLE_ROUND ? zoomProblem->getScale() : problem->getScale() / algorithmParamsBackup.getExplicityZoomValue();
-		out << problem->getScale() << " " << zoomProblemScale << " " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
-	}
 }
 
 void ConsolePackingLoader::writeNewLength2D(const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint threadSeed) {
 	QString *threadOutlogContens = outlogContents[threadSeed];
 	if (!threadOutlogContens) { threadOutlogContens = new QString; outlogContents.insert(threadSeed, threadOutlogContens); }
 	QTextStream out(threadOutlogContens);
-	if (!algorithmParamsBackup.isDoubleResolution())
+	if (algorithmParamsBackup.getSearchScale() > 0 && algorithmParamsBackup.getSearchScale() < problem->getScale())
+		out << problem->getScale() << " " << algorithmParamsBackup.getSearchScale() << " " << info.length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
+	else
 		out << problem->getScale() << " - " << info.length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
-	else {
-		int zoomProblemScale = algorithmParamsBackup.getZoomMethod() == RASTERVORONOIPACKING::DOUBLE_ROUND ? zoomProblem->getScale() : problem->getScale() / algorithmParamsBackup.getExplicityZoomValue();
-		out << problem->getScale() << " " << zoomProblemScale << " " << info.length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
-	}
 }
 
 void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
@@ -286,10 +234,11 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		QFile file(processedOutputTXTFile);
 		if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << processedOutputTXTFile << ": " << qPrintable(file.errorString());
 		QTextStream out(&file);
-		if (!algorithmParamsBackup.isDoubleResolution())
-			out << problem->getScale() << " - " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
+		if (algorithmParamsBackup.getSearchScale() > 0 && algorithmParamsBackup.getSearchScale() < problem->getScale())
+			out << problem->getScale() << " " << algorithmParamsBackup.getSearchScale() << " " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
 		else
-			out << problem->getScale() << " " << zoomProblem->getScale() << " " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
+			out << problem->getScale() << " - " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
+			
 		file.close();
 	}
 	else {

@@ -4,24 +4,21 @@
 class QCommandLineParser;
 class QString;
 
-enum RasterPackingMethods {Method_Default, Method_Gls, Method_Zoom, Method_ZoomGls};
+enum RasterPackingMethods {Method_Default, Method_Gls};
 enum InitialSolutionGenerator {Solution_Random, Bottom_Left};
 enum RectangularMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
-enum ZoomMethod { Zoom_Rounded, Zoom_Single };
 
 struct ConsolePackingArgs {
 	ConsolePackingArgs() {}
 
     QString inputFilePath;
-    QString zoomedInputFilePath;
     QString outputTXTFile;
     QString outputXMLFile;
 
     RasterPackingMethods methodType;
     InitialSolutionGenerator initialSolutionType;
 	RectangularMethod rectMehod;
-	ZoomMethod zoomMethod;
-	int zoomValue;
+	qreal zoomValue;
     int maxWorseSolutionsValue;
     int timeLimitValue;
 	int iterationsLimitValue;

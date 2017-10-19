@@ -7,6 +7,17 @@ RunConfigurationsDialog::RunConfigurationsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->spinBox->setValue(200);
+	connect(ui->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeSearchScaleEnable(int)));
+}
+
+void RunConfigurationsDialog::changeSearchScaleEnable(int heuristicIndex) {
+	if (heuristicIndex == 2) {
+		ui->label_7->setEnabled(true);
+		ui->doubleSpinBox_3->setEnabled(true);
+		return;
+	}
+	ui->label_7->setEnabled(false);
+	ui->doubleSpinBox_3->setEnabled(false);
 }
 
 RunConfigurationsDialog::~RunConfigurationsDialog()
@@ -20,6 +31,10 @@ int RunConfigurationsDialog::getInitialSolution() {
 
 int RunConfigurationsDialog::getMetaheuristic() {
     return ui->comboBox->currentIndex();
+}
+
+qreal RunConfigurationsDialog::getSearchScale() {
+	return ui->doubleSpinBox_3->value();
 }
 
 int RunConfigurationsDialog::getMaxWorse() {
@@ -39,6 +54,11 @@ void RunConfigurationsDialog::setInitialLenght(qreal lenght, qreal step) {
     ui->doubleSpinBox->setMinimum(0.0);
     //ui->doubleSpinBox->setMaximum(lenght);
     ui->doubleSpinBox->setSingleStep(step);
+}
+
+void RunConfigurationsDialog::setInitialSearchScale(qreal scale) {
+	ui->doubleSpinBox_3->setValue(scale);
+	ui->doubleSpinBox_3->setMinimum(0.0);
 }
 
 bool RunConfigurationsDialog::getStripPacking() {

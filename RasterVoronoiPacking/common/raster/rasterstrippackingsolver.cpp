@@ -15,13 +15,9 @@ std::shared_ptr<RasterStripPackingSolver> RasterStripPackingSolver::createRaster
 	else weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problems[0]->count())); // GLS
 
 	// Determine overlap evaluator
-	if (!parameters.isDoubleResolution()) overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problems[0], weights));
-	else {
-		if (parameters.getZoomMethod() == RASTERVORONOIPACKING::DOUBLE_ROUND)
-			overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(problems[0], problems[1], weights));
-		else
-			overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLSSingle(problems[0], parameters.getExplicityZoomValue(), weights));
-	}
+	if (parameters.getSearchScale() > 0 && parameters.getSearchScale() < problems[0]->getScale())
+		overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(problems[0], parameters.getSearchScale(), weights));
+	else overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problems[0], weights)); 
 	
 	// Create solver. TODO: Creation of cluster solver
 	solver = std::shared_ptr<RasterStripPackingSolver>(new RasterStripPackingSolver(problems[0], overlapEvaluator));

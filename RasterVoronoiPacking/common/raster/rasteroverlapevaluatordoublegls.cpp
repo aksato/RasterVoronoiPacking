@@ -12,6 +12,19 @@ void getScaledSolution(RasterPackingSolution &originalSolution, RasterPackingSol
 	}
 }
 
+void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps() {
+	int zoomFactorInt = this->problem->getScale() / searchProblemScale;
+	for (int itemId = 0; itemId < problem->count(); itemId++) {
+		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+			std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(-1, -1, problem->getItemType(itemId), angle);
+			int newWidth = 1 + (curIfp->width() - 1) / zoomFactorInt; int newHeight = 1 + (curIfp->height() - 1) / zoomFactorInt;
+			QPoint newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
+			maps.addOverlapMap(itemId, angle, std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint)));
+			// FIXME: Delete innerift polygons as they are used to release memomry
+		}
+	}
+}
+
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) {
 	QPoint pos = getMinimumOverlapSearchPosition(itemId, orientation, solution);
 	int zoomSquareSize = ZOOMNEIGHBORHOOD*qRound(this->problem->getScale() / searchProblemScale);
@@ -29,16 +42,12 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(
 }
 
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution) {
-	// Scale solution to seach scale
-	RasterPackingSolution roughSolution;
-	qreal zoomFactor = this->problem->getScale() / searchProblemScale;
-	getScaledSolution(solution, roughSolution, 1.0 / zoomFactor);
-
+	int zoomFactorInt = this->problem->getScale() / searchProblemScale;
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
 	currrentPieceMap->reset();
-	for (int i = 0; i < searchProblem->count(); i++) {
+	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
-		currrentPieceMap->addVoronoi(searchProblem->getNfps()->getRasterNoFitPolygon(searchProblem->getItemType(i), roughSolution.getOrientation(i), searchProblem->getItemType(itemId), orientation), roughSolution.getPosition(i), glsWeights->getWeight(itemId, i));
+		currrentPieceMap->addVoronoi(problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i), problem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i), zoomFactorInt);
 	}
 	return currrentPieceMap;
 }
@@ -98,39 +107,4 @@ qreal RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapMapSingleValue(int
 		totalOverlap += glsWeights->getWeight(itemId, i) * problem->getDistanceValue(itemId, pos, orientation, i, solution.getPosition(i), solution.getOrientation(i));
 	}
 	return totalOverlap;
-}
-
-RasterTotalOverlapMapEvaluatorDoubleGLSSingle::RasterTotalOverlapMapEvaluatorDoubleGLSSingle(std::shared_ptr<RasterPackingProblem> _problem, int zoomFactorInt) : RasterTotalOverlapMapEvaluatorDoubleGLS(_problem->getScale() / zoomFactorInt) {
-	this->problem = _problem;
-	glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count()));
-	createSearchMaps();
-}
-
-RasterTotalOverlapMapEvaluatorDoubleGLSSingle::RasterTotalOverlapMapEvaluatorDoubleGLSSingle(std::shared_ptr<RasterPackingProblem> _problem, int zoomFactorInt, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluatorDoubleGLS(_glsWeights, _problem->getScale() / zoomFactorInt) {
-	this->problem = _problem;
-	createSearchMaps();
-}
-
-void RasterTotalOverlapMapEvaluatorDoubleGLSSingle::createSearchMaps() {
-	int zoomFactorInt = this->problem->getScale() / searchProblemScale;
-	for (int itemId = 0; itemId < problem->count(); itemId++) {
-		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
-			std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(-1, -1, problem->getItemType(itemId), angle);
-			int newWidth = 1 + (curIfp->width()-1) / zoomFactorInt; int newHeight = 1 + (curIfp->height()-1) / zoomFactorInt;
-			QPoint newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
-			maps.addOverlapMap(itemId, angle, std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint)));
-			// FIXME: Delete innerift polygons as they are used to release memomry
-		}
-	}
-}
-
-std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLSSingle::getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution) {
-	int zoomFactorInt = this->problem->getScale() / searchProblemScale;
-	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
-	currrentPieceMap->reset();
-	for (int i = 0; i < problem->count(); i++) {
-		if (i == itemId) continue;
-		currrentPieceMap->addVoronoi(problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i), problem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i), zoomFactorInt);
-	}
-	return currrentPieceMap;
 }

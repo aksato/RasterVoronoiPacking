@@ -15,7 +15,7 @@ struct PackingBatchExecutorArgs {
 	qreal rinc;
 	bool rectangular;
 	QString rectMehod;
-	int zoomValue;
+	qreal zoomValue;
 };
 
 enum CommandLineParseResult

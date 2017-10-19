@@ -427,7 +427,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>Set Explicity Zoom Value</string>
+             <string>Set Search Map Scale</string>
             </property>
            </widget>
           </item>
@@ -536,11 +536,10 @@
      <string>File</string>
     </property>
     <addaction name="actionLoad_Problem"/>
-    <addaction name="actionLoad_Zoomed_Problem"/>
     <addaction name="separator"/>
     <addaction name="actionLoad_Solution"/>
     <addaction name="actionSave_Solution"/>
-    <addaction name="actionSave_Zoomed_Solution"/>
+    <addaction name="separator"/>
     <addaction name="actionExport_Solution_to_SVG"/>
     <addaction name="actionExport_Solution_to_Tikz"/>
     <addaction name="separator"/>

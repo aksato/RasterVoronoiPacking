@@ -84,7 +84,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 		params->rectMehod = methodType;
 	}
 	if (parser.isSet(valueZoom)) {
-		const int zoom = parser.value(valueZoom).toInt(&parseOk);
+		const qreal zoom = parser.value(valueZoom).toDouble(&parseOk);
 		if (parseOk && zoom > 0) params->zoomValue = zoom;
 		else { *errorMessage = "Bad zoom value."; return CommandLineError; }
 	}

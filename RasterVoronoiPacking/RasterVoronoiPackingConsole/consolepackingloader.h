@@ -24,8 +24,6 @@ public:
 	explicit ConsolePackingLoader(QObject *parent = 0);
 
 	void setParameters(QString inputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams, bool appendSeed = false);
-	void setParameters(QString inputFilePath, QString zoomedInputFilePath, QString outputTXTFile, QString outputXMLFile, RASTERVORONOIPACKING::RasterStripPackingParameters &algorithmParams, bool appendSeed = false);
-	//void run(PackingThread &threadedPacker);
 	void run();
 
 public slots :
@@ -44,7 +42,7 @@ private:
 	void writeNewLength2D(const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint threadSeed);
 	void saveXMLSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info);
 	RASTERVORONOIPACKING::RasterStripPackingParameters algorithmParamsBackup;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem, zoomProblem;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> problem;
 	QString outputTXTFile, outputXMLFile;
 	QMap<int, QString*> outlogContents;
 	bool appendSeedToOutputFiles;

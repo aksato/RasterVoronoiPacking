@@ -21,11 +21,9 @@ public:
     int getMaxWorse();
     int getMaxSeconds();
     qreal getLenght();
-	bool getUseCUDA();
-	bool getStripPacking();
-	bool getSquaredOpenDimensions();
-	bool getMinimalRectangleProblem();
+	int getPackingProblemIndex();
 	qreal getClusterFactor();
+	bool isZoomedApproach();
 
     void setInitialLenght(qreal lenght, qreal step);
 	void setInitialSearchScale(qreal scale);
@@ -33,7 +31,6 @@ public:
 	void disableCluster();
 
 private slots:
-	void changeSearchScaleEnable(int heuristicIndex);
 
 private:
     Ui::RunConfigurationsDialog *ui;

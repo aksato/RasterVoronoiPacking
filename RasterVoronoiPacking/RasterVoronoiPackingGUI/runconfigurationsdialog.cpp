@@ -7,17 +7,7 @@ RunConfigurationsDialog::RunConfigurationsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->spinBox->setValue(200);
-	connect(ui->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeSearchScaleEnable(int)));
-}
-
-void RunConfigurationsDialog::changeSearchScaleEnable(int heuristicIndex) {
-	if (heuristicIndex == 2) {
-		ui->label_7->setEnabled(true);
-		ui->doubleSpinBox_3->setEnabled(true);
-		return;
-	}
-	ui->label_7->setEnabled(false);
-	ui->doubleSpinBox_3->setEnabled(false);
+	ui->label_7->setVisible(false); ui->doubleSpinBox_3->setVisible(false);
 }
 
 RunConfigurationsDialog::~RunConfigurationsDialog()
@@ -61,10 +51,6 @@ void RunConfigurationsDialog::setInitialSearchScale(qreal scale) {
 	ui->doubleSpinBox_3->setMinimum(0.0);
 }
 
-bool RunConfigurationsDialog::getStripPacking() {
-	return ui->checkBox->isChecked();
-}
-
 qreal RunConfigurationsDialog::getClusterFactor() {
 	if (!ui->doubleSpinBox_2->isEnabled()) return -1.0;
 	return ui->doubleSpinBox_2->value();
@@ -80,10 +66,10 @@ void RunConfigurationsDialog::disableCluster() {
 	ui->doubleSpinBox_2->setEnabled(false);
 }
 
-bool RunConfigurationsDialog::getSquaredOpenDimensions() {
-	return ui->checkBox_2->isChecked();
+int RunConfigurationsDialog::getPackingProblemIndex() {
+	return ui->comboBox_3->currentIndex();
 }
 
-bool RunConfigurationsDialog::getMinimalRectangleProblem() {
-	return ui->checkBox_3->isChecked();
+bool RunConfigurationsDialog::isZoomedApproach() {
+	return ui->checkBox->isChecked();
 }

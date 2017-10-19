@@ -693,16 +693,22 @@ void MainWindow::executePacking() {
 	weightViewer.show();
 
 	params.setNmo(runConfig.getMaxWorse()); params.setTimeLimit(runConfig.getMaxSeconds());
-	params.setFixedLength(!runConfig.getStripPacking());
-	params.setRectangularPacking(runConfig.getSquaredOpenDimensions());
+	switch (runConfig.getPackingProblemIndex()) {
+		case 0: params.setFixedLength(false); params.setRectangularPacking(false); break;
+		case 1: params.setFixedLength(false); params.setRectangularPacking(true); params.setRectangularPackingMethod(RASTERVORONOIPACKING::SQUARE); break;
+		case 2: params.setFixedLength(false); params.setRectangularPacking(true); params.setRectangularPackingMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED); break;
+		case 3: params.setFixedLength(true); params.setRectangularPacking(false); break;
+	}
 	if (runConfig.getMetaheuristic() == 0) params.setHeuristic(NONE);
 	if (runConfig.getMetaheuristic() == 1 || runConfig.getMetaheuristic() == 2) params.setHeuristic(GLS);
-	if (runConfig.getMetaheuristic() == 2) params.setSearchScale(runConfig.getSearchScale());
-	if (runConfig.getInitialSolution() == 0) params.setInitialSolMethod(KEEPSOLUTION);
-	if (runConfig.getInitialSolution() == 1) params.setInitialSolMethod(RANDOMFIXED);
-	if (runConfig.getInitialSolution() == 2) params.setInitialSolMethod(BOTTOMLEFT);
+	if (runConfig.isZoomedApproach()) params.setSearchScale(runConfig.getSearchScale());
+	switch (runConfig.getInitialSolution()) {
+		case 0: params.setInitialSolMethod(KEEPSOLUTION); break;
+		case 1: params.setInitialSolMethod(RANDOMFIXED); break;
+		case 2: params.setInitialSolMethod(BOTTOMLEFT); break;
+	}
+	if (runConfig.getInitialSolution() != 2) params.setInitialLenght(runConfig.getLenght());
 	params.setClusterFactor(runConfig.getClusterFactor());
-	params.setInitialLenght(runConfig.getLenght());
 
 	// Determine initial width
 	int initialWidth;

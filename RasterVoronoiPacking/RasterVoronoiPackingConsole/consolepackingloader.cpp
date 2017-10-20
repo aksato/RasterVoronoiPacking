@@ -228,14 +228,12 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		for (QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>>::iterator it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
 			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> curSolution = (*it).first;
 			qreal realLength = (*it).second.length / problem->getScale();
-			if (algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count())
-				curSolution->save(stream, std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem(), realLength, true, seed);
+			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> solutionProblem = algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count() ?
+				std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem() : this->problem;
+			if (!info.twodim) curSolution->save(stream, solutionProblem, realLength, true, seed);
 			else {
-				if (!info.twodim) curSolution->save(stream, problem, realLength, true, seed);
-				else {
-					qreal realHeight = (*it).second.height / problem->getScale();
-					curSolution->save(stream, problem, realLength, realHeight, (*it).second.iteration, true, seed);
-				}
+				qreal realHeight = (*it).second.height / problem->getScale();
+				curSolution->save(stream, solutionProblem, realLength, realHeight, (*it).second.iteration, true, seed);
 			}
 		}
 		stream.writeEndElement(); // layouts

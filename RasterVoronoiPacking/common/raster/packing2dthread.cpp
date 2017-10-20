@@ -6,6 +6,30 @@
 #define MAXLOOPSPERLENGTH 5
 #define UPDATEINTERVAL 0.5
 
+void Packing2DThread::changeKeepAspectRatio(int &curLenght, int &curHeight, const qreal ratio) {
+	qreal ratioSqr = sqrt(ratio);
+	if (ratio > 1) {
+		curLenght = std::ceil(ratioSqr * (qreal)curLenght);
+		curHeight = std::ceil(ratioSqr * (qreal)curHeight);
+		return;
+	}
+	int reducedLength, reducedHeight;
+	if (!checkShrinkSizeConstraint(curLenght, curHeight, reducedLength, reducedHeight, ratioSqr)) return;
+	curLenght = reducedLength;
+	curHeight = reducedHeight;
+}
+
+void Packing2DThread::bagpipeChangeContainerDimensions(int &curLenght, int &curHeight) {
+	qreal curArea = (qreal)curLenght * (qreal)curHeight;
+	qreal ratioWmin = ((qreal)solver->getMinimumContainerWidth() * (qreal)solver->getMinimumContainerWidth()) / curArea;
+	qreal ratioHmin = curArea / ((qreal)solver->getMinimumContainerHeight() * (qreal)solver->getMinimumContainerHeight());
+
+	float ratio = ratioWmin + static_cast <float> (qrand()) / (static_cast <float> (RAND_MAX / (ratioHmin - ratioWmin)));
+
+	curLenght = qRound(sqrt(curArea * ratio));
+	curHeight = qRound(sqrt(curArea / ratio));
+}
+
 bool Packing2DThread::getShrinkedDimension(int dim, int &newDim, bool length) {
 	// Get minimum dimension
 	int minimumDimension = length ? solver->getMinimumContainerWidth() : solver->getMinimumContainerHeight();
@@ -81,11 +105,8 @@ void Packing2DThread::run() {
 	case RASTERVORONOIPACKING::SQUARE:
 		runSquare();
 		break;
-	case RASTERVORONOIPACKING::RANDOM_ENCLOSED: case RASTERVORONOIPACKING::COST_EVALUATION:
+	case RASTERVORONOIPACKING::RANDOM_ENCLOSED: case RASTERVORONOIPACKING::COST_EVALUATION: case RASTERVORONOIPACKING::BAGPIPE:
 		runRectangle();
-		break;
-	case RASTERVORONOIPACKING::BAGPIPE:
-		// NOT IMPLEMENTED
 		break;
 	}
 	quit();
@@ -248,19 +269,24 @@ void Packing2DThread::runRectangle() {
 		// Reduce or expand container
 		int currentArea = solver->getCurrentWidth() * solver->getCurrentHeight();
 		if (success) {
-			emit minimumLenghtUpdated(threadSolution, ExecutionSolutionInfo(curLenght, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed));
 			numLoops = 1;
 			if (currentArea < bestSolution.second) {
 				minSuccessfullSol = ExecutionSolutionInfo(curLenght, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
 				bestSolution = QPair<RASTERVORONOIPACKING::RasterPackingSolution, int>(threadSolution, currentArea);
+				emit minimumLenghtUpdated(threadSolution, ExecutionSolutionInfo(curLenght, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed));
 			}
 			if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaDec);
 			else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::COST_EVALUATION) costShrinkContainerDimensions(curLenght, curHeight, threadSolution, areaDec);
+			else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::BAGPIPE) changeKeepAspectRatio(curLenght, curHeight, areaDec);
 		}
 		else if (numLoops >= MAXLOOPSPERLENGTH) {
 			numLoops = 1;
 			if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaInc);
-			else  if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::COST_EVALUATION) expandSmallerDimension(curLenght, curHeight, areaInc);
+			else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::COST_EVALUATION) expandSmallerDimension(curLenght, curHeight, areaInc);
+			else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::BAGPIPE) {
+				if (areaInc * (qreal)curLenght * (qreal)curHeight > minSuccessfullSol.area)	bagpipeChangeContainerDimensions(curLenght, curHeight);
+				else changeKeepAspectRatio(curLenght, curHeight, areaInc);
+			}
 		}
 		else numLoops++;
 

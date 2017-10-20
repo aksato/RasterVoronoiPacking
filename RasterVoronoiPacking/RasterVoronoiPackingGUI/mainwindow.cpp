@@ -632,7 +632,7 @@ void MainWindow::printDensity() {
 	qDebug() << qSetRealNumberPrecision(2) << "Density" << qPrintable(QString::number((100 * rasterProblem->getScale()*totalArea) / ((qreal)currentContainerHeight*(qreal)currentContainerWidth), 'f', 2)) << "%";
 
 	QMessageBox msgBox;
-	msgBox.setText("The density of the layout is " + QString::number((100 * rasterProblem->getScale()*totalArea) / ((qreal)currentContainerHeight*(qreal)currentContainerWidth), 'f', 2) + "%.");
+	msgBox.setText("The density of the layout is " + QString::number((100 * rasterProblem->getScale() * rasterProblem->getScale() * totalArea) / ((qreal)currentContainerHeight*(qreal)currentContainerWidth), 'f', 2) + "%.");
 	msgBox.exec();
 }
 
@@ -716,6 +716,8 @@ void MainWindow::executePacking() {
 
 	// Determine execution type
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver(rasterProblem, params, initialWidth);
+	std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS>(solver->overlapEvaluator)->setgetGlsWeights(weights);
+	solver->resetWeights();
 	bool clusterExecution = params.getClusterFactor() > 0;
 	if (!clusterExecution) {
 		if (params.isRectangularPacking()) packer = std::shared_ptr<Packing2DThread>(new Packing2DThread);

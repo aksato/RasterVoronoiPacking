@@ -60,27 +60,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	qRegisterMetaType<ExecutionSolutionInfo>("ExecutionSolutionInfo");
     qRegisterMetaType<RASTERVORONOIPACKING::RasterPackingSolution>("RASTERVORONOIPACKING::RasterPackingSolution");
-	//connect(&runThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	//connect(&runThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-	//connect(&runThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	//connect(&runThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	//connect(&runThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
-	//connect(ui->pushButton_2, SIGNAL(clicked()), &runThread, SLOT(abort()));
-
-	//connect(&run2DThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	//connect(&run2DThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-	//connect(&run2DThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	//connect(&run2DThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	//connect(&run2DThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
-	//connect(ui->pushButton_2, SIGNAL(clicked()), &run2DThread, SLOT(abort()));
-
-	//connect(&runClusterThread, SIGNAL(solutionGenerated(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	//connect(&runClusterThread, SIGNAL(weightsChanged()), &weightViewer, SLOT(updateImage()));
-	//connect(&runClusterThread, SIGNAL(statusUpdated(int, int, int, qreal, qreal, qreal)), this, SLOT(showExecutionStatus(int, int, int, qreal, qreal, qreal)));
-	//connect(&runClusterThread, SIGNAL(minimumLenghtUpdated(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)), this, SLOT(showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo)));
-	//connect(&runClusterThread, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), this, SLOT(showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
-	//connect(ui->pushButton_2, SIGNAL(clicked()), &runClusterThread, SLOT(abort()));
-	//connect(&runClusterThread, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
 
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
 	connect(ui->pushButton_18, SIGNAL(clicked()), this, SLOT(generateCurrentTotalSearchOverlapMap()));
@@ -164,9 +143,7 @@ void MainWindow::loadPuzzle() {
 		else rasterProblem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
 		
 		// Density calculation
-		totalArea = problem.getTotalItemsArea();
-		containerWidth = getContainerWidth(problem);
-		
+		totalArea = problem.getTotalItemsArea();		
 		rasterProblem->load(problem);
 		currentContainerWidth = rasterProblem->getContainerWidth(); currentContainerHeight = rasterProblem->getContainerHeight();
 		solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
@@ -650,12 +627,12 @@ void MainWindow::exportSolutionTikz() {
 
 void MainWindow::printDensity() {
 	qDebug() << "Total area:" << totalArea;
-	qDebug() << "Container width:" << containerWidth;
+	qDebug() << "Container width:" << (qreal)currentContainerHeight / rasterProblem->getScale();
 	qDebug() << "Container length:" << (qreal)currentContainerWidth / rasterProblem->getScale();
-	qDebug() << qSetRealNumberPrecision(2) << "Density" << qPrintable(QString::number((100 * rasterProblem->getScale()*totalArea) / (containerWidth*(qreal)currentContainerWidth), 'f', 2)) << "%";
+	qDebug() << qSetRealNumberPrecision(2) << "Density" << qPrintable(QString::number((100 * rasterProblem->getScale()*totalArea) / ((qreal)currentContainerHeight*(qreal)currentContainerWidth), 'f', 2)) << "%";
 
 	QMessageBox msgBox;
-	msgBox.setText("The density of the layout is " + QString::number((100 * rasterProblem->getScale()*totalArea) / (containerWidth*(qreal)currentContainerWidth), 'f', 2) + "%.");
+	msgBox.setText("The density of the layout is " + QString::number((100 * rasterProblem->getScale()*totalArea) / ((qreal)currentContainerHeight*(qreal)currentContainerWidth), 'f', 2) + "%.");
 	msgBox.exec();
 }
 

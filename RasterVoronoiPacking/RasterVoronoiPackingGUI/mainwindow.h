@@ -88,7 +88,7 @@ private:
 
 	int accContainerShrink;
 	qreal searchScale;
-	qreal totalArea, containerWidth;
+	qreal totalArea;
 	RASTERPACKING::PackingProblem originalProblem;
 	int currentContainerWidth, currentContainerHeight;
 	std::shared_ptr<PackingThread> packer;

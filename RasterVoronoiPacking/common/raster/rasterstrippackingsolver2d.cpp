@@ -39,8 +39,8 @@ void RasterStripPackingSolver::generateBottomLeftRectangleSolution(RasterPacking
 				i++;
 			}
 			// Check minimum X and Y coordinate
-			int maxItemY = curPos.y()*qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxY(angle));
-			int maxItemX = curPos.x()*qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxX(angle));
+			int maxItemY = curPos.y() + qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxY(angle));
+			int maxItemX = curPos.x() + qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxX(angle));
 			int curArea = qMax(maxItemX, layoutLength) * qMax(maxItemY, layoutHeight);
 			if (angle == 0 || curArea < minItemArea) {
 				minItemArea = curArea;

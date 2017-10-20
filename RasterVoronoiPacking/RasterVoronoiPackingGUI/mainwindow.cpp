@@ -557,16 +557,17 @@ void MainWindow::loadSolution() {
 
     QXmlStreamReader xml;
 
-	// Searches for minimum length solution
+	// Searches for minimum area solution
     xml.setDevice(&file);
 	int mostCompactSolId = 0;
 	qreal minLength = -1;
+	qreal curLength = -1, curHeight = -2;
 	int id = 0;
 	while (!xml.atEnd()) {
 		xml.readNext();
 		if (xml.name() == "length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
 			qreal curLength = xml.readElementText().toFloat();
-			if (minLength < 0 || curLength < minLength) {
+			if (curHeight == -2 && (minLength < 0 || curLength < minLength)) {
 				minLength = curLength;
 				mostCompactSolId = id;
 			}
@@ -579,6 +580,7 @@ void MainWindow::loadSolution() {
 	xml.setDevice(&file);
 	int itemId = 0;
 	id = -1;
+	bool heightdefined = false;
     while (!xml.atEnd()) {
         xml.readNext();
 
@@ -602,10 +604,21 @@ void MainWindow::loadSolution() {
 			if (xml.name() == "length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
 				int scaledWidth = qRound(xml.readElementText().toFloat()*this->rasterProblem->getScale());
 				currentContainerWidth = scaledWidth;
-				ui->graphicsView->recreateContainerGraphics(currentContainerWidth);
+				
 			}
 
-			if (xml.name() == "solution" && xml.tokenType() == QXmlStreamReader::EndElement) break;
+			if (xml.name() == "height"  && xml.tokenType() == QXmlStreamReader::StartElement) {
+				int scaledHeight = qRound(xml.readElementText().toFloat()*this->rasterProblem->getScale());
+				currentContainerHeight = scaledHeight;
+				heightdefined = true;
+				
+			}
+
+			if (xml.name() == "solution" && xml.tokenType() == QXmlStreamReader::EndElement) {
+				if(!heightdefined) ui->graphicsView->recreateContainerGraphics(currentContainerWidth);
+				else ui->graphicsView->recreateContainerGraphics(currentContainerWidth, currentContainerHeight);
+				break;
+			}
 		}
     }
     file.close();
@@ -696,7 +709,13 @@ void MainWindow::executePacking() {
 	switch (runConfig.getPackingProblemIndex()) {
 		case 0: params.setFixedLength(false); params.setRectangularPacking(false); break;
 		case 1: params.setFixedLength(false); params.setRectangularPacking(true); params.setRectangularPackingMethod(RASTERVORONOIPACKING::SQUARE); break;
-		case 2: params.setFixedLength(false); params.setRectangularPacking(true); params.setRectangularPackingMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED); break;
+		case 2: params.setFixedLength(false); params.setRectangularPacking(true); 
+			switch (runConfig.getRectangularMethod()) {
+				case 0: params.setRectangularPackingMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED); break;
+				case 1: params.setRectangularPackingMethod(RASTERVORONOIPACKING::COST_EVALUATION); break;
+				case 2: params.setRectangularPackingMethod(RASTERVORONOIPACKING::BAGPIPE); break;
+			}
+			break;
 		case 3: params.setFixedLength(true); params.setRectangularPacking(false); break;
 	}
 	if (runConfig.getMetaheuristic() == 0) params.setHeuristic(NONE);

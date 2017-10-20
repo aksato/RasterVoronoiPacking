@@ -22,6 +22,7 @@ public:
     int getMaxSeconds();
     qreal getLenght();
 	int getPackingProblemIndex();
+	int getRectangularMethod();
 	qreal getClusterFactor();
 	bool isZoomedApproach();
 
@@ -31,7 +32,7 @@ public:
 	void disableCluster();
 
 private slots:
-
+	void showRectangularMethods(int index);
 private:
     Ui::RunConfigurationsDialog *ui;
 };

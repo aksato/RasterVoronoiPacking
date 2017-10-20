@@ -14,7 +14,7 @@
    <string>Configuration</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="3" column="2">
+   <item row="4" column="2">
     <widget class="QComboBox" name="comboBox">
      <property name="currentIndex">
       <number>1</number>
@@ -29,16 +29,6 @@
        <string>GLS</string>
       </property>
      </item>
-    </widget>
-   </item>
-   <item row="9" column="2">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="singleStep">
-      <double>0.010000000000000</double>
-     </property>
     </widget>
    </item>
    <item row="0" column="2">
@@ -65,7 +55,66 @@
      </item>
     </widget>
    </item>
+   <item row="10" column="2">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="singleStep">
+      <double>0.010000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="2">
+    <widget class="QDoubleSpinBox" name="doubleSpinBox">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="maximum">
+      <double>99999.990000000005239</double>
+     </property>
+    </widget>
+   </item>
    <item row="9" column="0">
+    <widget class="QLabel" name="label_6">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Cluster Time Fraction</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QComboBox" name="comboBox_2">
+     <property name="currentIndex">
+      <number>2</number>
+     </property>
+     <item>
+      <property name="text">
+       <string>Current</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Random</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Bottom Left</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Metaheuristic:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
     <widget class="QLabel" name="label_7">
      <property name="enabled">
       <bool>false</bool>
@@ -75,10 +124,10 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label">
+   <item row="6" column="0" colspan="2">
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Metaheuristic:</string>
+      <string>Max. worse iterations:</string>
      </property>
     </widget>
    </item>
@@ -89,7 +138,17 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="2">
+   <item row="13" column="0" colspan="3">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="2">
     <widget class="QTimeEdit" name="timeEdit">
      <property name="enabled">
       <bool>true</bool>
@@ -112,14 +171,21 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Max. worse iterations:</string>
+   <item row="6" column="2">
+    <widget class="QSpinBox" name="spinBox">
+     <property name="maximum">
+      <number>9999</number>
      </property>
     </widget>
    </item>
-   <item row="8" column="2">
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Initial solution:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="2">
     <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
      <property name="enabled">
       <bool>false</bool>
@@ -135,73 +201,14 @@
      </property>
     </widget>
    </item>
-   <item row="12" column="0" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="2">
-    <widget class="QSpinBox" name="spinBox">
-     <property name="maximum">
-      <number>9999</number>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_2">
+   <item row="11" column="0">
+    <widget class="QCheckBox" name="checkBox">
      <property name="text">
-      <string>Initial solution:</string>
+      <string>Use Zoomed Search Map</string>
      </property>
     </widget>
    </item>
-   <item row="7" column="2">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="maximum">
-      <double>99999.990000000005239</double>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="label_6">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Cluster Time Fraction</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="2">
-    <widget class="QComboBox" name="comboBox_2">
-     <property name="currentIndex">
-      <number>2</number>
-     </property>
-     <item>
-      <property name="text">
-       <string>Current</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Random</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Bottom Left</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="6" column="0">
+   <item row="7" column="0">
     <widget class="QLabel" name="label_4">
      <property name="enabled">
       <bool>true</bool>
@@ -211,7 +218,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
+   <item row="8" column="0" colspan="2">
     <widget class="QLabel" name="label_5">
      <property name="enabled">
       <bool>false</bool>
@@ -221,10 +228,29 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="0">
-    <widget class="QCheckBox" name="checkBox">
+   <item row="1" column="2">
+    <widget class="QComboBox" name="comboBox_4">
+     <item>
+      <property name="text">
+       <string>Random</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Cost Guided</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Bagpipe</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_9">
      <property name="text">
-      <string>Use Zoomed Search Map</string>
+      <string>Rectangular Packing Method</string>
      </property>
     </widget>
    </item>
@@ -275,8 +301,8 @@
      <y>481</y>
     </hint>
     <hint type="destinationlabel">
-     <x>115</x>
-     <y>424</y>
+     <x>128</x>
+     <y>453</y>
     </hint>
    </hints>
   </connection>
@@ -287,12 +313,12 @@
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>195</x>
-     <y>476</y>
+     <x>208</x>
+     <y>501</y>
     </hint>
     <hint type="destinationlabel">
-     <x>467</x>
-     <y>426</y>
+     <x>588</x>
+     <y>453</y>
     </hint>
    </hints>
   </connection>

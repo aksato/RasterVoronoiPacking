@@ -8,6 +8,8 @@ RunConfigurationsDialog::RunConfigurationsDialog(QWidget *parent) :
     ui->setupUi(this);
     ui->spinBox->setValue(200);
 	ui->label_7->setVisible(false); ui->doubleSpinBox_3->setVisible(false);
+	ui->label_9->setVisible(false); ui->comboBox_4->setVisible(false);
+	connect(ui->comboBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT(showRectangularMethods(int)));
 }
 
 RunConfigurationsDialog::~RunConfigurationsDialog()
@@ -72,4 +74,13 @@ int RunConfigurationsDialog::getPackingProblemIndex() {
 
 bool RunConfigurationsDialog::isZoomedApproach() {
 	return ui->checkBox->isChecked();
+}
+
+void RunConfigurationsDialog::showRectangularMethods(int index) {
+	ui->comboBox_4->setVisible(index == 2);
+	ui->label_9->setVisible(index == 2);
+}
+
+int RunConfigurationsDialog::getRectangularMethod() {
+	return ui->comboBox_4->currentIndex();
 }

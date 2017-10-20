@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 	foreach (CaseExecutionParam curCase , cases)
 	{
 		// Determine output files from folder
-		QDir outputDir(curCase.outputFolder);
+		QDir outputDir(curCase.outputFolder + QDir::separator() + params.appendResultPath);
 		QString xmlOutput = outputDir.filePath("bestSol.xml");
 		QString txtOutput = outputDir.filePath("outlog.dat");
 

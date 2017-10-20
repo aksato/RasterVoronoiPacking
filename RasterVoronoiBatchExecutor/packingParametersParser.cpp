@@ -17,6 +17,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueZoom("zoom", "Explicity zoom value. Does not override zoom input file parameter.", "value"); parser.addOption(valueZoom);
 	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
 	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);
+	const QCommandLineOption nameAppendResultFolder("result", "Subfolder for result files.", "name"); parser.addOption(nameAppendResultFolder);
 	const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -87,6 +88,9 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 		const qreal zoom = parser.value(valueZoom).toDouble(&parseOk);
 		if (parseOk && zoom > 0) params->zoomValue = zoom;
 		else { *errorMessage = "Bad zoom value."; return CommandLineError; }
+	}
+	if (parser.isSet(nameAppendResultFolder)) {
+		params->appendResultPath = parser.value(nameAppendResultFolder);
 	}
     return CommandLineOk;
 }

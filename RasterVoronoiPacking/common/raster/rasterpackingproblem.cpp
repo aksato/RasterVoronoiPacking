@@ -1,5 +1,6 @@
 #include "rasterpackingproblem.h"
 #include "../packingproblem.h"
+#include <cmath>
 #include <QDir>
 #include <QFileInfo>
 

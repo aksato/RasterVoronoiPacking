@@ -1,4 +1,5 @@
 #include "packing2dthread.h"
+#include <cmath>
 #include <limits>
 #include <QDebug>
 #include <QTime>

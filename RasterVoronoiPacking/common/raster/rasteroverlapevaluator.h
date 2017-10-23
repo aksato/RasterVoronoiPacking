@@ -7,7 +7,7 @@
 #include "totaloverlapmap.h"
 #include "glsweightset.h"
 
-class MainWindow;
+//class MainWindow;
 
 namespace RASTERVORONOIPACKING {
 
@@ -41,7 +41,7 @@ namespace RASTERVORONOIPACKING {
 	// --> Overlap evaluator class with guided local search metaheuristic
 	class RasterTotalOverlapMapEvaluatorGLS : public RasterTotalOverlapMapEvaluator
 	{
-		friend class MainWindow;
+                friend class ::MainWindow;
 
 	public:
 		// --> Default constructor
@@ -73,7 +73,7 @@ namespace RASTERVORONOIPACKING {
 	// --> Overlap evaluator class with dual resolution approach and support for guided local search metaheuristic
 	class RasterTotalOverlapMapEvaluatorDoubleGLS : public RasterTotalOverlapMapEvaluatorGLS
 	{
-		friend class MainWindow;
+                friend class ::MainWindow;
 
 	public:
 		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, qreal _searchProblemScale) : RasterTotalOverlapMapEvaluatorGLS(_problem), searchProblemScale(_searchProblemScale) { createSearchMaps(); }

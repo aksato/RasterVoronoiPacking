@@ -32,7 +32,8 @@ void ZoomedMapView::mousePressEvent(QMouseEvent * event) {
 void ZoomedMapView::updateMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> map, QPoint &centerPoint) {
 	int deltaX = -map->getReferencePoint().x() + size / 2 - centerPoint.x();
 	int deltaY = -map->getReferencePoint().y() + size / 2 - centerPoint.y();
-	QPixmap pixMap = QPixmap::fromImage(map->getZoomImage(size, size, QPoint(deltaX, deltaY)));
+        QPoint deltaPt(deltaX, deltaY);
+        QPixmap pixMap = QPixmap::fromImage(map->getZoomImage(size, size, deltaPt));
 	setImage(pixMap);
 	QPoint refPoint = map->getReferencePoint();
 	for (int i = 0; i < size; i++)

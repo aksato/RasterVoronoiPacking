@@ -186,11 +186,15 @@ void Packing2DThread::runSquare() {
 			}
 			else if (numLoops >= MAXLOOPSPERLENGTH) {
 				numLoops = 1;
-				curDim = std::ceil(areaInc * solver->getCurrentWidth());
-				// Failure
-				if (lastFeasibleSolution.second > curDim) {
-					solver->setContainerDimensions(lastFeasibleSolution.second, lastFeasibleSolution.second, threadSolution);
-					threadSolution = lastFeasibleSolution.first;
+				if (solver->getCurrentWidth() == minSuccessfullSol.length - 1) {
+					solver->generateRandomSolution(threadSolution);
+				}
+				else {
+					curDim = std::ceil(areaInc * solver->getCurrentWidth());
+					if (curDim >= minSuccessfullSol.length) {
+						curDim = (curDim + minSuccessfullSol.length) / 2;
+						if (curDim >= minSuccessfullSol.length) curDim = minSuccessfullSol.length - 1;
+					}
 				}
 			}
 			else numLoops++;

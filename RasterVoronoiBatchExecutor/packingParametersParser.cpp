@@ -13,7 +13,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value"); parser.addOption(valueNumThreads); 
 	const QCommandLineOption valueNumExecutions("executions", "Number of total executions of the algorithm per case.", "value"); parser.addOption(valueNumExecutions);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value"); parser.addOption(valueCluster);
-	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem. Choices: square, random, bagpipe.", "value"); parser.addOption(valueRectangular);
+	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem. Choices: square, random, cost, bagpipe.", "value"); parser.addOption(valueRectangular);
 	const QCommandLineOption valueZoom("zoom", "Explicity zoom value. Does not override zoom input file parameter.", "value"); parser.addOption(valueZoom);
 	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
 	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);

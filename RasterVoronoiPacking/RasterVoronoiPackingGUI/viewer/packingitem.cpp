@@ -32,11 +32,11 @@ QVariant PackingItem::itemChange(GraphicsItemChange change, const QVariant &valu
         if(deltaPos.x() != 0) newPos.setX(qRound(newPos.x()/gridSize)*gridSize);
         if(deltaPos.y() != 0) newPos.setY(qRound(newPos.y()/gridSize)*gridSize);
 
-        if (!rect.contains(newPos)) {
-            // Keep the item inside the scene rect.
-            newPos.setX(qMin(rect.right(), qMax(newPos.x(), rect.left())));
-            newPos.setY(qMin(rect.bottom(), qMax(newPos.y(), rect.top())));
-        }
+        //if (!rect.contains(newPos)) {
+        //    // Keep the item inside the scene rect.
+        //    newPos.setX(qMin(rect.right(), qMax(newPos.x(), rect.left())));
+        //    newPos.setY(qMin(rect.bottom(), qMax(newPos.y(), rect.top())));
+        //}
         return newPos;
     }
     return QGraphicsItem::itemChange(change, value);

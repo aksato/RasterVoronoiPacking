@@ -17,16 +17,22 @@ public:
 
     int getInitialSolution();
     int getMetaheuristic();
+	qreal getSearchScale();
     int getMaxWorse();
     int getMaxSeconds();
     qreal getLenght();
-	bool getUseCUDA();
-	bool getStripPacking();
+	int getPackingProblemIndex();
+	int getRectangularMethod();
 	qreal getClusterFactor();
+	bool isZoomedApproach();
 
     void setInitialLenght(qreal lenght, qreal step);
+	void setInitialSearchScale(qreal scale);
 	void enableCluster();
 	void disableCluster();
+
+private slots:
+	void showRectangularMethods(int index);
 private:
     Ui::RunConfigurationsDialog *ui;
 };

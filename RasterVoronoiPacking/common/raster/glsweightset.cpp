@@ -35,6 +35,7 @@ void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
 #ifndef CONSOLE
     QImage GlsWeightSet::getImage(int numItems) {
         QImage image(numItems, numItems, QImage::Format_Indexed8);
+		image.fill(0);
         setColormap(image, false);
 
         qreal minW = 1.0;
@@ -48,14 +49,18 @@ void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
                     if(curW > maxW) maxW = curW;
                 }
 
-        for(int itemId1 = 0; itemId1 < numItems; itemId1++)
-            for(int itemId2 = 0; itemId2 < numItems; itemId2++)
-                if(itemId1 != itemId2) {
-                    qreal curW = getWeight(itemId1, itemId2);
-                    int index = qRound(255*(curW-minW)/(maxW-minW));
-                    image.setPixel(itemId1, itemId2, index);
-                }
-                else image.setPixel(itemId1, itemId2, 0);
+		for (int itemId2 = 0; itemId2 < numItems; itemId2++) {
+			uchar *imageLine = (uchar *)image.scanLine(itemId2);
+			for (int itemId1 = 0; itemId1 < numItems; itemId1++, imageLine++) {
+				if (itemId1 != itemId2) {
+					qreal curW = getWeight(itemId1, itemId2);
+					int index = qRound(255 * (curW - minW) / (maxW - minW));
+					//image.setPixel(itemId1, itemId2, index);
+					*imageLine = index;
+				}
+			}
+		}
+                //else image.setPixel(itemId1, itemId2, 0);
         return image;
     }
 #endif

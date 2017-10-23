@@ -29,7 +29,7 @@ public:
     ~PackingViewer();
 
     void createGraphicItems(RASTERPACKING::PackingProblem &problem);
-    void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
+    //void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale);
     void getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution);
 	void showTotalOverlapMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> newMap, qreal scale = 1);
 
@@ -64,6 +64,7 @@ public slots:
     void setCurrentYCoord(double ypos);
     void highlightPair(int id1, int id2);
 	void recreateContainerGraphics(int pixelWidth);
+	void recreateContainerGraphics(int pixelWidth, int pixelHeight);
 
 signals:
     void zoomChanged(int pos);

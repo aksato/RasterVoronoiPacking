@@ -1,5 +1,6 @@
 #include "rasterpackingproblem.h"
 #include "../packingproblem.h"
+#include <cmath>
 #include <QDir>
 #include <QFileInfo>
 
@@ -54,7 +55,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     int typeId = 0; int itemId = 0;
     for(QList<std::shared_ptr<RASTERPACKING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++, typeId++)
         for(uint mult = 0; mult < (*it)->getMultiplicity(); mult++, itemId++) {
-            std::shared_ptr<RasterPackingItem> curItem = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount()));
+            std::shared_ptr<RasterPackingItem> curItem = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount(), (*it)->getPolygon()));
             curItem->setPieceName((*it)->getName());
             for(QVector<unsigned int>::const_iterator it2 = (*it)->corbegin(); it2 != (*it)->corend(); it2++) curItem->addAngleValue(*it2);
 			int minX, maxX, minY, maxY; (*it)->getPolygon()->getBoundingBox(minX, maxX, minY, maxY); curItem->setBoundingBox(minX, maxX, minY, maxY);
@@ -64,13 +65,17 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     std::shared_ptr<RASTERPACKING::Container> container = *problem.ccbegin();
     std::shared_ptr<RASTERPACKING::Polygon> pol = container->getPolygon();
     qreal minX = (*pol->begin()).x();
-    qreal maxX = minX;
-    std::for_each(pol->begin(), pol->end(), [&minX, &maxX](QPointF pt){
+	qreal minY = (*pol->begin()).y();
+    qreal maxX = minX, maxY = minY;
+    std::for_each(pol->begin(), pol->end(), [&minX, &maxX, &minY, &maxY](QPointF pt){
         if(pt.x() < minX) minX = pt.x();
         if(pt.x() > maxX) maxX = pt.x();
+		if (pt.y() < minY) minY = pt.y();
+		if (pt.y() > maxY) maxY = pt.y();
     });
     qreal rasterScale = (*problem.crnfpbegin())->getScale(); // FIXME: Global scale
     containerWidth = qRound(rasterScale*(maxX - minX));
+	containerHeight = qRound(rasterScale*(maxY - minY));
     containerName = (*problem.ccbegin())->getName();
 
     // 2. Link the name and angle of the piece with the ids defined for the items
@@ -121,31 +126,11 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     // 5. Read problem scale
     this->scale = (*problem.crnfpbegin())->getScale();
 
+	// 6. Read max size for container
+	this->maxWidth = std::ceil(problem.getMaxLength() * this->scale);
+	this->maxHeight = std::ceil(problem.getMaxWidth() * this->scale);
+
     return true;
-}
-
-void RasterPackingProblem::getProblemGPUMemRequirements(RASTERPACKING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem) {
-	unsigned int ifpCount = 0; ifpTotalMem = 0;  ifpMaxMem = 0;
-	for (QList<std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
-		std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIfp = *it;
-		// Create image. FIXME: Use data file instead?
-		QImage curImage(curRasterIfp->getFileName());
-
-		// Determine memory space
-		size_t curIfpMemSize = curImage.width()*curImage.height()*sizeof(qreal);
-		if (ifpMaxMem == 0 || curIfpMemSize > ifpMaxMem) ifpMaxMem = curIfpMemSize; 
-		ifpTotalMem += curIfpMemSize; ifpCount++;
-	}
-
-	unsigned int nfpCount = 0; nfpTotalMem = 0;
-	for (QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
-		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
-		// Create image. FIXME: Use data file instead?
-		QImage curImage(curRasterNfp->getFileName());
-
-		// Determine memory space
-		nfpTotalMem += curImage.width()*curImage.height()*sizeof(int); nfpCount++;
-	}
 }
 
 bool RasterPackingClusterProblem::load(RASTERPACKING::PackingProblem &problem) {
@@ -213,7 +198,7 @@ void RasterPackingClusterProblem::convertSolution(RASTERVORONOIPACKING::RasterPa
 					// Find mirror rotation. FIXME: Only works with increments of 90 degrees
 					if (this->originalProblem->getItem(item.id)->getAngleCount() == 1) newOrientation = 0;
 					else {
-						for (int i = 0; i < this->originalProblem->getItem(item.id)->getAngleCount(); i++) {
+						for (unsigned int i = 0; i < this->originalProblem->getItem(item.id)->getAngleCount(); i++) {
 							if ((qAbs(newAngle - 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))
 								|| ((newAngle + 180) % 360 == this->originalProblem->getItem(item.id)->getAngleValue(i))) {
 								newOrientation = i;
@@ -247,4 +232,50 @@ void RasterPackingClusterProblem::convertSolution(RASTERVORONOIPACKING::RasterPa
 		solution.setPosition(currCluster.first().id, oldSolution.getPosition(it.key()));
 		solution.setOrientation(currCluster.first().id, oldSolution.getOrientation(it.key()));
 	}
+}
+
+
+qreal RasterPackingProblem::getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2) {
+	qreal value1Static2Orbiting, value2Static1Orbiting; 
+	bool feasible;
+	
+	value1Static2Orbiting = getNfpValue(itemId1, pos1, orientation1, itemId2, pos2, orientation2, feasible);
+	if (feasible) return 0.0;
+	value2Static1Orbiting = getNfpValue(itemId2, pos2, orientation2, itemId1, pos1, orientation1, feasible);
+	if (feasible) return 0.0;
+
+	// FIXME: Values should be equal!
+	return value1Static2Orbiting < value2Static1Orbiting ? value1Static2Orbiting : value2Static1Orbiting;
+}
+
+bool RasterPackingProblem::areOverlapping(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2) {
+	if (getNfpIndexedValue(itemId1, pos1, orientation1, itemId2, pos2, orientation2) == 0) return false;
+	if (getNfpIndexedValue(itemId2, pos2, orientation2, itemId1, pos1, orientation1) == 0) return false;
+	return true;
+}
+
+int RasterPackingProblem::getNfpIndexedValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2) {
+	std::shared_ptr<RasterNoFitPolygon> curNfp = noFitPolygons->getRasterNoFitPolygon(getItemType(itemId1), orientation1, getItemType(itemId2), orientation2);
+	QPoint relPos = pos2 - pos1 + curNfp->getOrigin();
+
+	if (relPos.x() < 0 || relPos.x() > curNfp->width() - 1 || relPos.y() < 0 || relPos.y() > curNfp->height() - 1) return 0;
+	return curNfp->getPixel(relPos.x(), relPos.y());
+}
+
+qreal RasterPackingProblem::getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, bool &isZero) {
+	isZero = false;
+	std::shared_ptr<RasterNoFitPolygon> curNfp;
+	int indexValue = getNfpIndexedValue(itemId1, pos1, orientation1, itemId2, pos2, orientation2);
+	if (indexValue == 0) { isZero = true; return 0.0; }
+	curNfp = noFitPolygons->getRasterNoFitPolygon(getItemType(itemId1), orientation1, getItemType(itemId2), orientation2);
+	return 1.0 + (curNfp->getMaxD() - 1.0)*((qreal)indexValue - 1.0) / 254.0;
+}
+
+// TODO: Use QRect
+void RasterPackingProblem::getIfpBoundingBox(int itemId, int orientation, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY) {
+	std::shared_ptr<RasterNoFitPolygon> ifp = innerFitPolygons->getRasterNoFitPolygon(-1, -1, getItemType(itemId), orientation);
+	bottomLeftX = -ifp->getOriginX();
+	bottomLeftY = -ifp->getOriginY();
+	topRightX = bottomLeftX + ifp->width() - 1;
+	topRightY = bottomLeftY + ifp->height() - 1;
 }

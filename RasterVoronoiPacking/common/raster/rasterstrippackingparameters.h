@@ -1,18 +1,26 @@
 #ifndef RASTERSTRIPPACKINGPARAMETERS_H
 #define RASTERSTRIPPACKINGPARAMETERS_H
 
+#define DEFAULT_RDEC 0.04
+#define DEFAULT_RINC 0.01
+
 namespace RASTERVORONOIPACKING {
 	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
 	enum Heuristic { NONE, GLS };
-	enum PositionChoice { BOTTOMLEFT_POS, RANDOM_POS, LIMITS_POS, CONTOUR_POS};
+	enum EnclosedMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
 
 	class RasterStripPackingParameters
 	{
 	public:
 		RasterStripPackingParameters() :
-			Nmo(200), maxSeconds(600), heuristicType(GLS), doubleResolution(false),
-			fixedLength(false), maxIterations(0)
+			Nmo(200), maxSeconds(600), heuristicType(GLS), searchScale(-1),
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
 		{} // Default parameters
+
+		RasterStripPackingParameters(Heuristic _heuristicType, qreal _searchScale) :
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), searchScale(_searchScale),
+			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
+		{} // Default parameters with specific solver parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
 		int getNmo() { return this->Nmo; }
@@ -26,9 +34,6 @@ namespace RASTERVORONOIPACKING {
 		void setHeuristic(Heuristic _heuristicType) { this->heuristicType = _heuristicType; }
 		Heuristic getHeuristic() { return this->heuristicType; }
 
-		void setDoubleResolution(bool val) { this->doubleResolution = val; }
-		bool isDoubleResolution() { return this->doubleResolution; }
-
 		void setFixedLength(bool val) { this->fixedLength = val; }
 		bool isFixedLength() { return this->fixedLength; }
 
@@ -38,33 +43,47 @@ namespace RASTERVORONOIPACKING {
 		void setInitialLenght(qreal _initialLenght) { this->initialLenght = _initialLenght; setInitialSolMethod(RANDOMFIXED); } // FIXME: Should the initial solution method be set automatically?
 		qreal getInitialLenght() { return this->initialLenght; }
 
-		void setPlacementCriteria(PositionChoice _placementCriteria) { this->placementCriteria = _placementCriteria; }
-		PositionChoice getPlacementCriteria() { return this->placementCriteria; }
-
 		void setClusterFactor(qreal _clusterFactor) { this->clusterFactor = _clusterFactor; }
 		qreal getClusterFactor() { return this->clusterFactor; }
+		
+		void setRectangularPacking(bool val) { this->rectangularPacking = val; }
+		bool isRectangularPacking() { return this->rectangularPacking; }
+
+		void setRectangularPackingMethod(EnclosedMethod method) { this->rectangularPackingMethod = method; }
+		EnclosedMethod getRectangularPackingMethod() { return this->rectangularPackingMethod; }
+
+		void setSearchScale(qreal _searchScale) { this->searchScale = _searchScale; }
+		qreal getSearchScale() { return this->searchScale; }
+
+		void setResizeChangeRatios(qreal _ratioDecrease, qreal _ratioIncrease) { this->rdec = _ratioDecrease; this->rinc = _ratioIncrease; }
+		qreal getRdec() { return this->rdec; }
+		qreal getRinc() { return this->rinc; }
 
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
 			setTimeLimit(source.getTimeLimit());
 			setIterationsLimit(source.getIterationsLimit());
 			setHeuristic(source.getHeuristic());
-			setDoubleResolution(source.isDoubleResolution());
 			setFixedLength(source.isFixedLength());
 			setInitialSolMethod(source.getInitialSolMethod());
 			if (getInitialSolMethod() == RANDOMFIXED) setInitialLenght(source.getInitialLenght());
-			setPlacementCriteria(source.getPlacementCriteria());
 			setClusterFactor(source.getClusterFactor());
+			setRectangularPacking(source.isRectangularPacking());
+			setRectangularPackingMethod(source.getRectangularPackingMethod());
+			setSearchScale(source.getSearchScale());
+			setResizeChangeRatios(source.getRdec(), source.getRinc());
 		}
 
 	private:
 		int Nmo, maxSeconds, maxIterations;
 		Heuristic heuristicType;
 		ConstructivePlacement initialSolMethod;
-		PositionChoice placementCriteria; // FIXME: Debug
 		qreal initialLenght; // Only used with RANDOMFIXED initial solution
-		bool doubleResolution, fixedLength;
+		bool fixedLength, rectangularPacking;
+		EnclosedMethod rectangularPackingMethod;
+		qreal searchScale;
 		qreal clusterFactor;
+		qreal rdec, rinc;
 	};
 }
 

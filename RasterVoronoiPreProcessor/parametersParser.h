@@ -5,7 +5,7 @@ class QCommandLineParser;
 class QString;
 
 struct PreProcessorParameters {
-    PreProcessorParameters() {}
+	PreProcessorParameters() : noOverlap(true) {}
 
     QString inputFilePath;
     QString inputFileType;

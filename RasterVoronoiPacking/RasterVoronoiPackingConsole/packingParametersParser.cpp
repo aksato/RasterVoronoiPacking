@@ -10,7 +10,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
 
     parser.addPositionalArgument("source","Input problem file path.");
-    const QCommandLineOption nameZoomedInput(QStringList() << "zoom", "Zoomed problem input.", "name");
+    const QCommandLineOption nameZoomedInput(QStringList() << "zoom", "Zoomed problem input: file name or explicity zoom value.", "name");
     parser.addOption(nameZoomedInput);
     const QCommandLineOption nameOutputTXT(QStringList() << "result", "The output result statistics file name.", "name");
     parser.addOption(nameOutputTXT);
@@ -19,7 +19,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	const QCommandLineOption boolOutputSeed("appendseed", "Automatically append seed value to output file names.");
 	parser.addOption(boolOutputSeed);
 
-    const QCommandLineOption typeMethod("method", "Raster packing method choices: default, gls, zoom, zoomgls.", "type");
+    const QCommandLineOption typeMethod("method", "Raster packing method choices: default, gls.", "type");
     parser.addOption(typeMethod);
     const QCommandLineOption typeInitialSolution("initial", "Initial solution choices: random, bottomleft.", "type");
     parser.addOption(typeInitialSolution);
@@ -27,6 +27,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.addOption(valueMaxWorseSolutions);
     const QCommandLineOption valueTimeLimit("duration", "Time limit in seconds.", "value");
     parser.addOption(valueTimeLimit);
+	const QCommandLineOption valueRatios("ratios", "Ratios for container increase / decrease given in rdec;rinc form.", "value;value");
+	parser.addOption(valueRatios);
 	const QCommandLineOption valueIterationsLimit("maxits", "Maximum number of iterations.", "value");
 	parser.addOption(valueIterationsLimit);
     const QCommandLineOption valueLenght("length", "Container lenght.", "value");
@@ -35,10 +37,10 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(boolStripPacking);
 	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value");
 	parser.addOption(valueNumThreads);
-	const QCommandLineOption placementMethod("placement", "Criteria for choosing positions when there are multiple minimum values (debug). Choices: bottomleft, random, limits and contour.", "type");
-	parser.addOption(placementMethod);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value");
 	parser.addOption(valueCluster);
+	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, cost, bagpipe", "value");
+	parser.addOption(valueRectangularPacking);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -67,9 +69,15 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
     if (parser.isSet(nameZoomedInput)) {
         const QString inputName = parser.value(nameZoomedInput);
-        params->zoomedInputFilePath = inputName;
-        zoomedInputFileSet = true;
+		bool ok;
+		const qreal zoomValue = inputName.toDouble(&ok);
+		if (!ok || zoomValue < 0) {
+			*errorMessage = "Bad zoom value.";
+			return CommandLineError;
+		}
+		params->zoomValue = zoomValue;
     }
+	else params->zoomValue = -1.0;
 
     if (parser.isSet(nameOutputTXT)) {
         const QString outputName = parser.value(nameOutputTXT);
@@ -86,25 +94,12 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 
     if (parser.isSet(typeMethod)) {
         const QString methodType = parser.value(typeMethod).toLower();
-        if(methodType != "default" && methodType != "gls" && methodType != "zoom" && methodType != "zoomgls") {
-            *errorMessage = "Invalid method type! Avaible methods: 'default', 'gls', 'zoom' and 'zoomgls'.";
+        if(methodType != "default" && methodType != "gls") {
+            *errorMessage = "Invalid method type! Avaible methods: 'default', 'gls'.";
             return CommandLineError;
         }
         if(methodType == "default") params->methodType = Method_Default;
         if(methodType == "gls") params->methodType = Method_Gls;
-        if(methodType == "zoom") params->methodType = Method_Zoom;
-        if(methodType == "zoomgls") params->methodType = Method_ZoomGls;
-
-        if(zoomedInputFileSet && (methodType == "default" || methodType == "gls"))
-            qWarning() << "Warning: Method does not use zoom input file, ignoring the specified zoom problem.";
-        if(!zoomedInputFileSet && methodType == "zoom") {
-            qWarning() << "Warning: No zoom input file specified, changing method to 'default'";
-            params->methodType = Method_Default;
-        }
-        if(!zoomedInputFileSet && methodType == "zoomgls") {
-            qWarning() << "Warning: No zoom input file specified, changing method to 'gls'";
-            params->methodType = Method_Gls;
-        }
     }
     else {
         qWarning() << "Warning: Method not specified, set to default (no zoom, no gls).";
@@ -184,6 +179,20 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	if (parser.isSet(boolStripPacking)) params->stripPacking = true;
 	else  params->stripPacking = false;
 
+	if (parser.isSet(valueRectangularPacking)) {
+		params->rectangularPacking = true;
+		const QString methodType = parser.value(valueRectangularPacking).toLower();
+		if (methodType != "square" && methodType != "random" && methodType != "cost" && methodType != "bagpipe") {
+			*errorMessage = "Invalid initial rectangular method type! Avaible methods: 'square', 'random', 'cost' and 'bagpipe'.";
+			return CommandLineError;
+		}
+		if (methodType == "square") params->rectMehod = SQUARE;
+		if (methodType == "random") params->rectMehod = RANDOM_ENCLOSED;
+		if (methodType == "cost") params->rectMehod = COST_EVALUATION;
+		if (methodType == "bagpipe") params->rectMehod = BAGPIPE;
+	}
+	else params->rectangularPacking = false;
+
 	if (parser.isSet(valueNumThreads)) {
 		const QString threadsString = parser.value(valueNumThreads);
 		bool ok;
@@ -198,19 +207,6 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		params->numThreads = 1;
 	}
 
-	if (parser.isSet(placementMethod)) {
-		const QString methodType = parser.value(placementMethod).toLower();
-		if (methodType != "bottomleft" && methodType != "random" && methodType != "limits" && methodType != "contour") {
-			*errorMessage = "Invalid method type! Avaible methods: 'bottomleft', 'random', 'limits' and 'contour'.";
-			return CommandLineError;
-		}
-		if (methodType == "bottomleft") params->placementType = Pos_BottomLeft;
-		if (methodType == "random") params->placementType = Pos_Random;
-		if (methodType == "limits") params->placementType = Pos_Limits;
-		if (methodType == "contour") params->placementType = Pos_Contour;
-	}
-	else params->placementType = Pos_BottomLeft;
-
 	if (parser.isSet(valueCluster)) {
 		const QString clusterString = parser.value(valueCluster);
 		bool ok;
@@ -224,6 +220,25 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		}
 	}
 	else params->clusterFactor = -1.0;
+
+	if (parser.isSet(valueRatios)) {
+		const QString ratiosStr = parser.value(valueRatios);
+		QStringList ratiosList = ratiosStr.split(";");
+		bool ok;
+		qreal rdec = ratiosList[0].toDouble(&ok);
+		qreal rinc = ratiosList[1].toDouble(&ok);
+		if (ok && rdec > 0 && rinc > 0) {
+			params->rdec = rdec;
+			params->rinc = rinc;
+		}
+		else {
+			*errorMessage = "Bad ratio value.";
+			return CommandLineError;
+		}
+	}
+	else {
+		params->rdec = -1.0; params->rinc = -1.0;
+	}
 
     return CommandLineOk;
 }

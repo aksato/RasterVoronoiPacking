@@ -14,7 +14,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <memory>
-#include <windows.h>
 
 int main(int argc, char *argv[])
 {
@@ -56,25 +55,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (!params.zoomedInputFilePath.isEmpty()) {
-		// Transform zoomed source path to absolute
-		QFileInfo zoomedInputFileInfo(params.zoomedInputFilePath);
-		params.zoomedInputFilePath = zoomedInputFileInfo.absoluteFilePath();
-		// Check if zoomed source path exist
-		if (!QFile(params.zoomedInputFilePath).exists()) {
-			qCritical() << "Zoomed input file not found.";
-			return 1;
-		}
-	}
-
 	// Configure parameters
 	switch (params.methodType) {
-	case Method_Default: algorithmParams.setHeuristic(RASTERVORONOIPACKING::NONE); algorithmParams.setDoubleResolution(false); break;
-	case Method_Gls: algorithmParams.setHeuristic(RASTERVORONOIPACKING::GLS); algorithmParams.setDoubleResolution(false); break;
-	case Method_Zoom: algorithmParams.setHeuristic(RASTERVORONOIPACKING::NONE); algorithmParams.setDoubleResolution(true); break;
-	case Method_ZoomGls: algorithmParams.setHeuristic(RASTERVORONOIPACKING::GLS); algorithmParams.setDoubleResolution(true); break;
+	case Method_Default: algorithmParams.setHeuristic(RASTERVORONOIPACKING::NONE); break;
+	case Method_Gls: algorithmParams.setHeuristic(RASTERVORONOIPACKING::GLS); break;
 	}
 	algorithmParams.setFixedLength(!params.stripPacking);
+	if (params.rdec > 0 && params.rinc > 0) algorithmParams.setResizeChangeRatios(params.rdec, params.rinc);
 	algorithmParams.setTimeLimit(params.timeLimitValue); algorithmParams.setNmo(params.maxWorseSolutionsValue);
 	algorithmParams.setIterationsLimit(params.iterationsLimitValue);
 	if (params.initialSolutionType == Solution_Random) {
@@ -84,22 +71,22 @@ int main(int argc, char *argv[])
 	else if (params.initialSolutionType == Bottom_Left){
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::BOTTOMLEFT);
 	}
-	switch (params.placementType) {
-		case Pos_BottomLeft: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::BOTTOMLEFT_POS); break;
-		case Pos_Random: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::RANDOM_POS); break;
-		case Pos_Limits: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::LIMITS_POS); break;
-		case Pos_Contour: algorithmParams.setPlacementCriteria(RASTERVORONOIPACKING::CONTOUR_POS); break;
-	}
 	algorithmParams.setClusterFactor(params.clusterFactor);
+	algorithmParams.setRectangularPacking(params.rectangularPacking);
+	switch (params.rectMehod) {
+	case SQUARE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::SQUARE); break;
+	case RANDOM_ENCLOSED: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED); break;
+	case COST_EVALUATION: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::COST_EVALUATION); break;
+	case BAGPIPE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::BAGPIPE); break;
+	}
+	algorithmParams.setSearchScale(params.zoomValue);
 
-	if (!algorithmParams.isDoubleResolution()) packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
-	else packingLoader.setParameters(params.inputFilePath, params.zoomedInputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
+	packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
 
 	if (params.numThreads > 1) qDebug() << "Multithreaded version:" << params.numThreads << "parallel executions.";
 	for (int i = 0; i < params.numThreads; i++) {
-		//PackingThread threadedPacker;
 		packingLoader.run();
-		Sleep(10000);
+		QThread::sleep(1);
 	}
     return app.exec();
 }

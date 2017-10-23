@@ -4,9 +4,8 @@
 #include "raster/rasterpackingproblem.h"
 #include "raster/rasterpackingsolution.h"
 #include "raster/rasterstrippackingsolver.h"
-#include "raster/rasterstrippackingsolvergls.h"
-#include "raster/rasterstrippackingsolverdoublegls.h"
 #include "raster/packingthread.h"
+#include "raster/packing2dthread.h"
 #include "raster/packingclusterthread.h"
 #include "glsweightviewerdialog.h"
 #include "zoomedmapviewdialog.h"
@@ -29,7 +28,6 @@ public:
 
 private slots:
     void loadPuzzle();
-    void loadZoomedPuzzle();
     void updateAngleComboBox(int id);
     void updatePositionValues(QPointF pos);
     void printCurrentSolution();
@@ -38,6 +36,7 @@ private slots:
     void createRandomLayout();
 	void createBottomLeftLayout();
     void changeContainerWidth();
+	void changeContainerHeight();
     void showGlobalOverlap();
     void localSearch();
     void generateCurrentTotalGlsWeightedOverlapMap();
@@ -47,20 +46,23 @@ private slots:
     void glsWeightedlocalSearch();
 
 	void generateCurrentTotalSearchOverlapMap();
+	void generateCurrentTotalSearchOverlapMap2();
+	void setExplicityZoomValue();
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();
     void zoomedlocalSearch();
 
     void executePacking();
-	void showCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length);
+	void showCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info);
 	void showExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal curOverlap, qreal minOverlap, qreal elapsed);
-	void showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed, uint seed);
-	void showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int minLength, int totalItNum, qreal elapsed, uint seed);
+	void showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info, int totalItNum, qreal curOverlap, qreal minOverlap, qreal elapsed);
+	void showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info);
+	void showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint seed);
 
     void saveSolution();
-	void saveZoomedSolution();
     void loadSolution();
     void exportSolutionToSvg();
+	void exportSolutionTikz();
 
 	void switchToOriginalProblem();
 	void updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed);
@@ -68,26 +70,28 @@ private slots:
 	void printDensity();
 
 private:
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createBasicSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createGLSSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createDoubleGLSSolver();
     void createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale);
 	int logposition(qreal value);
 
     Ui::MainWindow *ui;
-    std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterZoomedProblem;
+    std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem;
     RASTERVORONOIPACKING::RasterPackingSolution solution;
-    std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverGLS> solverGls;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolverDoubleGLS> solverDoubleGls;
+	std::shared_ptr<RASTERVORONOIPACKING::GlsWeightSet> weights;
 	RASTERVORONOIPACKING::RasterStripPackingParameters params;
 
     ZoomedMapViewDialog zoomedMapViewer;
     GlsWeightViewerDialog weightViewer;
     RunConfigurationsDialog runConfig;
-	PackingThread runThread;
-	PackingClusterThread runClusterThread;
 
-    int accContainerShrink;
-	qreal totalArea; qreal containerWidth;
+	int accContainerShrink;
+	qreal searchScale;
+	qreal totalArea;
 	RASTERPACKING::PackingProblem originalProblem;
+	int currentContainerWidth, currentContainerHeight;
+	std::shared_ptr<PackingThread> packer;
 };
 
 #endif // MAINWINDOW_H

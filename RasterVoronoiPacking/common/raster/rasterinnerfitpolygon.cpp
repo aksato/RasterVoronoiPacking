@@ -21,7 +21,3 @@ std::shared_ptr<RasterInnerFitPolygon> RasterInnerFitPolygonSet::getRasterNoFitP
     int orbitingKey =  orbitingPieceId*numAngles + orbitingAngleId;
     return Ifps[orbitingKey];
 }
-
-void RasterInnerFitPolygonSet::shrink(int numPixels) {
-    std::for_each(Ifps.begin(), Ifps.end(), [numPixels](std::shared_ptr<RasterInnerFitPolygon> curIfp){curIfp->shrink(numPixels);});
-}

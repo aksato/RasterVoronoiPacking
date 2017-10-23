@@ -13,9 +13,17 @@ ZoomedMapViewDialog::~ZoomedMapViewDialog()
     delete ui;
 }
 
-void ZoomedMapViewDialog::setImage(QPixmap _pmap) {
-    ui->graphicsView->setImage(_pmap);
+ZoomedMapView *ZoomedMapViewDialog::getMapView() {
+	return ui->graphicsView;
 }
+
+//void ZoomedMapViewDialog::init(int size) {
+//	ui->graphicsView->init(size);
+//}
+
+//void ZoomedMapViewDialog::updateMap(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> map) {
+//	ui->graphicsView->updateMap(map);
+//}
 
 void ZoomedMapViewDialog::setValidArea(QRect validArea) {
     ui->graphicsView->setValidArea(validArea);

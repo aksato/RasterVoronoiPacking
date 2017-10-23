@@ -14,8 +14,7 @@ class MainWindow;
 namespace RASTERVORONOIPACKING {
     class RasterPackingItem {
     public:
-        RasterPackingItem() {}
-        RasterPackingItem(unsigned int _id, unsigned int pType, unsigned int aCount) : id(_id), pieceType(pType), angleCount(aCount) {}
+		RasterPackingItem(unsigned int _id, unsigned int pType, unsigned int aCount, std::shared_ptr<QPolygonF> pol) : id(_id), pieceType(pType), angleCount(aCount), polygon(pol) {}
         ~RasterPackingItem() {}
 
         void setId(unsigned int _id) {this->id = _id;}
@@ -24,6 +23,7 @@ namespace RASTERVORONOIPACKING {
         unsigned int getPieceType() {return this->pieceType;}
         void setAngleCount(unsigned int aCount) {this->angleCount = aCount;}
         unsigned int getAngleCount() {return this->angleCount;}
+		std::shared_ptr<QPolygonF> getPolygon() { return this->polygon; }
 
         void setPieceName(QString pName) {this->pieceName = pName;}
         QString getPieceName() {return this->pieceName;}
@@ -36,6 +36,20 @@ namespace RASTERVORONOIPACKING {
 		void getBoundingBox(int &_minX, int &_maxX, int &_minY, int &_maxY) {
 			_minX = this->minX; _maxX = this->maxX; _minY = this->minY; _maxY = this->maxY;
 		}
+		int getMaxX(int orientation) {
+			if (getAngleValue(orientation) == 0) return this->maxX;
+			if (getAngleValue(orientation) == 90) return -this->minY;
+			if (getAngleValue(orientation) == 180) return -this->minX;
+			if (getAngleValue(orientation) == 270) return this->maxY;
+			return 0; // FIXME: Implement continuous rotations?
+		}
+		int getMaxY(int orientation) {
+			if (getAngleValue(orientation) == 0) return this->maxY;
+			if (getAngleValue(orientation) == 90) return this->maxX;
+			if (getAngleValue(orientation) == 180) return -this->minY;
+			if (getAngleValue(orientation) == 270) return -this->minX;
+			return 0; // FIXME: Implement continuous rotations?
+		}
 
     private:
         unsigned int id;
@@ -45,6 +59,7 @@ namespace RASTERVORONOIPACKING {
 
         QString pieceName;
         QVector<int> angleValues;
+		std::shared_ptr<QPolygonF> polygon; // For output purposes
     };
 
     class RasterPackingProblem
@@ -65,21 +80,30 @@ namespace RASTERVORONOIPACKING {
         int count() {return items.size();}
         int getItemType(int id) {return items[id]->getPieceType();}
         int getContainerWidth() {return containerWidth;}
+		int getContainerHeight() { return containerHeight; }
+		int getMaxWidth() { return this->maxWidth; }
+		int getMaxHeight() { return this->maxHeight; }
         QString getContainerName() {return containerName;}
         qreal getScale() {return scale;}
 
-		static void getProblemGPUMemRequirements(RASTERPACKING::PackingProblem &problem, size_t &ifpTotalMem, size_t &ifpMaxMem, size_t &nfpTotalMem);
+		// Processing of nfp values
+		qreal getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		bool areOverlapping(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		void getIfpBoundingBox(int itemId, int orientation, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY);
 
     protected:
-//        QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<QPair<int,int>, int> &pieceAngleMap);
-
-        int containerWidth;
+        int containerWidth, containerHeight;
+		int maxWidth, maxHeight;
         QString containerName;
         unsigned int maxOrientations;
         QVector<std::shared_ptr<RasterPackingItem>> items;
         std::shared_ptr<RasterNoFitPolygonSet> noFitPolygons;
         std::shared_ptr<RasterNoFitPolygonSet> innerFitPolygons;
         qreal scale;
+
+	private:
+		int getNfpIndexedValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		qreal getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, bool &isZero);
     };
 
 	struct RasterPackingClusterItem {

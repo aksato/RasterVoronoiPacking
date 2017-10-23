@@ -121,10 +121,21 @@ void PackingViewer::keyPressEvent(QKeyEvent *event) {
 }
 
 void PackingViewer::recreateContainerGraphics(int pixelWidth) {
+	// Create container
+	//    curMap->setVisible(false);
+	QRectF containerPolygon = container->polygon().boundingRect();
+	containerPolygon.setWidth((qreal)pixelWidth / this->rasterScale);
+	container->setPolygon(containerPolygon);
+	std::for_each(pieces.begin(), pieces.end(), [&containerPolygon](PackingItem *curItem){curItem->setContainer(containerPolygon, curItem->getAngle(curItem->getCurAngle())); });
+	//    mainScene->setSceneRect(container->boundingRect());
+}
+
+void PackingViewer::recreateContainerGraphics(int pixelWidth, int pixelHeight) {
     // Create container
 //    curMap->setVisible(false);
     QRectF containerPolygon = container->polygon().boundingRect();
     containerPolygon.setWidth((qreal)pixelWidth/this->rasterScale);
+	containerPolygon.setHeight((qreal)pixelHeight/this->rasterScale);
     container->setPolygon(containerPolygon);
     std::for_each(pieces.begin(), pieces.end(), [&containerPolygon](PackingItem *curItem){curItem->setContainer(containerPolygon, curItem->getAngle(curItem->getCurAngle()));});
 //    mainScene->setSceneRect(container->boundingRect());
@@ -294,19 +305,19 @@ void PackingViewer::setCurrentYCoord(double ypos) {
     }
 }
 
-void PackingViewer::getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale) {
-    for(int i = 0; i < pieces.size(); i++) {
-        solution.setOrientation(i, pieces[i]->getCurAngle());
-        solution.setPosition(i, QPoint(qRound((qreal)pieces[i]->pos().x()*scale), qRound((qreal)pieces[i]->pos().y()*scale)));
-    }
-}
-
-void PackingViewer::getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {
-    getCurrentSolution(solution, this->rasterScale);
+//void PackingViewer::getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution, qreal scale) {
 //    for(int i = 0; i < pieces.size(); i++) {
 //        solution.setOrientation(i, pieces[i]->getCurAngle());
-//        solution.setPosition(i, QPoint(qRound((qreal)pieces[i]->pos().x()*this->rasterScale), qRound((qreal)pieces[i]->pos().y()*this->rasterScale)));
+//        solution.setPosition(i, QPoint(qRound((qreal)pieces[i]->pos().x()*scale), qRound((qreal)pieces[i]->pos().y()*scale)));
 //    }
+//}
+
+void PackingViewer::getCurrentSolution(RASTERVORONOIPACKING::RasterPackingSolution &solution) {
+    //getCurrentSolution(solution, this->rasterScale);
+    for(int i = 0; i < pieces.size(); i++) {
+        solution.setOrientation(i, pieces[i]->getCurAngle());
+        solution.setPosition(i, QPoint(qRound((qreal)pieces[i]->pos().x()*this->rasterScale), qRound((qreal)pieces[i]->pos().y()*this->rasterScale)));
+    }
 }
 
 void PackingViewer::setCurrentSolution(const RasterPackingSolution &solution, qreal scale) {

@@ -7,6 +7,9 @@ RunConfigurationsDialog::RunConfigurationsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->spinBox->setValue(200);
+	ui->label_7->setVisible(false); ui->doubleSpinBox_3->setVisible(false);
+	ui->label_9->setVisible(false); ui->comboBox_4->setVisible(false);
+	connect(ui->comboBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT(showRectangularMethods(int)));
 }
 
 RunConfigurationsDialog::~RunConfigurationsDialog()
@@ -20,6 +23,10 @@ int RunConfigurationsDialog::getInitialSolution() {
 
 int RunConfigurationsDialog::getMetaheuristic() {
     return ui->comboBox->currentIndex();
+}
+
+qreal RunConfigurationsDialog::getSearchScale() {
+	return ui->doubleSpinBox_3->value();
 }
 
 int RunConfigurationsDialog::getMaxWorse() {
@@ -41,8 +48,9 @@ void RunConfigurationsDialog::setInitialLenght(qreal lenght, qreal step) {
     ui->doubleSpinBox->setSingleStep(step);
 }
 
-bool RunConfigurationsDialog::getStripPacking() {
-	return ui->checkBox->isChecked();
+void RunConfigurationsDialog::setInitialSearchScale(qreal scale) {
+	ui->doubleSpinBox_3->setValue(scale);
+	ui->doubleSpinBox_3->setMinimum(0.0);
 }
 
 qreal RunConfigurationsDialog::getClusterFactor() {
@@ -58,4 +66,21 @@ void RunConfigurationsDialog::enableCluster() {
 void RunConfigurationsDialog::disableCluster() {
 	ui->label_6->setEnabled(false);
 	ui->doubleSpinBox_2->setEnabled(false);
+}
+
+int RunConfigurationsDialog::getPackingProblemIndex() {
+	return ui->comboBox_3->currentIndex();
+}
+
+bool RunConfigurationsDialog::isZoomedApproach() {
+	return ui->checkBox->isChecked();
+}
+
+void RunConfigurationsDialog::showRectangularMethods(int index) {
+	ui->comboBox_4->setVisible(index == 2);
+	ui->label_9->setVisible(index == 2);
+}
+
+int RunConfigurationsDialog::getRectangularMethod() {
+	return ui->comboBox_4->currentIndex();
 }

@@ -27,13 +27,16 @@ set(SRC
 	main.cpp
 	../common/raster/totaloverlapmap.cpp
 	../common/raster/rasterstrippackingsolver.cpp
-	../common/raster/rasterstrippackingsolvergls.cpp
-	../common/raster/rasterstrippackingsolverdoublegls.cpp
+	../common/raster/rasterstrippackingsolver2d.cpp
+	../common/raster/rasteroverlapevaluator.cpp
+	../common/raster/rasteroverlapevaluatorgls.cpp
+	../common/raster/rasteroverlapevaluatordoublegls.cpp
 	../common/raster/rasterpackingsolution.cpp
 	../common/raster/rasterpackingproblem.cpp
 	../common/raster/rasternofitpolygon.cpp
 	../common/raster/rasterinnerfitpolygon.cpp
 	../common/raster/packingthread.cpp
+	../common/raster/packing2dthread.cpp
 	../common/raster/packingclusterthread.cpp
 	../common/raster/glsweightset.cpp
 	viewer/graphicsindexedrectitem.cpp
@@ -52,14 +55,14 @@ set(HEADERS
 	zoomedmapviewdialog.h
 	../common/raster/totaloverlapmap.h
 	../common/raster/rasterstrippackingsolver.h
-	../common/raster/rasterstrippackingsolvergls.h
-	../common/raster/rasterstrippackingsolverdoublegls.h
+	../common/raster/rasteroverlapevaluator.h
 	../common/raster/rasterpackingsolution.h
 	../common/raster/rasterstrippackingparameters.h
 	../common/raster/rasterpackingproblem.h
 	../common/raster/rasternofitpolygon.h
 	../common/raster/rasterinnerfitpolygon.h
 	../common/raster/packingthread.h
+	../common/raster/packing2dthread.h
 	../common/raster/packingclusterthread.h
 	../common/raster/glsweightset.h
 	viewer/graphicsindexedrectitem.h

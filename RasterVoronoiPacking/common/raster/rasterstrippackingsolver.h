@@ -8,14 +8,14 @@
 #include "totaloverlapmap.h"
 #include "glsweightset.h"
 
-class MainWindow;
+//class MainWindow;
 
 namespace RASTERVORONOIPACKING {
 	enum BottomLeftMode {BL_STRIPPACKING, BL_RECTANGULAR, BL_SQUARE};
 
 	class RasterStripPackingSolver
 	{
-		friend class MainWindow;
+                friend class ::MainWindow;
 
 	public:
 		static std::shared_ptr<RasterStripPackingSolver> createRasterPackingSolver(std::shared_ptr<RasterPackingProblem> problem, RasterStripPackingParameters &parameters, int initialWidth = -1, int initialHeight = -1);

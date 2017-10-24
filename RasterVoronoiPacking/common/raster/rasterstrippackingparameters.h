@@ -5,7 +5,7 @@
 #define DEFAULT_RINC 0.01
 
 namespace RASTERVORONOIPACKING {
-	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT};
+	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT };
 	enum Heuristic { NONE, GLS };
 	enum EnclosedMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
 
@@ -13,12 +13,12 @@ namespace RASTERVORONOIPACKING {
 	{
 	public:
 		RasterStripPackingParameters() :
-			Nmo(200), maxSeconds(600), heuristicType(GLS), searchScale(-1),
+			Nmo(200), maxSeconds(600), heuristicType(GLS), searchScale(-1), clusterFactor(-1.0),
 			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
 		{} // Default parameters
 
 		RasterStripPackingParameters(Heuristic _heuristicType, qreal _searchScale) :
-			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), searchScale(_searchScale),
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), searchScale(_searchScale), clusterFactor(-1.0),
 			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
 		{} // Default parameters with specific solver parameters
 
@@ -45,7 +45,7 @@ namespace RASTERVORONOIPACKING {
 
 		void setClusterFactor(qreal _clusterFactor) { this->clusterFactor = _clusterFactor; }
 		qreal getClusterFactor() { return this->clusterFactor; }
-		
+
 		void setRectangularPacking(bool val) { this->rectangularPacking = val; }
 		bool isRectangularPacking() { return this->rectangularPacking; }
 

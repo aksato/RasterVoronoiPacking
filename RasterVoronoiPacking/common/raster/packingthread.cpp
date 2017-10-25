@@ -4,7 +4,7 @@
 #include <QTime>
 
 #define MAXLOOPSPERLENGTH 5
-#define UPDATEINTERVAL 2
+#define UPDATEINTERVAL 0.2
 
 PackingThread::~PackingThread() {
     m_abort = true;

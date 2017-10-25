@@ -14,11 +14,11 @@ namespace RASTERVORONOIPACKING {
 
     struct WeightIncrement {
         WeightIncrement() {}
-        WeightIncrement(int _id1, int _id2, qreal _value) {
+        WeightIncrement(int _id1, int _id2, int _value) {
             id1 = _id1; id2 = _id2; value = _value;
         }
         int id1, id2;
-        qreal value;
+        int value;
     };
 
     class GlsWeightSet
@@ -29,7 +29,7 @@ namespace RASTERVORONOIPACKING {
         void init(int numItems);
         void clear() {weights.clear();}
         void reset(int numItems);
-        virtual qreal getWeight(int itemId1, int itemId2);
+        virtual int getWeight(int itemId1, int itemId2);
         void updateWeights(QVector<WeightIncrement> &increments);
 
         #ifndef CONSOLE
@@ -40,16 +40,16 @@ namespace RASTERVORONOIPACKING {
 		GlsWeightSet() {}
 
     private:
-        void addWeight(int itemId1, int itemId2, qreal weight);
+        void addWeight(int itemId1, int itemId2, int weight);
 
-        QHash<QPair<int,int>, qreal> weights;
+        QHash<QPair<int,int>, int> weights;
 
     };
 
 	class GlsNoWeightSet : public GlsWeightSet {
 	public:
 		GlsNoWeightSet() : GlsWeightSet() {}
-		qreal getWeight(int itemId1, int itemId2) { return 1.0; }
+		int getWeight(int itemId1, int itemId2) { return 1; }
 	};
 }
 

@@ -278,7 +278,6 @@ QStringList RasterNoFitPolygon::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("scale"); commands.push_back(QString::number(this->scale));
     commands.push_back("writeAttribute"); commands.push_back("x0"); commands.push_back(QString::number(this->referencePoint.x()));
     commands.push_back("writeAttribute"); commands.push_back("y0"); commands.push_back(QString::number(this->referencePoint.y()));
-	commands.push_back("writeAttribute"); commands.push_back("maxD"); commands.push_back(QString::number(this->maxD));
     commands.push_back("writeEndElement"); // resultingPolygon
     commands.push_back("writeEndElement"); // rnfp
 
@@ -470,7 +469,6 @@ bool PackingProblem::load(QString fileName) {
          if(xml.name()=="resultingImage" && xml.tokenType() == QXmlStreamReader::StartElement) {
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setFileName(xml.attributes().value("path").toString());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setScale(xml.attributes().value("scale").toFloat());
-             std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setMaxD(xml.attributes().value("maxD").toFloat());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setReferencePoint(QPoint(xml.attributes().value("x0").toInt(),xml.attributes().value("y0").toInt()));
          }
          if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::EndElement)

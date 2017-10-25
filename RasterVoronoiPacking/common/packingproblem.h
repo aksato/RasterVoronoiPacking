@@ -146,18 +146,15 @@ namespace RASTERPACKING {
         QString getFileName() {return this->fileName;}
         QPoint getReferencePoint() {return this->referencePoint;}
         qreal getScale() {return this->scale;}
-        qreal getMaxD() {return this->maxD;}
         virtual QStringList getXML() = 0;
         void setFileName(QString fname) {this->fileName = fname;}
         void setReferencePoint(QPoint RP) {this->referencePoint = RP;}
         void setScale(qreal scale) {this->scale = scale;}
-        void setMaxD(qreal maxD) {this->maxD = maxD;}
 
     protected:
         QString fileName;
         QPoint referencePoint;
         qreal scale;
-        qreal maxD;
     };
 
     class RasterNoFitPolygon : public RasterGeometricTool {

@@ -119,8 +119,8 @@ bool RasterStripPackingSolver::detectItemPartialOverlap(QVector<int> sequence, i
 }
 
 // --> Get layout overlap (sum of individual overlap values)
-qreal RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution) {
-    qreal totalOverlap = 0;
+quint32 RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution) {
+	quint32 totalOverlap = 0;
     for(int itemId = 0; itemId < originalProblem->count(); itemId++) {
 		totalOverlap += getItemTotalOverlap(itemId, solution);
     }
@@ -161,10 +161,10 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 	for (int i = 0; i < originalProblem->count(); i++) {
 		int shuffledId = sequence[i];
 		if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution))) continue;
-		qreal minValue; QPoint minPos; int minAngle = 0;
+		quint32 minValue; QPoint minPos; int minAngle = 0;
 		minPos = getMinimumOverlapPosition(shuffledId, minAngle, solution, minValue);
 		for (uint curAngle = 1; curAngle < originalProblem->getItem(shuffledId)->getAngleCount(); curAngle++) {
-			qreal curValue; QPoint curPos;
+			quint32 curValue; QPoint curPos;
 			curPos = getMinimumOverlapPosition(shuffledId, curAngle, solution, curValue);
 			if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
 		}
@@ -174,7 +174,7 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 }
 
 // --> Get absolute minimum overlap position
-QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value) {
+QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value) {
 	std::shared_ptr<TotalOverlapMap> map = overlapEvaluator->getTotalOverlapMap(itemId, orientation, solution);
 	QPoint minRelativePos;
 	value = map->getMinimum(minRelativePos);
@@ -188,8 +188,8 @@ void getNextBLPosition(QPoint &curPos, int  minIfpX, int minIfpY, int maxIfpX, i
 	}
 }
 
-qreal RasterStripPackingSolver::getItemTotalOverlap(int itemId, RasterPackingSolution &solution) {
-	qreal totalOverlap = 0;
+quint32 RasterStripPackingSolver::getItemTotalOverlap(int itemId, RasterPackingSolution &solution) {
+	quint32 totalOverlap = 0;
 	for (int i = 0; i < originalProblem->count(); i++) {
 		if (i == itemId) continue;
 		totalOverlap += originalProblem->getDistanceValue(itemId, solution.getPosition(itemId), solution.getOrientation(itemId),

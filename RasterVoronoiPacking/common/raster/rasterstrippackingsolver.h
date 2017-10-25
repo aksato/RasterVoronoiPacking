@@ -30,7 +30,7 @@ namespace RASTERVORONOIPACKING {
 		void generateRandomSolution(RasterPackingSolution &solution);
 		void generateBottomLeftSolution(RasterPackingSolution &solution, BottomLeftMode mode = BL_STRIPPACKING);
 		// --> Get layout overlap (sum of individual overlap values)
-		qreal getGlobalOverlap(RasterPackingSolution &solution);
+		quint32 getGlobalOverlap(RasterPackingSolution &solution);
 		// --> Local search
 		void performLocalSearch(RasterPackingSolution &solution);
 		// --> Change container size
@@ -47,11 +47,11 @@ namespace RASTERVORONOIPACKING {
 
 	protected:
 		// --> Get minimum overlap position for item
-		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, qreal &value);
+		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);
 
 		// --> Overlap determination functions
 		bool detectItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution);
-		qreal getItemTotalOverlap(int itemId, RasterPackingSolution &solution);
+		quint32 getItemTotalOverlap(int itemId, RasterPackingSolution &solution);
 
 		// --> Pointer to problem, size variables and total map evaluator
 		std::shared_ptr<RasterPackingProblem> originalProblem;

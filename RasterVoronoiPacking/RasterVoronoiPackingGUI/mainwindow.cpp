@@ -247,7 +247,7 @@ void MainWindow::createBottomLeftLayout() {
 }
 
 void MainWindow::translateCurrentToMinimumPosition() {
-    qreal minVal;
+	quint32 minVal;
     ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
@@ -345,7 +345,7 @@ void MainWindow::resetGlsWeightedOverlapMap() {
 }
 
 void MainWindow::translateCurrentToGlsWeightedMinimumPosition() {
-	qreal minVal;
+	quint32 minVal;
 	ui->graphicsView->getCurrentSolution(solution);
 	int itemId = ui->graphicsView->getCurrentItemId();
 	QTime myTimer; myTimer.start();
@@ -426,11 +426,11 @@ void MainWindow::translateCurrentToMinimumZoomedPosition() {
 	ui->graphicsView->getCurrentSolution(solution);
     int itemId = ui->graphicsView->getCurrentItemId();
 
-	qreal minValue; QPoint minPos; int minAngle = 0;
+	quint32 minValue; QPoint minPos; int minAngle = 0;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverDoubleGls = createDoubleGLSSolver();
 	minPos = solverDoubleGls->getMinimumOverlapPosition(itemId, minAngle, solution, minValue);
 	for (uint curAngle = 1; curAngle < this->rasterProblem->getItem(itemId)->getAngleCount(); curAngle++) {
-		qreal curValue; QPoint curPos;
+		quint32 curValue; QPoint curPos;
 		curPos = solverDoubleGls->getMinimumOverlapPosition(itemId, curAngle, solution, curValue);
 		if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
 	}

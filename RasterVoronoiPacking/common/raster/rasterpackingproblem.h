@@ -87,7 +87,7 @@ namespace RASTERVORONOIPACKING {
         qreal getScale() {return scale;}
 
 		// Processing of nfp values
-		qreal getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		quint32 getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
 		bool areOverlapping(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
 		void getIfpBoundingBox(int itemId, int orientation, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY);
 
@@ -103,8 +103,7 @@ namespace RASTERVORONOIPACKING {
 
 	private:
 		quint32 *loadBinaryNofitPolygons(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
-		int getNfpIndexedValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
-		qreal getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, bool &isZero);
+		quint32 getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
     };
 
 	struct RasterPackingClusterItem {

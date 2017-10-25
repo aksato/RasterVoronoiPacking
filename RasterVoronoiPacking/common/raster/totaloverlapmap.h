@@ -39,31 +39,31 @@ namespace RASTERVORONOIPACKING {
 		const int getOriginalWidth() {return originalWidth;}
 		const int getOriginalHeight() { return originalHeight; }
 		QRect getRect() { return QRect(-reference, QSize(width, height)); }
-        float getValue(const QPoint &pt) {return getLocalValue(pt.x()+reference.x(),pt.y()+reference.y());}
-        void setValue(const QPoint &pt, float value) {setLocalValue(pt.x()+reference.x(), pt.y()+reference.y(), value);}
+		quint32 getValue(const QPoint &pt) { return getLocalValue(pt.x() + reference.x(), pt.y() + reference.y()); }
+		void setValue(const QPoint &pt, quint32 value) { setLocalValue(pt.x() + reference.x(), pt.y() + reference.y(), value); }
 
         void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
-        void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight);
-		void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, float weight, int zoomFactorInt);
-		virtual float getMinimum(QPoint &minPt);
+        void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
+		void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
+		virtual quint32 getMinimum(QPoint &minPt);
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes
 			QImage getZoomImage(int _width, int _height, QPoint &displacement); // For debug purposes
         #endif
 
-		void setData(float *_data) { delete[] data; data = _data; }
+		void setData(quint32 *_data) { delete[] data; data = _data; }
 
     protected:
-        float *data;
+        quint32 *data;
         int width;
         int height;
 		const int originalWidth, originalHeight;
 
     private:
-        float *scanLine(int y);
-        float getLocalValue(int i, int j) {return data[j*width+i];}
-        void setLocalValue(int i, int j, float value) {data[j*width+i] = value;}
+		quint32 *scanLine(int y);
+		quint32 getLocalValue(int i, int j) { return data[j*width + i]; }
+		void setLocalValue(int i, int j, quint32 value) { data[j*width + i] = value; }
         bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);
 		bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection, int zoomFactorInt);
 

@@ -100,8 +100,8 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::updateMapsDimensions(int pixelWidt
 	}
 }
 
-qreal RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution) {
-	qreal totalOverlap = 0;
+quint32 RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution) {
+	quint32 totalOverlap = 0;
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
 		totalOverlap += glsWeights->getWeight(itemId, i) * problem->getDistanceValue(itemId, pos, orientation, i, solution.getPosition(i), solution.getOrientation(i));

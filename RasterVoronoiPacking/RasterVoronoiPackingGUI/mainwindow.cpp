@@ -373,17 +373,18 @@ void MainWindow::glsWeightedlocalSearch() {
 }
 
 void MainWindow::changeContainerWidth() {
-    // FIXME: Create custom dialog
+	// FIXME: Create custom dialog
 	ui->graphicsView->getCurrentSolution(solution);
 	bool ok;
-	qreal lenght = QInputDialog::getDouble(this, "New container lenght", "Lenght:", (qreal)currentContainerWidth/ ui->graphicsView->getScale(), 0, (qreal)10 * this->rasterProblem->getContainerWidth() / ui->graphicsView->getScale(), 2, &ok);
+	qreal lenght = QInputDialog::getDouble(this, "New container lenght", "Lenght:", (qreal)currentContainerWidth / ui->graphicsView->getScale(), 0, (qreal)10 * this->rasterProblem->getContainerWidth() / ui->graphicsView->getScale(), 2, &ok);
 	if (!ok) return;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = createBasicSolver();
-    int scaledWidth = qRound(lenght*ui->graphicsView->getScale());
+	int scaledWidth = qRound(lenght*ui->graphicsView->getScale());
 	if (scaledWidth < solver->getMinimumContainerWidth()) {
 		ui->statusBar->showMessage("Could not reduce container width.");
 		return;
 	}
+	solver->setContainerWidth(scaledWidth, solution);
 	currentContainerWidth = solver->getCurrentWidth();
 	ui->graphicsView->recreateContainerGraphics(currentContainerWidth);
 	ui->graphicsView->setCurrentSolution(solution);
@@ -401,8 +402,8 @@ void MainWindow::changeContainerHeight() {
 		ui->statusBar->showMessage("Could not reduce container height.");
 		return;
 	}
+	solver->setContainerDimensions(currentContainerWidth, scaledHeight, solution);
 	currentContainerHeight = solver->getCurrentHeight();
-	solver->setContainerDimensions(currentContainerWidth, currentContainerHeight, solution);
 	ui->graphicsView->recreateContainerGraphics(currentContainerWidth, currentContainerHeight);
 	ui->graphicsView->setCurrentSolution(solution);
 }

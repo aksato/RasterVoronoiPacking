@@ -6,30 +6,27 @@
 	#include "colormap.h"
 #endif
 
-#define INITWEIGHTVAL 1
+#define INITWEIGHTVAL 100
 using namespace RASTERVORONOIPACKING;
 
 void GlsWeightSet::init(int numItems) {
-    weights.clear();
-    for(int itemId1 = 0; itemId1 < numItems; itemId1++)
-        for(int itemId2 = 0; itemId2 < numItems; itemId2++)
-            if(itemId1 != itemId2)
-				addWeight(itemId1, itemId2, INITWEIGHTVAL);
+	weights = QVector<unsigned int>(numItems * numItems);
+	weights.fill(INITWEIGHTVAL);
 }
 
 int GlsWeightSet::getWeight(int itemId1, int itemId2) {
     Q_ASSERT_X(itemId1 != itemId2, "GlsWeightSet::getWeigth", "Cannot verify collision with itself");
-    return weights[QPair<int,int>(itemId1, itemId2)];
+	return weights[itemId1 + numItems*itemId2];
 }
 
 void GlsWeightSet::addWeight(int itemId1, int itemId2, int weight) {
     Q_ASSERT_X(itemId1 != itemId2, "GlsWeightSet::getWeigth", "Cannot verify collision with itself");
-    weights.insert(QPair<int,int>(itemId1, itemId2), weight);
+	weights[itemId1 + numItems*itemId2] = weight;
 }
 
 void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
     std::for_each(increments.begin(), increments.end(), [this](WeightIncrement &inc){
-        weights[QPair<int,int>(inc.id1, inc.id2)] += inc.value;
+		weights[inc.id1 + numItems*inc.id2] += inc.value;
     });
 }
 
@@ -39,7 +36,7 @@ void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
 		image.fill(0);
         setColormap(image, false);
 
-        qreal minW = 1.0;
+		qreal minW = std::numeric_limits<quint32>::max();
         qreal maxW = 1.0;
 
         for(int itemId1 = 0; itemId1 < numItems; itemId1++)
@@ -67,7 +64,5 @@ void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
 #endif
 
 void GlsWeightSet::reset(int numItems) {
-    for(int itemId1 = 0; itemId1 < numItems; itemId1++)
-        for(int itemId2 = 0; itemId2 < numItems; itemId2++)
-			weights[QPair<int, int>(itemId1, itemId2)] = INITWEIGHTVAL;
+	weights.fill(INITWEIGHTVAL);
 }

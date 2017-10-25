@@ -24,13 +24,15 @@ namespace RASTERVORONOIPACKING {
     class GlsWeightSet
     {
     public:
-        GlsWeightSet(int numItems) {init(numItems);}
+		GlsWeightSet(int _numItems) : numItems(_numItems) { init(_numItems); }
 
         void init(int numItems);
         void clear() {weights.clear();}
         void reset(int numItems);
         virtual int getWeight(int itemId1, int itemId2);
         void updateWeights(QVector<WeightIncrement> &increments);
+		QVector<unsigned int>::iterator begin() { return weights.begin(); }
+		QVector<unsigned int>::iterator end() { return weights.end(); }
 
         #ifndef CONSOLE
             QImage getImage(int numItems);
@@ -42,7 +44,8 @@ namespace RASTERVORONOIPACKING {
     private:
         void addWeight(int itemId1, int itemId2, int weight);
 
-        QHash<QPair<int,int>, int> weights;
+		int numItems;
+        QVector<unsigned int> weights;
 
     };
 

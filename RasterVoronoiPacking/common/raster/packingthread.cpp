@@ -37,11 +37,13 @@ void PackingThread::run()
 	ExecutionSolutionInfo minSuccessfullSol(curLength, 0, seed);
 	qreal curRealLength = (qreal)minSuccessfullSol.length;
 	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
-	qreal minOverlap = std::numeric_limits<qreal>::max();
-	qreal curOverlap = minOverlap;
+	quint32 minOverlap = std::numeric_limits<quint32>::max();
+	quint32 curOverlap = minOverlap;
     RASTERVORONOIPACKING::RasterPackingSolution bestSolution = threadSolution;
     solver->resetWeights();
 	int numLoops = 1;
+	QVector<quint32> currentOverlaps(solver->getNumItems()*solver->getNumItems());
+	quint32 maxItemOverlap;
 
 	// Determine time to finish
 	QDateTime finalTime = QDateTime::currentDateTime();
@@ -71,12 +73,12 @@ void PackingThread::run()
 		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 			if(m_abort) break;
 			solver->performLocalSearch(threadSolution);
-			solver->updateWeights(threadSolution);
-			curOverlap = solver->getGlobalOverlap(threadSolution);
+			curOverlap = solver->getGlobalOverlap(threadSolution, currentOverlaps, maxItemOverlap);
+			solver->updateWeights(threadSolution, currentOverlaps, maxItemOverlap);
 			if(curOverlap < minOverlap) {
 				minOverlap = curOverlap;
 				if(parameters.isFixedLength()) bestSolution = threadSolution; // Best solution for the minimum overlap problem
-				if (qFuzzyCompare(1.0 + 0.0, 1.0 + curOverlap)) { success = true; break; }
+				if (curOverlap == 0) { success = true; break; }
 				worseSolutionsCount = 0;
 			}
 			else worseSolutionsCount++;

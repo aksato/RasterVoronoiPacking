@@ -31,6 +31,7 @@ namespace RASTERVORONOIPACKING {
 		void generateBottomLeftSolution(RasterPackingSolution &solution, BottomLeftMode mode = BL_STRIPPACKING);
 		// --> Get layout overlap (sum of individual overlap values)
 		quint32 getGlobalOverlap(RasterPackingSolution &solution);
+		quint32 getGlobalOverlap(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 &maxOverlap);
 		// --> Local search
 		void performLocalSearch(RasterPackingSolution &solution);
 		// --> Change container size
@@ -40,6 +41,7 @@ namespace RASTERVORONOIPACKING {
 		bool setContainerDimensions(int &pixelWidthX, int &pixelWidthY);
 		// --> Guided Local Search functions
 		virtual void updateWeights(RasterPackingSolution &solution) { overlapEvaluator->updateWeights(solution); };
+		virtual void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap) { overlapEvaluator->updateWeights(solution, overlaps, maxOverlap); };
 		virtual void resetWeights() { overlapEvaluator->resetWeights(); };
 		// --> Size information function
 		int getMinimumContainerWidth() { return originalProblem->getMaxWidth(); }
@@ -50,7 +52,9 @@ namespace RASTERVORONOIPACKING {
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);
 
 		// --> Overlap determination functions
+		// Detect if item is in overlapping position for a subset of fixed items
 		bool detectItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution);
+		bool detectItemTotalOverlap(int itemId, RasterPackingSolution &solution);
 		quint32 getItemTotalOverlap(int itemId, RasterPackingSolution &solution);
 
 		// --> Pointer to problem, size variables and total map evaluator

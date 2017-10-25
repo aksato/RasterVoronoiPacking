@@ -114,7 +114,10 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
         QImage curImage(curRasterNfp->getFileName());
 		std::shared_ptr<RasterNoFitPolygon> curMountain;
 		if (nfpData == nullptr) curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curImage, curRasterNfp->getReferencePoint()));
-		else curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curNfpData, sizes[i].first, sizes[i].second, rps[i]));
+		else {
+			curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curNfpData, sizes[i].first, sizes[i].second, rps[i]));
+			curNfpData += sizes[i].first * sizes[i].second;
+		}
 
         // Determine ids
         QPair<int,int> staticIds, orbitingIds;
@@ -124,8 +127,6 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
 
         // Create nofit polygon
         noFitPolygons->addRasterNoFitPolygon(staticIds.first, staticIds.second, orbitingIds.first, orbitingIds.second, curMountain);
-
-		curNfpData += sizes[i].first * sizes[i].second;
     }
 
     // 5. Read problem scale

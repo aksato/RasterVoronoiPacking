@@ -330,7 +330,9 @@ void MainWindow::updateGlsWeightedOverlapMap() {
     ui->graphicsView->getCurrentSolution(solution);
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverGls = createGLSSolver();
 	std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS>(solverGls->overlapEvaluator)->setgetGlsWeights(weights);
-    solverGls->updateWeights(solution);
+	QVector<quint32> currentOverlaps(rasterProblem->count()*rasterProblem->count()); quint32 maxItemOverlap;
+	solverGls->getGlobalOverlap(solution, currentOverlaps, maxItemOverlap);
+	solverGls->updateWeights(solution, currentOverlaps, maxItemOverlap);
     ui->statusBar->showMessage("Weights updated.");
     weightViewer.updateImage();
     weightViewer.show();

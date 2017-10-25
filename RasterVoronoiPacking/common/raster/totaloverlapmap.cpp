@@ -127,16 +127,21 @@ void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint
 quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 	quint32 *curPt = data;
 	quint32 minVal = *curPt;
+	int minid = 0;
 	minPt = QPoint(0, 0);
 	int numVals = height*width;
 	for (int id = 0; id < numVals; id++, curPt++) {
 		quint32 curVal = *curPt;
 		if (curVal < minVal) {
 			minVal = curVal;
-			minPt = QPoint(id % width, id / width);
-			if (minVal == 0) return minVal;
+			minid = id;
+			if (minVal == 0) {
+				minPt = QPoint(minid % width, minid / width);
+				return minVal;
+			}
 		}
 	}
+	minPt = QPoint(minid % width, minid / width);
 	return minVal;
 }
 

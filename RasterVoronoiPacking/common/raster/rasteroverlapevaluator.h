@@ -23,6 +23,7 @@ namespace RASTERVORONOIPACKING {
 
 		// --> Guided Local Search functions
 		virtual void updateWeights(RasterPackingSolution &solution) = 0;
+		virtual void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap) = 0;
 		virtual void resetWeights() = 0;
 		virtual std::shared_ptr<GlsWeightSet> getGlsWeights() { return nullptr; }
 
@@ -55,7 +56,8 @@ namespace RASTERVORONOIPACKING {
 		
 		// --> Update guided local search weights
 		void updateWeights(RasterPackingSolution &solution);
-
+		void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap);
+		
 		// --> Reset guided local search weights
 		void resetWeights();
 

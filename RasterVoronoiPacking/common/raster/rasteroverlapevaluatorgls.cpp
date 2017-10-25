@@ -36,6 +36,11 @@ void RasterTotalOverlapMapEvaluatorGLS::updateWeights(RasterPackingSolution &sol
 	glsWeights->updateWeights(solutionOverlapValues);
 }
 
+void RasterTotalOverlapMapEvaluatorGLS::updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap) {
+	std::transform(glsWeights->begin(), glsWeights->end(), overlaps.begin(),
+		glsWeights->begin(), [&maxOverlap](const quint32 &a, const quint32 &b){return a + qRound(100.0*(qreal)b / (qreal)maxOverlap); });
+}
+
 //  TODO: Update cache information!
 void RasterTotalOverlapMapEvaluatorGLS::resetWeights() {
 	glsWeights->reset(problem->count());

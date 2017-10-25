@@ -127,6 +127,24 @@ quint32 RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &soluti
     return totalOverlap;
 }
 
+quint32 RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 &maxOverlap) {
+	maxOverlap = 0;
+	quint32 totalOverlap = 0;
+	int overlapIndex = 0;
+	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
+		quint32 curOverlap = 0;
+		for (int i = 0; i < originalProblem->count(); i++) {
+			if (i == itemId) { overlaps[overlapIndex++] = 0; continue; }
+			quint32 individualOverlap = originalProblem->getDistanceValue(itemId, solution.getPosition(itemId), solution.getOrientation(itemId), i, solution.getPosition(i), solution.getOrientation(i));
+			overlaps[overlapIndex++] = individualOverlap;
+			curOverlap += individualOverlap;
+			if (individualOverlap > maxOverlap) maxOverlap = individualOverlap;
+		}
+		totalOverlap += curOverlap;
+	}
+	return totalOverlap;
+}
+
 bool RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingSolution &solution) {
 	if (!setContainerWidth(pixelWidth)) return false;
 
@@ -160,13 +178,18 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 	std::random_shuffle(sequence.begin(), sequence.end());
 	for (int i = 0; i < originalProblem->count(); i++) {
 		int shuffledId = sequence[i];
-		if (qFuzzyCompare(1.0 + 0.0, 1.0 + getItemTotalOverlap(shuffledId, solution))) continue;
+		if (!detectItemTotalOverlap(shuffledId, solution)) continue;
 		quint32 minValue; QPoint minPos; int minAngle = 0;
 		minPos = getMinimumOverlapPosition(shuffledId, minAngle, solution, minValue);
-		for (uint curAngle = 1; curAngle < originalProblem->getItem(shuffledId)->getAngleCount(); curAngle++) {
-			quint32 curValue; QPoint curPos;
-			curPos = getMinimumOverlapPosition(shuffledId, curAngle, solution, curValue);
-			if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
+		if (minValue != 0) {
+			for (uint curAngle = 1; curAngle < originalProblem->getItem(shuffledId)->getAngleCount(); curAngle++) {
+				quint32 curValue; QPoint curPos;
+				curPos = getMinimumOverlapPosition(shuffledId, curAngle, solution, curValue);
+				if (curValue < minValue) {
+					minValue = curValue; minPos = curPos; minAngle = curAngle;
+					if (minValue == 0) break;
+				}
+			}
 		}
 		solution.setOrientation(shuffledId, minAngle);
 		solution.setPosition(shuffledId, minPos);
@@ -196,4 +219,12 @@ quint32 RasterStripPackingSolver::getItemTotalOverlap(int itemId, RasterPackingS
 			i, solution.getPosition(i), solution.getOrientation(i));
 	}
 	return totalOverlap;
+}
+
+bool RasterStripPackingSolver::detectItemTotalOverlap(int itemId, RasterPackingSolution &solution) {
+	for (int i = 0; i < originalProblem->count(); i++) {
+		if (i == itemId) continue;
+		if (originalProblem->areOverlapping(itemId, solution.getPosition(itemId), solution.getOrientation(itemId), i, solution.getPosition(i), solution.getOrientation(i))) return true;
+	}
+	return false;
 }

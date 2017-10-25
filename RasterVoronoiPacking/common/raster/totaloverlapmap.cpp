@@ -203,7 +203,7 @@ float TotalOverlapMap::getMinimum(QPoint &minPt) {
 				if (*mapLine == 0)
 					*resultLine = 0;
 				else {
-					int index = (int)((*mapLine - 1) * 253 / (maxD - 1) + 1);
+					int index = (int)((*mapLine - 1) * 254 / (maxD - 1) + 1);
 					*resultLine = index;
 				}
 			}

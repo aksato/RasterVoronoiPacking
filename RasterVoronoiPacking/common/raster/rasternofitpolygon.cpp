@@ -34,7 +34,7 @@ void RasterNoFitPolygonSet::clear() {
 
 void RasterNoFitPolygon::setMatrix(QImage image) {
     //matrix = std::vector< std::vector<quint8> >(image.height(), std::vector<quint8>(image.width()));
-	matrix = new int[image.width() * image.height()];
+	matrix = new quint32[image.width() * image.height()];
 	
     for(int j = 0; j < image.height(); j++)
         for(int i = 0; i < image.width(); i++)

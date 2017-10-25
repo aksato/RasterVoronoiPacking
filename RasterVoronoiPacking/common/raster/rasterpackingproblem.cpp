@@ -102,12 +102,19 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     }
 
     // 4. Load nofit polygons
+	QVector<QPair<quint32, quint32>> sizes;
+	QVector<QPoint> rps;
+	quint32 *nfpData = loadBinaryNofitPolygons(problem.getNfpDataFileName(), sizes, rps);
+	quint32 *curNfpData = nfpData;
     noFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
-    for(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++) {
+	int i = 0;
+    for(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++, i++) {
         std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
         // Create image. FIXME: Use data file instead?
         QImage curImage(curRasterNfp->getFileName());
-        std::shared_ptr<RasterNoFitPolygon> curMountain(new RasterNoFitPolygon(curImage, curRasterNfp->getReferencePoint(), curRasterNfp->getMaxD()));
+		std::shared_ptr<RasterNoFitPolygon> curMountain;
+		if (nfpData == nullptr) curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curImage, curRasterNfp->getReferencePoint(), curRasterNfp->getMaxD()));
+		else curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curNfpData, sizes[i].first, sizes[i].second, rps[i]));
 
         // Determine ids
         QPair<int,int> staticIds, orbitingIds;
@@ -118,9 +125,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
         // Create nofit polygon
         noFitPolygons->addRasterNoFitPolygon(staticIds.first, staticIds.second, orbitingIds.first, orbitingIds.second, curMountain);
 
-		// Alloc in GPU
-		int static1DId, orbitingDId;
-		static1DId = staticIds.first * NUM_ORIENTATIONS + staticIds.second; orbitingDId = orbitingIds.first*NUM_ORIENTATIONS + orbitingIds.second;  // FIXME: get number of orientations
+		curNfpData += sizes[i].first * sizes[i].second;
     }
 
     // 5. Read problem scale
@@ -131,6 +136,28 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
 	this->maxHeight = std::ceil(problem.getMaxWidth() * this->scale);
 
     return true;
+}
+
+quint32 *RasterPackingProblem::loadBinaryNofitPolygons(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps) {
+	QFile file(fileName);
+	if(!file.open(QIODevice::ReadOnly)) return nullptr;
+	QDataStream in(&file);
+	in.setByteOrder(QDataStream::LittleEndian);
+	quint32 numNfps;
+	in >> numNfps;
+	sizes.reserve(numNfps); rps.reserve(numNfps);
+	int numElements = 0;
+	for (int i = 0; i < numNfps; i++) {
+		quint32 width, height, rpx, rpy;
+		in >> width >> height >> rpx >> rpy;
+		numElements += width * height;
+		sizes << QPair<quint32, quint32>(width, height);
+		rps << QPoint(rpx, rpy);
+	}
+	quint32 *data = new quint32[numElements];
+	in.readRawData((char *)data, numElements * sizeof(quint32));
+	file.close();
+	return data;
 }
 
 bool RasterPackingClusterProblem::load(RASTERPACKING::PackingProblem &problem) {
@@ -268,7 +295,7 @@ qreal RasterPackingProblem::getNfpValue(int itemId1, QPoint pos1, int orientatio
 	int indexValue = getNfpIndexedValue(itemId1, pos1, orientation1, itemId2, pos2, orientation2);
 	if (indexValue == 0) { isZero = true; return 0.0; }
 	curNfp = noFitPolygons->getRasterNoFitPolygon(getItemType(itemId1), orientation1, getItemType(itemId2), orientation2);
-	return 1.0 + (curNfp->getMaxD() - 1.0)*((qreal)indexValue - 1.0) / 254.0;
+	return 1.0 + (curNfp->getMaxD() - 1.0)*((qreal)indexValue - 1.0) / (qreal)(curNfp->getMaxIndex() - 1);
 }
 
 // TODO: Use QRect

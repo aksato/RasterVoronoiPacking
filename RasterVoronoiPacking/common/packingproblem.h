@@ -227,7 +227,8 @@ namespace RASTERPACKING {
         void setDescription(QString _description) {this->description = _description;}
         QString getDescription() {return this->description;}
         bool copyHeader(QString fileName);
-
+		QString getNfpDataFileName() { return this->nfpDataFileName; }
+		
         void addRasterNofitPolygon(std::shared_ptr<RasterNoFitPolygon> rasterNfp) {this->rasterNofitPolygons.push_back(rasterNfp);}
         void addRasterInnerfitPolygon(std::shared_ptr<RasterInnerFitPolygon> rasterIfp) {this->rasterInnerfitPolygons.push_back(rasterIfp);}
 
@@ -298,6 +299,7 @@ namespace RASTERPACKING {
 		QMap<QString, CLUSTERING::Cluster> clusteredPieces;
 		QString originalProblem;
 		qreal maxLength, maxWidth;
+		QString nfpDataFileName;
     };
 }
 

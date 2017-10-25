@@ -102,6 +102,7 @@ namespace RASTERVORONOIPACKING {
         qreal scale;
 
 	private:
+		quint32 *loadBinaryNofitPolygons(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
 		int getNfpIndexedValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
 		qreal getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2, bool &isZero);
     };

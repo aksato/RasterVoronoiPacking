@@ -384,6 +384,7 @@ void MainWindow::changeContainerWidth() {
 		ui->statusBar->showMessage("Could not reduce container width.");
 		return;
 	}
+	solver->setContainerWidth(scaledWidth, solution);
 	currentContainerWidth = solver->getCurrentWidth();
 	ui->graphicsView->recreateContainerGraphics(currentContainerWidth);
 	ui->graphicsView->setCurrentSolution(solution);
@@ -401,8 +402,8 @@ void MainWindow::changeContainerHeight() {
 		ui->statusBar->showMessage("Could not reduce container height.");
 		return;
 	}
+	solver->setContainerDimensions(currentContainerWidth, scaledHeight, solution);
 	currentContainerHeight = solver->getCurrentHeight();
-	solver->setContainerDimensions(currentContainerWidth, currentContainerHeight, solution);
 	ui->graphicsView->recreateContainerGraphics(currentContainerWidth, currentContainerHeight);
 	ui->graphicsView->setCurrentSolution(solution);
 }

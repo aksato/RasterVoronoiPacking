@@ -428,23 +428,9 @@ bool PackingProblem::load(QString fileName) {
              QPointF vertex;
              vertex.setX(xml.attributes().value("x0").toDouble());
              vertex.setY(xml.attributes().value("y0").toDouble());
-			 //// Update bounding box
-			 //if (curPolygon->isEmpty()) { itemBoundingBox.setBottomLeft(vertex); itemBoundingBox.setTopRight(vertex); }
-			 //else {
-				// if (vertex.x() < itemBoundingBox.left()) itemBoundingBox.setLeft(vertex.x());
-				// if (vertex.x() > itemBoundingBox.right()) itemBoundingBox.setRight(vertex.x());
-				// if (vertex.y() < itemBoundingBox.top()) itemBoundingBox.setTop(vertex.y());
-				// if (vertex.y() > itemBoundingBox.bottom()) itemBoundingBox.setBottom(vertex.y());
-			 //}
 			 // Insert vertex into polygon
              curPolygon->push_back(vertex);
          }
-
-		 //// Process finished polygon
-		 //if (xml.name() == "polygon" && xml.tokenType() == QXmlStreamReader::EndElement) {
-			// if(itemBoundingBox.width() > maxLength) maxLength = itemBoundingBox.width();
-			// if(itemBoundingBox.height() > maxWidth) maxWidth = itemBoundingBox.height();
-		 //}
 
 		 // Add Bounding Box Information
 		 if (xml.name() == "xMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinX(xml.readElementText().toInt());
@@ -477,6 +463,8 @@ bool PackingProblem::load(QString fileName) {
              this->addInnerFitPolygon(std::static_pointer_cast<InnerFitPolygon>(curGeometricTool));
 
          // Process raster nofit polygon informations
+		 if (xml.name() == "raster" && xml.tokenType() == QXmlStreamReader::StartElement)
+			 this->nfpDataFileName = xml.attributes().value("data").toString();
          if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::StartElement)
              curGeometricTool = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon);
          if(xml.name()=="resultingImage" && xml.tokenType() == QXmlStreamReader::StartElement) {

@@ -10,12 +10,13 @@ namespace RASTERVORONOIPACKING {
 	struct TotalOverlapMapEntry {
 		TotalOverlapMapEntry() : enabled(false) {}
 		TotalOverlapMapEntry(int _itemId, std::shared_ptr<RasterNoFitPolygon> _nfp, QPoint pos, int _weight) : itemId(_itemId), nfp(_nfp), posX(pos.x()), posY(pos.y()), weight(_weight), enabled(true) {}
+		TotalOverlapMapEntry(TotalOverlapMapEntry &other, int _weight) : itemId(other.itemId), nfp(other.nfp), posX(other.posX), posY(other.posY), weight(_weight), enabled(other.enabled) {}
 		int itemId;
 		std::shared_ptr<RasterNoFitPolygon> nfp;
 		int posX, posY;
 		int weight;
 		bool enabled;
-		bool operator==(const TotalOverlapMapEntry& hs) const { return std::tie(nfp, posX, posY, weight) == std::tie(hs.nfp, hs.posX, hs.posY, hs.weight); }
+		bool operator==(const TotalOverlapMapEntry& hs) const { return std::tie(nfp, posX, posY) == std::tie(hs.nfp, hs.posX, hs.posY); }
 	};
 }
 

@@ -213,7 +213,10 @@ quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 void CachedTotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {
 	// Process cache
 	TotalOverlapMapEntry currentEntry(itemId, nfp, pos, weight);
-	if (!emptyCache && currentEntry == currentEntries[itemId]) {toRemoveEntries[itemId].enabled = false; toRemoveCount--;}
+	if (!emptyCache && currentEntry == currentEntries[itemId]) {
+		if (currentEntry.weight != currentEntries[itemId].weight) toAddEntries << TotalOverlapMapEntry(currentEntry, currentEntry.weight - currentEntries[itemId].weight);
+		toRemoveEntries[itemId].enabled = false; toRemoveCount--;
+	}
 	else toAddEntries << currentEntry;
 	currentEntries[itemId] = currentEntry; currentCount++;
 

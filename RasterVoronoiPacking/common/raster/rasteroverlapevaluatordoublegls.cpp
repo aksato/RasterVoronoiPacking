@@ -47,7 +47,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTot
 	currrentPieceMap->reset();
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
-		currrentPieceMap->addVoronoi(problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i), problem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i), zoomFactorInt);
+		currrentPieceMap->addVoronoi(i, problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i), problem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i), zoomFactorInt);
 	}
 	return currrentPieceMap;
 }

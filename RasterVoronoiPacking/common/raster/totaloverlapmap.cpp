@@ -81,7 +81,7 @@ bool TotalOverlapMap::getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight
 	return true;
 }
 
-void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
+void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
     QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
     QRect intersection;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
@@ -94,7 +94,7 @@ void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint
 	}
 }
 
-void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {
+void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {
     QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
     QRect intersection;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
@@ -107,7 +107,7 @@ void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint
 	}
 }
 
-void TotalOverlapMap::addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {
+void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {
 	//QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
 	QPoint relativeOrigin = zoomFactorInt * getReferencePoint() + pos - nfp->getOrigin();
 	QRect intersection;
@@ -209,3 +209,34 @@ quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 		return image;
 	}
 #endif
+
+void CachedTotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {
+	// Process cache
+	TotalOverlapMapEntry currentEntry(itemId, nfp, pos, weight);
+	currentEntries.insert(currentEntry);
+	std::unordered_set<TotalOverlapMapEntry>::const_iterator it = toRemoveEntries.find(currentEntry);
+	if (it != toRemoveEntries.end()) toRemoveEntries.erase(it);
+	else toAddEntries.insert(currentEntry);
+
+	// All cache entries were processed, create overlap map
+	if (currentEntries.size() == totalNumItems - 1) {
+		if (toRemoveEntries.size() + toAddEntries.size() < totalNumItems - 1) {
+			for (auto entry : toRemoveEntries) TotalOverlapMap::addVoronoi(entry.itemId, entry.nfp, QPoint(entry.posX, entry.posY), -entry.weight);
+			for (auto entry : toAddEntries) TotalOverlapMap::addVoronoi(entry.itemId, entry.nfp, QPoint(entry.posX, entry.posY), entry.weight);
+		}
+		else {
+			TotalOverlapMap::reset();
+			for (auto entry : currentEntries) TotalOverlapMap::addVoronoi(entry.itemId, entry.nfp, QPoint(entry.posX, entry.posY), entry.weight);
+		}
+		toRemoveEntries = currentEntries;
+		toAddEntries.clear();
+		currentEntries.clear();
+	}
+}
+
+void CachedTotalOverlapMap::init(uint _width, uint _height) {
+	TotalOverlapMap::init(_width, _height);
+	toAddEntries.clear();
+	currentEntries.clear();
+	toRemoveEntries.clear();
+}

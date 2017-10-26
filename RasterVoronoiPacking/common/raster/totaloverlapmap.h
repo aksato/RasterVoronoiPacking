@@ -4,6 +4,38 @@
 #include "rasternofitpolygon.h"
 #include "rasterstrippackingparameters.h"
 #include <QDebug>
+#include <unordered_set>
+
+namespace RASTERVORONOIPACKING {
+	struct TotalOverlapMapEntry {
+		TotalOverlapMapEntry(int _itemId, std::shared_ptr<RasterNoFitPolygon> _nfp, QPoint pos, int _weight) : itemId(_itemId), nfp(_nfp), posX(pos.x()), posY(pos.y()), weight(_weight) {}
+		int itemId;
+		std::shared_ptr<RasterNoFitPolygon> nfp;
+		int posX, posY;
+		int weight;
+		bool operator==(const TotalOverlapMapEntry& hs) const { return std::tie(itemId, nfp, posX, posY, weight) == std::tie(hs.itemId, hs.nfp, hs.posX, hs.posY, hs.weight); }
+	};
+}
+
+namespace std
+{
+	template <>
+	struct hash<RASTERVORONOIPACKING::TotalOverlapMapEntry>
+	{
+		size_t operator()(const RASTERVORONOIPACKING::TotalOverlapMapEntry& k) const
+		{
+			// Compute individual hash values for first, second and third
+			// http://stackoverflow.com/a/1646913/126995
+			size_t res = 17;
+			res = res * 31 + hash<std::shared_ptr<RASTERVORONOIPACKING::RasterNoFitPolygon>>()(k.nfp);
+			res = res * 31 + hash<int>()(k.posX);
+			res = res * 31 + hash<int>()(k.posY);
+			res = res * 31 + hash<int>()(k.weight);
+			return res;
+		}
+	};
+}
+
 
 namespace RASTERVORONOIPACKING {
 
@@ -16,8 +48,8 @@ namespace RASTERVORONOIPACKING {
 		TotalOverlapMap(QRect &boundingBox);
 		virtual ~TotalOverlapMap() { delete[] data; }
 
-        void init(uint _width, uint _height);
-        void reset();
+        virtual void init(uint _width, uint _height);
+        virtual void reset();
 
 		void setDimensions(int _width, int _height) {
 			Q_ASSERT_X(_width > 0 && _height > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
@@ -42,9 +74,9 @@ namespace RASTERVORONOIPACKING {
 		quint32 getValue(const QPoint &pt) { return getLocalValue(pt.x() + reference.x(), pt.y() + reference.y()); }
 		void setValue(const QPoint &pt, quint32 value) { setLocalValue(pt.x() + reference.x(), pt.y() + reference.y(), value); }
 
-        void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
-        void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
-		void addVoronoi(std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
+        virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
+		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
+		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
 		virtual quint32 getMinimum(QPoint &minPt);
 
         #ifndef CONSOLE
@@ -59,6 +91,9 @@ namespace RASTERVORONOIPACKING {
         int width;
         int height;
 		const int originalWidth, originalHeight;
+		#ifdef QT_DEBUG
+		int initialWidth;
+		#endif
 
     private:
 		quint32 *scanLine(int y);
@@ -66,12 +101,26 @@ namespace RASTERVORONOIPACKING {
 		void setLocalValue(int i, int j, quint32 value) { data[j*width + i] = value; }
         bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);
 		bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection, int zoomFactorInt);
-
-        #ifdef QT_DEBUG
-        int initialWidth;
-        #endif
         QPoint reference;
     };
+
+	class CachedTotalOverlapMap : public TotalOverlapMap {
+	public:
+		CachedTotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _totalNumItems) : TotalOverlapMap(ifp), totalNumItems(_totalNumItems) {};
+		CachedTotalOverlapMap(int width, int height, int _totalNumItems) : TotalOverlapMap(width, height), totalNumItems(_totalNumItems) {};
+		CachedTotalOverlapMap(int width, int height, QPoint _reference, int _totalNumItems) : TotalOverlapMap(width, height, _reference), totalNumItems(_totalNumItems) {};
+		CachedTotalOverlapMap(QRect &boundingBox, int _totalNumItems) : TotalOverlapMap(boundingBox), totalNumItems(_totalNumItems) {};
+		~CachedTotalOverlapMap() {}
+
+		void init(uint _width, uint _height); // FIXME: Is it really necessary to reimplement?
+		void reset() {}
+		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
+	private:
+		std::unordered_set<TotalOverlapMapEntry> currentEntries;
+		std::unordered_set<TotalOverlapMapEntry> toRemoveEntries;
+		std::unordered_set<TotalOverlapMapEntry> toAddEntries;
+		const int totalNumItems;
+	};
 
     class TotalOverlapMapSet
     {
@@ -95,4 +144,5 @@ namespace RASTERVORONOIPACKING {
     };
 
 }
+
 #endif // TOTALOVERLAPMAP_H

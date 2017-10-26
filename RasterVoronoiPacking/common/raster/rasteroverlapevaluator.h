@@ -17,6 +17,7 @@ namespace RASTERVORONOIPACKING {
 	public:
 		// --> Default constructor
 		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem);
+		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cacheMaps);
 
 		// --> Determines the item total overlap map
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
@@ -47,9 +48,11 @@ namespace RASTERVORONOIPACKING {
 	public:
 		// --> Default constructor
 		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem) : RasterTotalOverlapMapEvaluator(_problem) { glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); }
+		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cacheMaps) : RasterTotalOverlapMapEvaluator(_problem, cacheMaps) { glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); }
 
 		// --> Constructor using a custom weights
 		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluator(_problem), glsWeights(_glsWeights) {}
+		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cacheMaps) : RasterTotalOverlapMapEvaluator(_problem, cacheMaps), glsWeights(_glsWeights) {}
 
 		// --> Determines the item total overlap map with guided local search
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);

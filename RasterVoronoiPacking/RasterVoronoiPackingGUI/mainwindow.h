@@ -70,6 +70,7 @@ private slots:
 	void printDensity();
 
 private:
+	std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> overlapEvaluator, overlapEvaluatorGls, overlapEvaluatorDoubleGls;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createBasicSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createGLSSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createDoubleGLSSolver();

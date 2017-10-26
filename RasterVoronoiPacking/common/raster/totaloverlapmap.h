@@ -8,34 +8,16 @@
 
 namespace RASTERVORONOIPACKING {
 	struct TotalOverlapMapEntry {
-		TotalOverlapMapEntry(int _itemId, std::shared_ptr<RasterNoFitPolygon> _nfp, QPoint pos, int _weight) : itemId(_itemId), nfp(_nfp), posX(pos.x()), posY(pos.y()), weight(_weight) {}
+		TotalOverlapMapEntry() : enabled(false) {}
+		TotalOverlapMapEntry(int _itemId, std::shared_ptr<RasterNoFitPolygon> _nfp, QPoint pos, int _weight) : itemId(_itemId), nfp(_nfp), posX(pos.x()), posY(pos.y()), weight(_weight), enabled(true) {}
 		int itemId;
 		std::shared_ptr<RasterNoFitPolygon> nfp;
 		int posX, posY;
 		int weight;
-		bool operator==(const TotalOverlapMapEntry& hs) const { return std::tie(itemId, nfp, posX, posY, weight) == std::tie(hs.itemId, hs.nfp, hs.posX, hs.posY, hs.weight); }
+		bool enabled;
+		bool operator==(const TotalOverlapMapEntry& hs) const { return std::tie(nfp, posX, posY, weight) == std::tie(hs.nfp, hs.posX, hs.posY, hs.weight); }
 	};
 }
-
-namespace std
-{
-	template <>
-	struct hash<RASTERVORONOIPACKING::TotalOverlapMapEntry>
-	{
-		size_t operator()(const RASTERVORONOIPACKING::TotalOverlapMapEntry& k) const
-		{
-			// Compute individual hash values for first, second and third
-			// http://stackoverflow.com/a/1646913/126995
-			size_t res = 17;
-			res = res * 31 + hash<std::shared_ptr<RASTERVORONOIPACKING::RasterNoFitPolygon>>()(k.nfp);
-			res = res * 31 + hash<int>()(k.posX);
-			res = res * 31 + hash<int>()(k.posY);
-			res = res * 31 + hash<int>()(k.weight);
-			return res;
-		}
-	};
-}
-
 
 namespace RASTERVORONOIPACKING {
 
@@ -106,19 +88,19 @@ namespace RASTERVORONOIPACKING {
 
 	class CachedTotalOverlapMap : public TotalOverlapMap {
 	public:
-		CachedTotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _totalNumItems) : TotalOverlapMap(ifp), totalNumItems(_totalNumItems) {};
-		CachedTotalOverlapMap(int width, int height, int _totalNumItems) : TotalOverlapMap(width, height), totalNumItems(_totalNumItems) {};
-		CachedTotalOverlapMap(int width, int height, QPoint _reference, int _totalNumItems) : TotalOverlapMap(width, height, _reference), totalNumItems(_totalNumItems) {};
-		CachedTotalOverlapMap(QRect &boundingBox, int _totalNumItems) : TotalOverlapMap(boundingBox), totalNumItems(_totalNumItems) {};
+		CachedTotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _totalNumItems) : TotalOverlapMap(ifp), totalNumItems(_totalNumItems), emptyCache(true), toRemoveCount(0), currentCount(0) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
+		//CachedTotalOverlapMap(int width, int height, int _totalNumItems) : TotalOverlapMap(width, height), totalNumItems(_totalNumItems) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
+		//CachedTotalOverlapMap(int width, int height, QPoint _reference, int _totalNumItems) : TotalOverlapMap(width, height, _reference), totalNumItems(_totalNumItems) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
+		//CachedTotalOverlapMap(QRect &boundingBox, int _totalNumItems) : TotalOverlapMap(boundingBox), totalNumItems(_totalNumItems) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
 		~CachedTotalOverlapMap() {}
 
 		void init(uint _width, uint _height); // FIXME: Is it really necessary to reimplement?
 		void reset() {}
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
 	private:
-		std::unordered_set<TotalOverlapMapEntry> currentEntries;
-		std::unordered_set<TotalOverlapMapEntry> toRemoveEntries;
-		std::unordered_set<TotalOverlapMapEntry> toAddEntries;
+		bool emptyCache;
+		int currentCount, toRemoveCount;
+		QVector<TotalOverlapMapEntry> currentEntries, toRemoveEntries, toAddEntries;
 		const int totalNumItems;
 	};
 

@@ -130,9 +130,11 @@ void PackingThread::run()
 		//emit weightsChanged();
 	}
 	if (m_abort) {qDebug() << "Aborted!"; quit();}
-	solver->setContainerWidth(minSuccessfullSol.length, bestSolution);
-	emit finishedExecution(bestSolution, minSuccessfullSol, totalItNum, curOverlap, minOverlap, getTimeStamp(parameters.getTimeLimit(), finalTime));
-	quit();
+	else {
+		solver->setContainerWidth(minSuccessfullSol.length, bestSolution);
+		emit finishedExecution(bestSolution, minSuccessfullSol, totalItNum, curOverlap, minOverlap, getTimeStamp(parameters.getTimeLimit(), finalTime));
+		quit();
+	}
 }
 
 void PackingThread::abort() {

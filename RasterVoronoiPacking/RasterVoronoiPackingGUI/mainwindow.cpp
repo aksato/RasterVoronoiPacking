@@ -82,26 +82,29 @@ MainWindow::~MainWindow()
 }
 
 std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::createBasicSolver() {
-        RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::NONE, this->rasterProblem->getScale());
+	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::NONE, this->rasterProblem->getScale());
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem },
-                tempParameters, currentContainerWidth, currentContainerHeight);
+		tempParameters, currentContainerWidth, currentContainerHeight);
 	solver->overlapEvaluator = this->overlapEvaluator;
+	solver->setContainerDimensions(currentContainerWidth, currentContainerHeight);
 	return solver;
 }
 
 std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::createGLSSolver() {
-        RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::GLS, this->rasterProblem->getScale());
+	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::GLS, this->rasterProblem->getScale());
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverGls = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem },
-                tempParameters, currentContainerWidth, currentContainerHeight);
+		tempParameters, currentContainerWidth, currentContainerHeight);
 	solverGls->overlapEvaluator = this->overlapEvaluatorGls;
+	solverGls->setContainerDimensions(currentContainerWidth, currentContainerHeight);
 	return solverGls;
 }
 
 std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::createDoubleGLSSolver() {
-    RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::GLS, this->searchScale);
+	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::GLS, this->searchScale);
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverDoubleGls = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem },
-                tempParameters, currentContainerWidth, currentContainerHeight);
+		tempParameters, currentContainerWidth, currentContainerHeight);
 	solverDoubleGls->overlapEvaluator = this->overlapEvaluatorDoubleGls;
+	solverDoubleGls->setContainerDimensions(currentContainerWidth, currentContainerHeight);
 	return solverDoubleGls;
 }
 

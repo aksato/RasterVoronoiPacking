@@ -46,7 +46,6 @@ private slots:
     void glsWeightedlocalSearch();
 
 	void generateCurrentTotalSearchOverlapMap();
-	void generateCurrentTotalSearchOverlapMap2();
 	void setExplicityZoomValue();
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();

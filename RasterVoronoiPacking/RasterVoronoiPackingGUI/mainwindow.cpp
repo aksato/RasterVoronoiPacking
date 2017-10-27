@@ -63,7 +63,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(printCurrentSolution()));
 	connect(ui->pushButton_18, SIGNAL(clicked()), this, SLOT(generateCurrentTotalSearchOverlapMap()));
-	connect(ui->pushButton_21, SIGNAL(clicked()), this, SLOT(generateCurrentTotalSearchOverlapMap2()));
 	connect(ui->pushButton_22, SIGNAL(clicked()), this, SLOT(setExplicityZoomValue()));
     connect(ui->pushButton_16, SIGNAL(clicked()), this, SLOT(showZoomedMap()));
     connect(ui->pushButton_17, SIGNAL(clicked()), this, SLOT(translateCurrentToMinimumZoomedPosition()));
@@ -461,25 +460,14 @@ void MainWindow::generateCurrentTotalSearchOverlapMap() {
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
 
-void MainWindow::generateCurrentTotalSearchOverlapMap2() {
-	ui->graphicsView->getCurrentSolution(solution);
-	int itemId = ui->graphicsView->getCurrentItemId();
-	QTime myTimer; myTimer.start();
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverDoubleGls = createDoubleGLSSolver();
-	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS>(solverDoubleGls->overlapEvaluator)->getTotalOverlapSearchMap(itemId, solution.getOrientation(itemId), solution);
-	int milliseconds = myTimer.elapsed();
-	ui->graphicsView->showTotalOverlapMap(curMap, qRound(this->rasterProblem->getScale() / this->searchScale));
-	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
-}
-
 void MainWindow::setExplicityZoomValue() {
 	bool ok;
 	searchScale = QInputDialog::getDouble(this, "Explicity Zoom Value", "Zoom:", 1, 0.01, this->rasterProblem->getScale(), 1, &ok);
 	if (!ok) return;
 	int zoomSquareSize = ZOOMNEIGHBORHOOD * qRound(this->rasterProblem->getScale() / searchScale);
 	zoomedMapViewer.getMapView()->init(zoomSquareSize, searchScale / this->rasterProblem->getScale());
-	ui->pushButton_16->setEnabled(true); ui->pushButton_17->setEnabled(true); ui->pushButton_18->setEnabled(true); ui->pushButton_20->setEnabled(true); ui->pushButton_21->setEnabled(true);
-	this->overlapEvaluatorDoubleGls = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(this->rasterProblem, searchScale, weights));
+	ui->pushButton_16->setEnabled(true); ui->pushButton_17->setEnabled(true); ui->pushButton_18->setEnabled(true); ui->pushButton_20->setEnabled(true);
+	this->overlapEvaluatorDoubleGls = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(this->rasterProblem, searchScale, weights, true));
 }
 
 void MainWindow::zoomedlocalSearch() {

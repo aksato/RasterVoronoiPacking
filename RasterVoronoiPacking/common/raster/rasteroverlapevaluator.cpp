@@ -1,4 +1,5 @@
 #include "rasteroverlapevaluator.h"
+#include "totaloverlapmapcache.h"
 
 using namespace RASTERVORONOIPACKING;
 

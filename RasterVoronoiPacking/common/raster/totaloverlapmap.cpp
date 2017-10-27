@@ -27,10 +27,6 @@ TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp) : orig
     reference = ifp->getOrigin();
 }
 
-TotalOverlapMap::TotalOverlapMap(int width, int height) : originalWidth(width), originalHeight(height) {
-    init(width, height);
-}
-
 TotalOverlapMap::TotalOverlapMap(int width, int height, QPoint _reference) : originalWidth(width), originalHeight(height), reference(_reference) {
 	init(width, height);
 }
@@ -209,37 +205,3 @@ quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 		return image;
 	}
 #endif
-
-void CachedTotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {
-	// Process cache
-	TotalOverlapMapEntry currentEntry(itemId, nfp, pos, weight);
-	if (!emptyCache && currentEntry == currentEntries[itemId]) {
-		if (currentEntry.weight != currentEntries[itemId].weight) toAddEntries << TotalOverlapMapEntry(currentEntry, currentEntry.weight - currentEntries[itemId].weight);
-		toRemoveEntries[itemId].enabled = false; toRemoveCount--;
-	}
-	else toAddEntries << currentEntry;
-	currentEntries[itemId] = currentEntry; currentCount++;
-
-	// All cache entries were processed, create overlap map
-	if (currentCount == totalNumItems - 1) {
-		if (!emptyCache && toRemoveCount + toAddEntries.size() < totalNumItems - 1) {
-			for (auto entry : toRemoveEntries) if (entry.enabled) TotalOverlapMap::addVoronoi(entry.itemId, entry.nfp, QPoint(entry.posX, entry.posY), -entry.weight);
-			for (auto entry : toAddEntries) TotalOverlapMap::addVoronoi(entry.itemId, entry.nfp, QPoint(entry.posX, entry.posY), entry.weight);
-		}
-		else {
-			TotalOverlapMap::reset();
-			for (auto entry : currentEntries) if (entry.enabled) TotalOverlapMap::addVoronoi(entry.itemId, entry.nfp, QPoint(entry.posX, entry.posY), entry.weight);
-		}
-		currentCount = 0;
-		toRemoveEntries = currentEntries; toRemoveCount = totalNumItems - 1;
-		toAddEntries.clear();
-		emptyCache = false;
-	}
-}
-
-void CachedTotalOverlapMap::init(uint _width, uint _height) {
-	TotalOverlapMap::init(_width, _height);
-	currentCount = 0;
-	toAddEntries.clear();
-	emptyCache = true;
-}

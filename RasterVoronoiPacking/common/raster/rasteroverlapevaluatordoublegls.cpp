@@ -1,4 +1,5 @@
 #include "rasteroverlapevaluator.h"
+#include "totaloverlapmapcache.h"
 #include <QtCore/qmath.h>
 
 using namespace RASTERVORONOIPACKING;
@@ -12,14 +13,18 @@ void getScaledSolution(RasterPackingSolution &originalSolution, RasterPackingSol
 	}
 }
 
-void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps() {
+void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 	int zoomFactorInt = this->problem->getScale() / searchProblemScale;
+	maps.clear();
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(-1, -1, problem->getItemType(itemId), angle);
 			int newWidth = 1 + (curIfp->width() - 1) / zoomFactorInt; int newHeight = 1 + (curIfp->height() - 1) / zoomFactorInt;
 			QPoint newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
-			maps.addOverlapMap(itemId, angle, std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint)));
+			std::shared_ptr<TotalOverlapMap> curMap = cacheMaps ?
+				std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, this->problem->count())) :
+				std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
+			maps.addOverlapMap(itemId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}
 	}

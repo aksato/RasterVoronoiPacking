@@ -3,22 +3,6 @@
 
 #include "rasternofitpolygon.h"
 #include "rasterstrippackingparameters.h"
-#include <QDebug>
-#include <unordered_set>
-
-namespace RASTERVORONOIPACKING {
-	struct TotalOverlapMapEntry {
-		TotalOverlapMapEntry() : enabled(false) {}
-		TotalOverlapMapEntry(int _itemId, std::shared_ptr<RasterNoFitPolygon> _nfp, QPoint pos, int _weight) : itemId(_itemId), nfp(_nfp), posX(pos.x()), posY(pos.y()), weight(_weight), enabled(true) {}
-		TotalOverlapMapEntry(TotalOverlapMapEntry &other, int _weight) : itemId(other.itemId), nfp(other.nfp), posX(other.posX), posY(other.posY), weight(_weight), enabled(other.enabled) {}
-		int itemId;
-		std::shared_ptr<RasterNoFitPolygon> nfp;
-		int posX, posY;
-		int weight;
-		bool enabled;
-		bool operator==(const TotalOverlapMapEntry& hs) const { return std::tie(nfp, posX, posY) == std::tie(hs.nfp, hs.posX, hs.posY); }
-	};
-}
 
 namespace RASTERVORONOIPACKING {
 
@@ -26,7 +10,6 @@ namespace RASTERVORONOIPACKING {
     {
     public:
         TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp);
-        TotalOverlapMap(int width, int height);
 		TotalOverlapMap(int width, int height, QPoint _reference);
 		TotalOverlapMap(QRect &boundingBox);
 		virtual ~TotalOverlapMap() { delete[] data; }
@@ -87,24 +70,6 @@ namespace RASTERVORONOIPACKING {
         QPoint reference;
     };
 
-	class CachedTotalOverlapMap : public TotalOverlapMap {
-	public:
-		CachedTotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _totalNumItems) : TotalOverlapMap(ifp), totalNumItems(_totalNumItems), emptyCache(true), toRemoveCount(0), currentCount(0) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
-		//CachedTotalOverlapMap(int width, int height, int _totalNumItems) : TotalOverlapMap(width, height), totalNumItems(_totalNumItems) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
-		//CachedTotalOverlapMap(int width, int height, QPoint _reference, int _totalNumItems) : TotalOverlapMap(width, height, _reference), totalNumItems(_totalNumItems) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
-		//CachedTotalOverlapMap(QRect &boundingBox, int _totalNumItems) : TotalOverlapMap(boundingBox), totalNumItems(_totalNumItems) { currentEntries.resize(totalNumItems); toRemoveEntries.resize(totalNumItems); };
-		~CachedTotalOverlapMap() {}
-
-		void init(uint _width, uint _height); // FIXME: Is it really necessary to reimplement?
-		void reset() {}
-		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
-	private:
-		bool emptyCache;
-		int currentCount, toRemoveCount;
-		QVector<TotalOverlapMapEntry> currentEntries, toRemoveEntries, toAddEntries;
-		const int totalNumItems;
-	};
-
     class TotalOverlapMapSet
     {
     public:
@@ -113,6 +78,7 @@ namespace RASTERVORONOIPACKING {
 
         void addOverlapMap(int orbitingPieceId, int orbitingAngleId, std::shared_ptr<TotalOverlapMap> ovm);
         std::shared_ptr<TotalOverlapMap> getOverlapMap(int orbitingPieceId, int orbitingAngleId);
+		void clear() { mapSet.clear(); }
 
         QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cbegin() {return mapSet.cbegin();}
         QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cend() {return mapSet.cend();}

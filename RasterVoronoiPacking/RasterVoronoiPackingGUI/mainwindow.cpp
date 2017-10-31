@@ -246,7 +246,7 @@ void MainWindow::createBottomLeftLayout() {
 	solver->generateBottomLeftSolution(solution);
 	currentContainerWidth = solver->getCurrentWidth(); currentContainerHeight = solver->getCurrentHeight();
 	int milliseconds = myTimer.elapsed();
-	ui->graphicsView->recreateContainerGraphics(currentContainerWidth, currentContainerHeight);
+	ui->graphicsView->recreateContainerGraphics(currentContainerWidth);
 	ui->graphicsView->setCurrentSolution(solution);
 	ui->statusBar->showMessage("New bottom left solution created. Length: " + QString::number(solver->getCurrentWidth() / rasterProblem->getScale()) + ". Elapsed Time : " + QString::number(milliseconds) + " miliseconds");
 }

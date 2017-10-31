@@ -78,15 +78,16 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 
 		// --> Rasterize polygon
 		int width, height, *rasterCurPolygonVec;
-		if (params.innerFitEpsilon < 0) rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height);
+		if (params.innerFitEpsilon < 0) rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height, params.skipRaster);
 		else rasterCurPolygonVec = curPolygon->getRasterBoundingBoxImageVector(referencePoint, params.rasterScaleFactor, params.innerFitEpsilon, width, height);
-		QImage rasterCurPolygon = getImageFromVec(rasterCurPolygonVec, width, height);
-		rasterCurPolygon.save(outputPath + "/" + curPolygon->getName() + ".png");
-
-		std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIFP(new RASTERPACKING::RasterInnerFitPolygon(*it));
+		if (!params.skipRaster) {
+			QImage rasterCurPolygon = getImageFromVec(rasterCurPolygonVec, width, height);
+			rasterCurPolygon.save(outputPath + "/" + curPolygon->getName() + ".png");
+		}
+		std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIFP(new RASTERPACKING::RasterInnerFitPolygon(*it, width, height));
 		curRasterIFP->setScale(params.rasterScaleFactor);
 		curRasterIFP->setReferencePoint(referencePoint);
-		curRasterIFP->setFileName(curPolygon->getName() + ".png");
+		curRasterIFP->setFileName(curPolygon->getName() + (params.skipRaster ? "" : ".png"));
 		problem.addRasterInnerfitPolygon(curRasterIFP);
 
 		qreal progress = (qreal)numProcessed / (qreal)problem.getInnerfitPolygonsCount();
@@ -115,24 +116,24 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 
 		// --> Rasterize polygon
 		int width, height;
-		//int *rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height);
 		int *rasterCurPolygonVec;
 		if (!params.noOverlap)
-			rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height);
+			rasterCurPolygonVec = curPolygon->getRasterImageVector(referencePoint, params.rasterScaleFactor, width, height, params.skipRaster);
 		else
-			rasterCurPolygonVec = curPolygon->getRasterImageVectorWithContour(referencePoint, params.rasterScaleFactor, width, height);
-		if (params.saveRaster) {
-			QImage rasterCurPolygon = getImageFromVec(rasterCurPolygonVec, width, height);
-			rasterCurPolygon.save(outputPath + "/r" + curPolygon->getName() + ".png");
+			rasterCurPolygonVec = curPolygon->getRasterImageVectorWithContour(referencePoint, params.rasterScaleFactor, width, height, params.skipRaster);
+		if (!params.skipRaster) {
+			if (params.saveRaster) {
+				QImage rasterCurPolygon = getImageFromVec(rasterCurPolygonVec, width, height);
+				rasterCurPolygon.save(outputPath + "/r" + curPolygon->getName() + ".png");
+			}
+			imageSizes.push_back(QPair<int, int>(width, height));
+			distTransfNames.push_back(curPolygon->getName() + ".png");
+			rasterPolygonVecs.push_back(rasterCurPolygonVec);
 		}
-		imageSizes.push_back(QPair<int, int>(width, height));
-		distTransfNames.push_back(curPolygon->getName() + ".png");
-		rasterPolygonVecs.push_back(rasterCurPolygonVec);
-
-		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNFP(new RASTERPACKING::RasterNoFitPolygon(*it));
+		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNFP(new RASTERPACKING::RasterNoFitPolygon(*it, width, height));
 		curRasterNFP->setScale(params.rasterScaleFactor);
 		curRasterNFP->setReferencePoint(referencePoint);
-		curRasterNFP->setFileName(curPolygon->getName() + ".png");
+		curRasterNFP->setFileName(curPolygon->getName() + (params.skipRaster ? "" : ".png"));
 		problem.addRasterNofitPolygon(curRasterNFP);
 
 		qreal progress = (qreal)numProcessed / (qreal)problem.getNofitPolygonsCount();
@@ -176,7 +177,7 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 	std::cout << std::endl;
 	qDebug() << "Max distance determination finished." << problem.getNofitPolygonsCount() << "polygons processed in" << myTimer.elapsed() / 1000.0 << "seconds";
 
-	for (QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator it = problem.rnfpbegin(); it != problem.rnfpend(); it++) (*it)->setMaxD(maxD);
+	//for (QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator it = problem.rnfpbegin(); it != problem.rnfpend(); it++) (*it)->setMaxD(maxD);
 	problem.save(outputPath + QDir::separator() + params.outputXMLName, clusterInfo);
 
 	qDebug() << "Final distance transformation started.";

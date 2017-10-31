@@ -58,7 +58,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
             std::shared_ptr<RasterPackingItem> curItem = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(itemId, typeId, (*it)->getOrientationsCount(), (*it)->getPolygon()));
             curItem->setPieceName((*it)->getName());
             for(QVector<unsigned int>::const_iterator it2 = (*it)->corbegin(); it2 != (*it)->corend(); it2++) curItem->addAngleValue(*it2);
-			int minX, maxX, minY, maxY; (*it)->getPolygon()->getBoundingBox(minX, maxX, minY, maxY); curItem->setBoundingBox(minX, maxX, minY, maxY);
+			qreal minX, maxX, minY, maxY; (*it)->getPolygon()->getBoundingBox(minX, maxX, minY, maxY); curItem->setBoundingBox(minX, maxX, minY, maxY);
 			items.append(curItem);
         }
 
@@ -84,13 +84,21 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     QHash<QPair<int,int>, int> pieceAngleMap;
     mapPieceNameAngle(problem, pieceIndexMap, pieceTotalAngleMap, pieceAngleMap);
 
+	// 2.5. Read Raster Data
+	QVector<QPair<quint32, quint32>> sizes;
+	QVector<QPoint> rps;
+	quint32 *nfpData = loadBinaryNofitPolygons(problem.getNfpDataFileName(), sizes, rps);
+	quint32 *curNfpData = nfpData;
+
     // 3. Load innerfit polygons
     innerFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
     for(QList<std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
         std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIfp = *it;
         // Create image. FIXME: Use data file instead?
         QImage curImage(curRasterIfp->getFileName());
-        std::shared_ptr<RasterNoFitPolygon> curMap(new RasterNoFitPolygon(curImage, curRasterIfp->getReferencePoint()));
+		std::shared_ptr<RasterNoFitPolygon> curMap;
+		if (nfpData == nullptr) curMap = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curImage, curRasterIfp->getReferencePoint()));
+		else curMap = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curRasterIfp->getWidth(), curRasterIfp->getHeight(), curRasterIfp->getReferencePoint()));
 
         // Determine ids
         QPair<int,int> staticIds, orbitingIds;
@@ -102,10 +110,6 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     }
 
     // 4. Load nofit polygons
-	QVector<QPair<quint32, quint32>> sizes;
-	QVector<QPoint> rps;
-	quint32 *nfpData = loadBinaryNofitPolygons(problem.getNfpDataFileName(), sizes, rps);
-	quint32 *curNfpData = nfpData;
     noFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
 	int i = 0;
     for(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++, i++) {
@@ -238,7 +242,7 @@ void RasterPackingClusterProblem::convertSolution(RASTERVORONOIPACKING::RasterPa
 					newAngle = this->originalProblem->getItem(item.id)->getAngleValue(newOrientation);
 
 					// Get item bounding box
-					int minX, minY, maxX, maxY;
+					qreal minX, minY, maxX, maxY;
 					this->originalProblem->getItem(item.id)->getBoundingBox(minX, maxX, minY, maxY);
 
 					// Determine offset of the reference point

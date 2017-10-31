@@ -57,7 +57,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	parser.addOption(valueClusterWeight);
 	const QCommandLineOption nameClusterOutputFile("cluster-output", "Prefix for cluster output files.", "prefix");
 	parser.addOption(nameClusterOutputFile);
-
+	const QCommandLineOption boolSkipRaster("skip", "Skip rasterization and generation of images processes, only generate xml file.");
+	parser.addOption(boolSkipRaster);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -128,6 +129,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
         params->saveRaster = true;
     }
     else params->saveRaster = false;
+
+	params->skipRaster = parser.isSet(boolSkipRaster);
 
     if (parser.isSet(typeOutputFile)) {
         const QString ouputType = parser.value(typeOutputFile).toLower();

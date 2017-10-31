@@ -30,20 +30,20 @@ namespace RASTERVORONOIPACKING {
         void addAngleValue(int angle) {this->angleValues.push_back(angle);}
         int getAngleValue(int id) {return this->angleValues.at(id);}
 		int getOrientationFromAngle(int angle) { return this->angleValues.indexOf(angle); }
-		void setBoundingBox(int _minX, int _maxX, int _minY, int _maxY) {
+		void setBoundingBox(qreal _minX, qreal _maxX, qreal _minY, qreal _maxY) {
 			this->minX = _minX; this->maxX = _maxX; this->minY = _minY; this->maxY = _maxY;
 		}
-		void getBoundingBox(int &_minX, int &_maxX, int &_minY, int &_maxY) {
+		void getBoundingBox(qreal &_minX, qreal &_maxX, qreal &_minY, qreal &_maxY) {
 			_minX = this->minX; _maxX = this->maxX; _minY = this->minY; _maxY = this->maxY;
 		}
-		int getMaxX(int orientation) {
+		qreal getMaxX(int orientation) {
 			if (getAngleValue(orientation) == 0) return this->maxX;
 			if (getAngleValue(orientation) == 90) return -this->minY;
 			if (getAngleValue(orientation) == 180) return -this->minX;
 			if (getAngleValue(orientation) == 270) return this->maxY;
 			return 0; // FIXME: Implement continuous rotations?
 		}
-		int getMaxY(int orientation) {
+		qreal getMaxY(int orientation) {
 			if (getAngleValue(orientation) == 0) return this->maxY;
 			if (getAngleValue(orientation) == 90) return this->maxX;
 			if (getAngleValue(orientation) == 180) return -this->minY;
@@ -55,7 +55,7 @@ namespace RASTERVORONOIPACKING {
         unsigned int id;
         unsigned int pieceType;
         unsigned int angleCount;
-		int minX, maxX, minY, maxY;
+		qreal minX, maxX, minY, maxY;
 
         QString pieceName;
         QVector<int> angleValues;

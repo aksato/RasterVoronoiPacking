@@ -278,6 +278,8 @@ QStringList RasterNoFitPolygon::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("scale"); commands.push_back(QString::number(this->scale));
     commands.push_back("writeAttribute"); commands.push_back("x0"); commands.push_back(QString::number(this->referencePoint.x()));
     commands.push_back("writeAttribute"); commands.push_back("y0"); commands.push_back(QString::number(this->referencePoint.y()));
+	commands.push_back("writeAttribute"); commands.push_back("width"); commands.push_back(QString::number(this->width));
+	commands.push_back("writeAttribute"); commands.push_back("height"); commands.push_back(QString::number(this->height));
     commands.push_back("writeEndElement"); // resultingPolygon
     commands.push_back("writeEndElement"); // rnfp
 
@@ -303,6 +305,8 @@ QStringList RasterInnerFitPolygon::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("scale"); commands.push_back(QString::number(this->scale));
     commands.push_back("writeAttribute"); commands.push_back("x0"); commands.push_back(QString::number(this->referencePoint.x()));
     commands.push_back("writeAttribute"); commands.push_back("y0"); commands.push_back(QString::number(this->referencePoint.y()));
+	commands.push_back("writeAttribute"); commands.push_back("width"); commands.push_back(QString::number(this->width));
+	commands.push_back("writeAttribute"); commands.push_back("height"); commands.push_back(QString::number(this->height));
     commands.push_back("writeEndElement"); // resultingPolygon
     commands.push_back("writeEndElement"); // rnfp
 
@@ -432,11 +436,10 @@ bool PackingProblem::load(QString fileName) {
          }
 
 		 // Add Bounding Box Information
-		 if (xml.name() == "xMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinX(xml.readElementText().toInt());
-		 if (xml.name() == "xMax" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMaxX(xml.readElementText().toInt());
-		 if (xml.name() == "yMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinY(xml.readElementText().toInt());
-		 if (xml.name() == "yMax" && xml.tokenType() == QXmlStreamReader::StartElement) 
-			 curPolygon->setBoundingBoxMaxY(xml.readElementText().toInt());
+		 if (xml.name() == "xMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinX(xml.readElementText().toDouble());
+		 if (xml.name() == "xMax" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMaxX(xml.readElementText().toDouble());
+		 if (xml.name() == "yMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinY(xml.readElementText().toDouble());
+		 if (xml.name() == "yMax" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMaxY(xml.readElementText().toDouble());
 
          // Process nofit polygon informations
          if(xml.name()=="nfp" && xml.tokenType() == QXmlStreamReader::StartElement) {
@@ -470,6 +473,8 @@ bool PackingProblem::load(QString fileName) {
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setFileName(xml.attributes().value("path").toString());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setScale(xml.attributes().value("scale").toFloat());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setReferencePoint(QPoint(xml.attributes().value("x0").toInt(),xml.attributes().value("y0").toInt()));
+			 std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setWidth(xml.attributes().value("width").toInt());
+			 std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setHeight(xml.attributes().value("height").toInt());
          }
          if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::EndElement)
              this->addRasterNofitPolygon(std::static_pointer_cast<RasterNoFitPolygon>(curGeometricTool));

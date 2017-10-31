@@ -14,6 +14,7 @@ namespace RASTERVORONOIPACKING {
     public:
 		RasterNoFitPolygon(QImage _image, QPoint _origin) : origin(_origin) { setMatrix(_image); }
 		RasterNoFitPolygon(quint32 *_matrix, int _width, int _height, QPoint _origin) : origin(_origin), matrix(_matrix), w(_width), h(_height) {}
+		RasterNoFitPolygon(int _width, int _height, QPoint _origin) : origin(_origin), w(_width), h(_height) { matrix = new quint32[w * h](); }
 		~RasterNoFitPolygon() { if (!matrix) { delete[] matrix; matrix = nullptr; } } // FIXME: delete or not? depends on the constructor, which is bad
 
         void setOrigin(QPoint origin) {this->origin = origin;}

@@ -23,6 +23,7 @@ struct PreProcessorParameters {
 	QList<int> clusterRankings;
 	QString clusterPrefix, clusterFile, clusterInfoFile;
 	QList<qreal> clusterWeights;
+	bool skipRaster;
 };
 
 enum CommandLineParseResult

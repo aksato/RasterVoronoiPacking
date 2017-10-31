@@ -120,7 +120,17 @@ void BresenhamVec(int x1, int y1, int const x2, int const y2, int *S, int width)
 	}
 }
 
-int *Polygon::getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height) {
+int ceilEpsilon(qreal v1, qreal eps) {
+	if (qAbs(qRound(v1) - v1) < eps) return qRound(v1);
+	return qCeil(v1);
+}
+
+int floorEpsilon(qreal v1, qreal eps) {
+	if (qAbs(qRound(v1) - v1) < eps) return qRound(v1);
+	return qFloor(v1);
+}
+
+int *Polygon::getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height, bool skipRaster) {
 	QPolygonF polygon;
 	qreal xMin, xMax, yMin, yMax;
 
@@ -138,11 +148,12 @@ int *Polygon::getRasterImageVector(QPoint &RP, qreal scale, int &width, int &hei
 
 		polygon << QPointF(x, y);
 	}
-	RP.setX(-qRound(xMin)); RP.setY(-qRound(yMin));
-	polygon.translate(-xMin, -yMin);
+	RP.setX(-ceilEpsilon(xMin, RASTER_EPS)); RP.setY(-ceilEpsilon(yMin, RASTER_EPS));
+	polygon.translate(RP.x(), RP.y());
 
-	width = qRound(xMax - xMin) + 1;
-	height = qRound(yMax - yMin) + 1;
+	width = floorEpsilon(xMax, RASTER_EPS) + RP.x() + 1;
+	height = floorEpsilon(yMax, RASTER_EPS) + RP.y() + 1;
+	if (skipRaster) return nullptr;
 	int *S = new int[width*height];
 	std::fill_n(S, width*height, 1);
 
@@ -228,7 +239,7 @@ bool lessThanNotEqualEpsilon(qreal v1, qreal v2, qreal eps) {
 	else return v1 < v2;
 }
 
-int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height) {
+int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height, bool skipRaster) {
 	QPolygonF polygon;
 	qreal xMin, xMax, yMin, yMax;
 
@@ -246,11 +257,12 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 
 		polygon << QPointF(x, y);
 	}
-	RP.setX(-qFloor(xMin)); RP.setY(-qFloor(yMin));
+	RP.setX(-floorEpsilon(xMin, RASTER_EPS)); RP.setY(-floorEpsilon(yMin, RASTER_EPS));
 	polygon.translate(RP.x(), RP.y());
 
-	width = qCeil(xMax) + RP.x() + 1;
-	height = qCeil(yMax) + RP.y() + 1;
+	width = ceilEpsilon(xMax, RASTER_EPS) + RP.x() + 1;
+	height = ceilEpsilon(yMax, RASTER_EPS) + RP.y() + 1;
+	if (skipRaster) return nullptr;
 	int *S = new int[width*height];
 	std::fill_n(S, width*height, 1);
 

@@ -30,16 +30,16 @@ namespace RASTERPACKING {
         static std::shared_ptr<Polygon> getNofitPolygon(std::shared_ptr<Polygon> staticPolygon, std::shared_ptr<Polygon> orbitingPolygon); // FIXME: Does not work for concave polygons
         QImage getRasterImage(QPoint &RP, qreal scale = 1.0);
         QImage getRasterImage8bit(QPoint &RP, qreal scale = 1.0);
-        int *getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height);
-		int *getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height);
+		int *getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height, bool skipRaster);
+		int *getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height, bool skipRaster);
 		int *getRasterBoundingBoxImageVector(QPoint &RP, qreal scale, qreal epsilon, int &width, int &height);
 		void fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale);
 		qreal getArea();
-		void setBoundingBoxMinX(int _minX) { this->minX = _minX; }
-		void setBoundingBoxMaxX(int _maxX) { this->maxX = _maxX; }
-		void setBoundingBoxMinY(int _minY) { this->minY = _minY; }
-		void setBoundingBoxMaxY(int _maxY) { this->maxY = _maxY; }
-		void getBoundingBox(int &_minX, int &_maxX, int &_minY, int &_maxY) {
+		void setBoundingBoxMinX(qreal _minX) { this->minX = _minX; }
+		void setBoundingBoxMaxX(qreal _maxX) { this->maxX = _maxX; }
+		void setBoundingBoxMinY(qreal _minY) { this->minY = _minY; }
+		void setBoundingBoxMaxY(qreal _maxY) { this->maxY = _maxY; }
+		void getBoundingBox(qreal &_minX, qreal &_maxX, qreal &_minY, qreal &_maxY) {
 			_minX = this->minX; _maxX = this->maxX; _minY = this->minY; _maxY = this->maxY;
 		}
 
@@ -47,7 +47,7 @@ namespace RASTERPACKING {
         QVector<QPair<QPointF,QPointF>> degLines;
         QVector<QPointF> degNodes;
         QString name;
-		int minX, maxX, minY, maxY;
+		qreal minX, maxX, minY, maxY;
     };
 
     class PackingComponent {
@@ -140,21 +140,27 @@ namespace RASTERPACKING {
 
     class RasterGeometricTool : public GeometricTool {
     public:
-        RasterGeometricTool() {}
+		RasterGeometricTool() {} // FIXME: Remove it
+        RasterGeometricTool(int _width, int _height) : width(_width), height(_height) {}
         ~RasterGeometricTool() {}
 
         QString getFileName() {return this->fileName;}
         QPoint getReferencePoint() {return this->referencePoint;}
         qreal getScale() {return this->scale;}
+		int getWidth() { return this->width; }
+		int getHeight() { return this->height; }
         virtual QStringList getXML() = 0;
         void setFileName(QString fname) {this->fileName = fname;}
         void setReferencePoint(QPoint RP) {this->referencePoint = RP;}
         void setScale(qreal scale) {this->scale = scale;}
+		void setWidth(int width) {this->width = width;}
+		void setHeight(int height) { this->height = height; }
 
     protected:
         QString fileName;
         QPoint referencePoint;
         qreal scale;
+		int width, height;
     };
 
     class RasterNoFitPolygon : public RasterGeometricTool {
@@ -162,7 +168,7 @@ namespace RASTERPACKING {
         RasterNoFitPolygon() {
             polygon = nullptr;
         }
-        RasterNoFitPolygon(std::shared_ptr<NoFitPolygon> nfp) {
+		RasterNoFitPolygon(std::shared_ptr<NoFitPolygon> nfp, int _width, int _height) : RasterGeometricTool(_width, _height) {
             polygon = nullptr;
             this->staticName  = nfp->getStaticName();
             this->staticAngle = nfp->getStaticAngle();
@@ -171,8 +177,6 @@ namespace RASTERPACKING {
         }
         ~RasterNoFitPolygon() {}
         QStringList getXML();
-
-
     };
 
     class RasterInnerFitPolygon : public RasterGeometricTool {
@@ -180,7 +184,7 @@ namespace RASTERPACKING {
         RasterInnerFitPolygon() {
             polygon = nullptr;
         }
-        RasterInnerFitPolygon(std::shared_ptr<InnerFitPolygon> ifp) {
+		RasterInnerFitPolygon(std::shared_ptr<InnerFitPolygon> ifp, int _width, int _height) : RasterGeometricTool(_width, _height) {
             polygon = nullptr;
             this->staticName  = ifp->getStaticName();
             this->staticAngle = ifp->getStaticAngle();

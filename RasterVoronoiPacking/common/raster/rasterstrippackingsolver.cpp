@@ -95,7 +95,7 @@ void RasterStripPackingSolver::generateBottomLeftStripSolution(RasterPackingSolu
 				curPos.setY(curPos.y() + 1); if (curPos.y() > maxIfpY) { curPos.setY(minIfpY); curPos.setX(curPos.x() + 1); }
 			}
 			// Check minimum X coordinate
-			int maxItemX = curPos.x() + qRound(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxX(angle));
+			int maxItemX = curPos.x() + qCeil(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxX(angle));
 			if (angle == 0 || maxItemX < minMaxItemX) {
 				minMaxItemX = maxItemX;
 				solution.setPosition(shuffledId, curPos); solution.setOrientation(shuffledId, angle);

@@ -37,6 +37,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(boolStripPacking);
 	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value");
 	parser.addOption(valueNumThreads);
+	const QCommandLineOption valueNumGroupSize("parallel-group", "Size of thread groups with shared data.", "value");
+	parser.addOption(valueNumGroupSize);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value");
 	parser.addOption(valueCluster);
 	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, cost, bagpipe", "value");
@@ -207,6 +209,14 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		params->numThreads = 1;
 	}
 
+	if (parser.isSet(valueNumGroupSize)) {
+		const QString groupSizeString = parser.value(valueNumGroupSize); bool ok;
+		const int groupSize = groupSizeString.toInt(&ok);
+		if (ok && groupSize > 0 && groupSize <= params->numThreads) params->threadGroupSize = groupSize;
+		else { *errorMessage = "Bad thread group size value."; return CommandLineError; }
+	}
+	else params->threadGroupSize = params->numThreads;
+	
 	if (parser.isSet(valueCluster)) {
 		const QString clusterString = parser.value(valueCluster);
 		bool ok;

@@ -375,7 +375,7 @@ void Clusterizator::insertNewCluster(QList<Cluster> &minClusters, Cluster &candi
 	int exchangedClusterId = -1;
 	for (int curClusterId = 0; curClusterId < minClusters.length(); curClusterId++) {
 		QList<Cluster> currentClusterList = QList<Cluster>() << candidateCluster;
-		for (size_t i = 0; i < minClusters.length(); i++)  {
+		for (int i = 0; i < minClusters.length(); i++)  {
 			if (i != curClusterId) currentClusterList.push_back(minClusters[i]);
 		}
 		if (!checkValidClustering(currentClusterList)) continue;
@@ -392,7 +392,7 @@ void Clusterizator::insertNewCluster(QList<Cluster> &minClusters, Cluster &candi
 }
 
 bool Clusterizator::checkValidClustering(QList<Cluster> &clusterList) {
-	QMap<QString, int> pieceCounts;
+	QMap<QString, unsigned int> pieceCounts;
 	foreach(Cluster curCluster, clusterList) {
 		QString staticPiece = curCluster.noFitPolygon->getStaticName();
 		QString orbitingPiece = curCluster.noFitPolygon->getOrbitingName();

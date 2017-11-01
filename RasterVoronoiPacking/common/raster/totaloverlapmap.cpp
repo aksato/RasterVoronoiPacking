@@ -6,15 +6,23 @@
 
 using namespace RASTERVORONOIPACKING;
 
-TotalOverlapMapSet::TotalOverlapMapSet() : shrinkValX(0), shrinkValY(0) {
+TotalOverlapMapSet::TotalOverlapMapSet(int numItems) : shrinkValX(0), shrinkValY(0) {
     numAngles = 4;
+	initializeSet(numItems);
 }
 
-TotalOverlapMapSet::TotalOverlapMapSet(int numberOfOrientations) : shrinkValX(0), shrinkValY(0), numAngles(numberOfOrientations) {}
+TotalOverlapMapSet::TotalOverlapMapSet(int numberOfOrientations, int numItems) : shrinkValX(0), shrinkValY(0), numAngles(numberOfOrientations) {
+	initializeSet(numItems);
+}
+
+void TotalOverlapMapSet::initializeSet(int numItems) {
+	mapSet = QVector<std::shared_ptr<TotalOverlapMap>>(numItems*numAngles);
+}
 
 void TotalOverlapMapSet::addOverlapMap(int orbitingPieceId, int orbitingAngleId, std::shared_ptr<TotalOverlapMap> ovm) {
     int orbitingKey =  orbitingPieceId*numAngles + orbitingAngleId;
-    mapSet.insert(orbitingKey, ovm);
+    //mapSet.insert(orbitingKey, ovm);
+	mapSet[orbitingKey] = ovm;
 }
 
 std::shared_ptr<TotalOverlapMap> TotalOverlapMapSet::getOverlapMap(int orbitingPieceId, int orbitingAngleId) {

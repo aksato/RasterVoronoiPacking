@@ -17,7 +17,7 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 	maps.clear();
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
-			std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(-1, -1, problem->getItemType(itemId), angle);
+			std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
 			int newWidth = 1 + (curIfp->width() - 1) / zoomFactorInt; int newHeight = 1 + (curIfp->height() - 1) / zoomFactorInt;
 			QPoint newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
 			std::shared_ptr<TotalOverlapMap> curMap = cacheMaps ?
@@ -57,7 +57,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTot
 
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution) {
 	// Determine zoomed area inside the innerfit polygon
-	std::shared_ptr<RasterNoFitPolygon> curIfp = this->problem->getIfps()->getRasterNoFitPolygon(-1, -1, this->problem->getItemType(itemId), orientation);
+	std::shared_ptr<RasterNoFitPolygon> curIfp = this->problem->getIfps()->getRasterNoFitPolygon(0, 0, this->problem->getItemType(itemId), orientation);
 	QRect curIfpBoundingBox(QPoint(-curIfp->getOriginX(), -curIfp->getOriginY()), QSize(curIfp->width() - maps.getShrinkValX(), curIfp->height() - maps.getShrinkValY()));
 	QRect zoomSquareRect(QPoint(pos.x() - width / 2, pos.y() - height / 2), QSize(width, height));
 	zoomSquareRect = zoomSquareRect.intersected(curIfpBoundingBox);

@@ -37,20 +37,34 @@ namespace RASTERVORONOIPACKING {
 		int w, h;
     };
 
+	class ItemRasterNoFitPolygonSet {
+	public:
+		ItemRasterNoFitPolygonSet(int numberOfOrientations, int numItems);
+		std::shared_ptr<RasterNoFitPolygon> getRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId);
+		std::shared_ptr<RasterNoFitPolygon> &operator[](int i) { return itemNfpSet[i]; }
+
+	private:
+		QVector<std::shared_ptr<RasterNoFitPolygon>> itemNfpSet;
+		const int numAngles;
+	};
+
     class RasterNoFitPolygonSet
     {
     public:
-        RasterNoFitPolygonSet();
-        RasterNoFitPolygonSet(int numberOfOrientations);
+		RasterNoFitPolygonSet(int numItems);
+		RasterNoFitPolygonSet(int numberOfOrientations, int numItems);
 
         bool load(RASTERPACKING::PackingProblem &problem);
         void addRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId, std::shared_ptr<RasterNoFitPolygon> nfp);
         std::shared_ptr<RasterNoFitPolygon> getRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
-        void eraseRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
-        void clear();
+		std::shared_ptr<ItemRasterNoFitPolygonSet> getItemRasterNoFitPolygonSet(int orbitingPieceTypeId, int orbitingAngleId);
+        //void eraseRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
+        //void clear();
 
     private:
-        QHash<QPair<int,int>, std::shared_ptr<RasterNoFitPolygon>> Nfps;
+        //QHash<QPair<int,int>, std::shared_ptr<RasterNoFitPolygon>> Nfps;
+		void initializeSet(int numItems);
+		QVector<std::shared_ptr<ItemRasterNoFitPolygonSet>> nfpSet;
         int numAngles;
     };
 }

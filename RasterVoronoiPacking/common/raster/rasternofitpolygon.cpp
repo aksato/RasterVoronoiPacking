@@ -4,33 +4,58 @@
 #include<QPoint>
 using namespace RASTERVORONOIPACKING;
 
-RasterNoFitPolygonSet::RasterNoFitPolygonSet() {
-    numAngles = 4;
+ItemRasterNoFitPolygonSet::ItemRasterNoFitPolygonSet(int numberOfOrientations, int numItems) : numAngles(numberOfOrientations) {
+	itemNfpSet = QVector<std::shared_ptr<RasterNoFitPolygon>>(numItems*numAngles);
 }
 
-RasterNoFitPolygonSet::RasterNoFitPolygonSet(int numberOfOrientations) : numAngles(numberOfOrientations) {}
+std::shared_ptr<RasterNoFitPolygon> ItemRasterNoFitPolygonSet::getRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId) {
+	int staticKey = staticPieceTypeId*numAngles + staticAngleId;
+	return itemNfpSet[staticKey];
+}
+
+RasterNoFitPolygonSet::RasterNoFitPolygonSet(int numItems) {
+    numAngles = 4;
+	initializeSet(numItems);
+}
+
+RasterNoFitPolygonSet::RasterNoFitPolygonSet(int numberOfOrientations, int numItems) : numAngles(numberOfOrientations) {
+	initializeSet(numItems);
+}
+
+void RasterNoFitPolygonSet::initializeSet(int numItems) {
+	nfpSet = QVector<std::shared_ptr<ItemRasterNoFitPolygonSet>>(numItems*numAngles);
+	for (int i = 0; i < nfpSet.length(); i++) {
+		nfpSet[i] = std::shared_ptr<ItemRasterNoFitPolygonSet>(new ItemRasterNoFitPolygonSet(numAngles, numItems));
+	}
+}
 
 void RasterNoFitPolygonSet::addRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId, std::shared_ptr<RasterNoFitPolygon> nfp) {
     int staticKey =  staticPieceTypeId*numAngles + staticAngleId;
     int orbitingKey =  orbitingPieceTypeId*numAngles + orbitingAngleId;
-    Nfps.insert(QPair<int,int>(staticKey, orbitingKey), nfp);
+    //Nfps.insert(QPair<int,int>(staticKey, orbitingKey), nfp);
+	(*nfpSet[orbitingKey])[staticKey] = nfp;
 }
 
 std::shared_ptr<RasterNoFitPolygon> RasterNoFitPolygonSet::getRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId) {
     int staticKey =  staticPieceTypeId*numAngles + staticAngleId;
     int orbitingKey =  orbitingPieceTypeId*numAngles + orbitingAngleId;
-    return Nfps[QPair<int,int>(staticKey, orbitingKey)];
+	return (*nfpSet[orbitingKey])[staticKey];//Nfps[QPair<int,int>(staticKey, orbitingKey)];
 }
 
-void RasterNoFitPolygonSet::eraseRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId) {
-    int staticKey =  staticPieceTypeId*numAngles + staticAngleId;
-    int orbitingKey =  orbitingPieceTypeId*numAngles + orbitingAngleId;
-    Nfps.remove(QPair<int,int>(staticKey, orbitingKey));
+std::shared_ptr<ItemRasterNoFitPolygonSet> RasterNoFitPolygonSet::getItemRasterNoFitPolygonSet(int orbitingPieceTypeId, int orbitingAngleId) {
+	int orbitingKey = orbitingPieceTypeId*numAngles + orbitingAngleId;
+	return nfpSet[orbitingKey];
 }
 
-void RasterNoFitPolygonSet::clear() {
-    Nfps.clear();
-}
+//void RasterNoFitPolygonSet::eraseRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId) {
+//    int staticKey =  staticPieceTypeId*numAngles + staticAngleId;
+//    int orbitingKey =  orbitingPieceTypeId*numAngles + orbitingAngleId;
+//    Nfps.remove(QPair<int,int>(staticKey, orbitingKey));
+//}
+//
+//void RasterNoFitPolygonSet::clear() {
+//    Nfps.clear();
+//}
 
 void RasterNoFitPolygon::setMatrix(QImage image) {
     //matrix = std::vector< std::vector<quint8> >(image.height(), std::vector<quint8>(image.width()));

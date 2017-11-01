@@ -32,7 +32,7 @@ void mapPieceNameAngle(RASTERPACKING::PackingProblem &problem, QHash<QString, in
 
 QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int,int>, int> &pieceAngleMap) {
     QPair<int,int> ids;
-    ids.first = -1; ids.second = -1;
+    ids.first = 0; ids.second = 0;
     if(pieceIndexMap.find(polygonName) != pieceIndexMap.end()) {
         ids.first = *pieceIndexMap.find(polygonName);
 //        for(uint i = 0; i < items[ids.first]->getAngleCount(); i++) // ERROR
@@ -91,7 +91,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
 	quint32 *curNfpData = nfpData;
 
     // 3. Load innerfit polygons
-    innerFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
+	innerFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet(items.length()));
     for(QList<std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
         std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIfp = *it;
         // Create image. FIXME: Use data file instead?
@@ -110,7 +110,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     }
 
     // 4. Load nofit polygons
-    noFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet);
+	noFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet(items.length()));
 	int i = 0;
     for(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++, i++) {
         std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
@@ -285,7 +285,7 @@ quint32 RasterPackingProblem::getNfpValue(int itemId1, QPoint pos1, int orientat
 
 // TODO: Use QRect
 void RasterPackingProblem::getIfpBoundingBox(int itemId, int orientation, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY) {
-	std::shared_ptr<RasterNoFitPolygon> ifp = innerFitPolygons->getRasterNoFitPolygon(-1, -1, getItemType(itemId), orientation);
+	std::shared_ptr<RasterNoFitPolygon> ifp = innerFitPolygons->getRasterNoFitPolygon(0, 0, getItemType(itemId), orientation);
 	bottomLeftX = -ifp->getOriginX();
 	bottomLeftY = -ifp->getOriginY();
 	topRightX = bottomLeftX + ifp->width() - 1;

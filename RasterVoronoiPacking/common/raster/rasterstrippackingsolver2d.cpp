@@ -67,7 +67,7 @@ bool RasterStripPackingSolver::setContainerDimensions(int &pixelWidthX, int &pix
 
 	// Detect extruding items and move them horizontally back inside the container
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
-		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(itemId), solution.getOrientation(itemId));
+		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(0, 0, originalProblem->getItemType(itemId), solution.getOrientation(itemId));
 		int maxPositionX = -ifp->getOriginX() + ifp->width() - (this->initialWidth - this->currentWidth) - 1;
 		int maxPositionY = -ifp->getOriginY() + ifp->height() - (this->initialHeight - this->currentHeight) - 1;
 		QPoint curItemPos = solution.getPosition(itemId);

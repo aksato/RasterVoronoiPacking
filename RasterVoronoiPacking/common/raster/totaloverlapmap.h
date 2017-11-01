@@ -73,22 +73,24 @@ namespace RASTERVORONOIPACKING {
     class TotalOverlapMapSet
     {
     public:
-        TotalOverlapMapSet();
-        TotalOverlapMapSet(int numberOfOrientations);
+		TotalOverlapMapSet(int numItems);
+        TotalOverlapMapSet(int numberOfOrientations, int numItems);
 
         void addOverlapMap(int orbitingPieceId, int orbitingAngleId, std::shared_ptr<TotalOverlapMap> ovm);
         std::shared_ptr<TotalOverlapMap> getOverlapMap(int orbitingPieceId, int orbitingAngleId);
 		void clear() { mapSet.clear(); }
 
-        QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cbegin() {return mapSet.cbegin();}
-        QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cend() {return mapSet.cend();}
+        //QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cbegin() {return mapSet.cbegin();}
+        //QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cend() {return mapSet.cend();}
 
 		void setShrinkVal(int val) { this->shrinkValX = val; }
 		void setShrinkVal(int valX, int valY) { this->shrinkValX = valX; this->shrinkValY = valY; }
 		int getShrinkValX() { return this->shrinkValX; }
 		int getShrinkValY() { return this->shrinkValY; }
     private:
-        QHash<int, std::shared_ptr<TotalOverlapMap>> mapSet;
+        //QHash<int, std::shared_ptr<TotalOverlapMap>> mapSet;
+		void initializeSet(int numItems);
+		QVector<std::shared_ptr<TotalOverlapMap>> mapSet;
 		int numAngles, shrinkValX, shrinkValY;
     };
 

@@ -50,7 +50,7 @@ void RasterStripPackingSolver::generateRandomSolution(RasterPackingSolution &sol
         }
 
         // Shuffle position
-		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(i), rnd_angle);
+		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(0, 0, originalProblem->getItemType(i), rnd_angle);
 		int newIfpWidth = ifp->width() - qRound(originalProblem->getScale() * (qreal)(this->initialWidth - this->currentWidth) / this->originalProblem->getScale());
         int minX = -ifp->getOriginX(); int minY = -ifp->getOriginY();
         int maxX = minX + newIfpWidth - 1;
@@ -148,7 +148,7 @@ bool RasterStripPackingSolver::setContainerWidth(int &pixelWidth, RasterPackingS
 
 	// Detect extruding items and move them horizontally back inside the container
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
-		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(-1, -1, originalProblem->getItemType(itemId), solution.getOrientation(itemId));
+		std::shared_ptr<RasterNoFitPolygon> ifp = originalProblem->getIfps()->getRasterNoFitPolygon(0, 0, originalProblem->getItemType(itemId), solution.getOrientation(itemId));
 		int maxPositionX = -ifp->getOriginX() + ifp->width() - (this->initialWidth - this->currentWidth) - 1;
 		QPoint curItemPos = solution.getPosition(itemId);
 		if (curItemPos.x() > maxPositionX) {

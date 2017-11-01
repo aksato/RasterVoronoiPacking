@@ -87,7 +87,7 @@ private:
     RunConfigurationsDialog runConfig;
 
 	int accContainerShrink;
-	qreal searchScale;
+	int zoomFactor;
 	qreal totalArea;
 	RASTERPACKING::PackingProblem originalProblem;
 	int currentContainerWidth, currentContainerHeight;

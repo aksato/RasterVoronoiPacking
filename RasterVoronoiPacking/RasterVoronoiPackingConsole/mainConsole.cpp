@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 	case COST_EVALUATION: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::COST_EVALUATION); break;
 	case BAGPIPE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::BAGPIPE); break;
 	}
-	algorithmParams.setSearchScale(params.zoomValue);
+	algorithmParams.setZoomFactor(params.zoomValue);
 
 	int finishedThreadNums = 0;
 	QVector<std::shared_ptr<ConsolePackingLoader>> packingLoadersList;

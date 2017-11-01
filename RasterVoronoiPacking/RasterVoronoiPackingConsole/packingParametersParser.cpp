@@ -10,8 +10,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
 
     parser.addPositionalArgument("source","Input problem file path.");
-    const QCommandLineOption nameZoomedInput(QStringList() << "zoom", "Zoomed problem input: file name or explicity zoom value.", "name");
-    parser.addOption(nameZoomedInput);
+    const QCommandLineOption valueZoom(QStringList() << "zoom", "Zoom value for double resolution search method.", "value");
+	parser.addOption(valueZoom);
     const QCommandLineOption nameOutputTXT(QStringList() << "result", "The output result statistics file name.", "name");
     parser.addOption(nameOutputTXT);
     const QCommandLineOption nameOutputXML(QStringList() << "layout", "The output layout XML file name.", "name");
@@ -69,17 +69,17 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     }
     params->inputFilePath = positionalArguments.at(0);
 
-    if (parser.isSet(nameZoomedInput)) {
-        const QString inputName = parser.value(nameZoomedInput);
+	if (parser.isSet(valueZoom)) {
+		const QString valueZoomStr = parser.value(valueZoom);
 		bool ok;
-		const qreal zoomValue = inputName.toDouble(&ok);
-		if (!ok || zoomValue < 0) {
+		const int zoomValue = valueZoomStr.toInt(&ok);
+		if (!ok || zoomValue < 1) {
 			*errorMessage = "Bad zoom value.";
 			return CommandLineError;
 		}
 		params->zoomValue = zoomValue;
     }
-	else params->zoomValue = -1.0;
+	else params->zoomValue = 1;
 
     if (parser.isSet(nameOutputTXT)) {
         const QString outputName = parser.value(nameOutputTXT);

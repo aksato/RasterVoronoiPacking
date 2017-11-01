@@ -193,7 +193,7 @@ quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 				if (*mapLine == 0)
 					*resultLine = 0;
 				else {
-					int index = (int)(((float)*mapLine - 1.0)*254.0 / (maxD - 1.0) + 1.0);
+					int index = (int)(((float)*mapLine - 1.0)*253.0 / (maxD - 1.0) + 1.0);
 					*resultLine = index;
 				}
 			}

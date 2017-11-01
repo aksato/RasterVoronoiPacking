@@ -17,7 +17,7 @@ public:
 
     int getInitialSolution();
     int getMetaheuristic();
-	qreal getSearchScale();
+	int getZoomRatio();
     int getMaxWorse();
     int getMaxSeconds();
     qreal getLenght();
@@ -27,7 +27,7 @@ public:
 	bool isZoomedApproach();
 
     void setInitialLenght(qreal lenght, qreal step);
-	void setInitialSearchScale(qreal scale);
+	void setInitialZoomFactor(int zoom);
 	void enableCluster();
 	void disableCluster();
 

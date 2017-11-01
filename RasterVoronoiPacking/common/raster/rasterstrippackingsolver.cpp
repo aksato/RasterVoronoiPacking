@@ -3,8 +3,6 @@
 
 using namespace RASTERVORONOIPACKING;
 
-#define ZOOMNEIGHBORHOOD 3
-
 std::shared_ptr<RasterStripPackingSolver> RasterStripPackingSolver::createRasterPackingSolver(std::shared_ptr<RasterPackingProblem> problem, RasterStripPackingParameters &parameters, int initialWidth, int initialHeight) {
 	std::shared_ptr<RasterStripPackingSolver> solver;
 	std::shared_ptr<GlsWeightSet> weights;

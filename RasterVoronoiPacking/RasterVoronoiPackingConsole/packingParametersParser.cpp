@@ -215,7 +215,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		if (ok && groupSize > 0 && groupSize <= params->numThreads) params->threadGroupSize = groupSize;
 		else { *errorMessage = "Bad thread group size value."; return CommandLineError; }
 	}
-	else params->threadGroupSize = params->numThreads;
+	else params->threadGroupSize = 1;
 	
 	if (parser.isSet(valueCluster)) {
 		const QString clusterString = parser.value(valueCluster);

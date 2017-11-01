@@ -78,7 +78,7 @@ bool TotalOverlapMap::getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight
 }
 
 void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
-    QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
+    QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
     QRect intersection;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
 
@@ -91,7 +91,7 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 }
 
 void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {
-    QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
+    QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
     QRect intersection;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
 
@@ -104,8 +104,7 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 }
 
 void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {
-	//QPoint relativeOrigin = getReferencePoint() + pos - nfp->getOrigin();
-	QPoint relativeOrigin = zoomFactorInt * getReferencePoint() + pos - nfp->getOrigin();
+	QPoint relativeOrigin = zoomFactorInt * this->reference + pos - nfp->getOrigin();
 	QRect intersection;
 	if (!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection, zoomFactorInt)) return;
 
@@ -131,13 +130,10 @@ quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 		if (curVal < minVal) {
 			minVal = curVal;
 			minid = id;
-			if (minVal == 0) {
-				minPt = QPoint(minid % width, minid / width);
-				return minVal;
-			}
+			if (minVal == 0) break;
 		}
 	}
-	minPt = QPoint(minid % width, minid / width);
+	minPt = QPoint(minid % width, minid / width) - this->reference;
 	return minVal;
 }
 

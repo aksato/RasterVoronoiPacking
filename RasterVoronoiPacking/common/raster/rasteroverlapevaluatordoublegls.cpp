@@ -43,7 +43,7 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(
 	map->getMinimum(minRelativePos);
 
 	// Rescale position before returning
-	return (this->problem->getScale() / searchProblemScale) *(minRelativePos - map->getReferencePoint());
+	return (this->problem->getScale() / searchProblemScale) * minRelativePos;
 }
 
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution) {

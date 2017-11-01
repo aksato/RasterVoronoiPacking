@@ -199,7 +199,7 @@ QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orien
 	std::shared_ptr<TotalOverlapMap> map = overlapEvaluator->getTotalOverlapMap(itemId, orientation, solution);
 	QPoint minRelativePos;
 	value = map->getMinimum(minRelativePos);
-	return minRelativePos - map->getReferencePoint();
+	return minRelativePos;
 }
 
 void getNextBLPosition(QPoint &curPos, int  minIfpX, int minIfpY, int maxIfpX, int maxIfpY) {

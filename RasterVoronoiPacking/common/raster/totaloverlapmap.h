@@ -43,7 +43,7 @@ namespace RASTERVORONOIPACKING {
         virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
-		virtual quint32 getMinimum(QPoint &minPt);
+		quint32 getMinimum(QPoint &minPt);
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes

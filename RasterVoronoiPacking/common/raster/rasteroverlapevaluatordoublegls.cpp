@@ -62,11 +62,12 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getRec
 	QRect zoomSquareRect(QPoint(pos.x() - width / 2, pos.y() - height / 2), QSize(width, height));
 	zoomSquareRect = zoomSquareRect.intersected(curIfpBoundingBox);
 
-	// Create zoomed overlap Map
+	// Create zoomed overlap Map. FIXME: Use cache map?
 	std::shared_ptr<TotalOverlapMap> curZoomedMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(zoomSquareRect));
-	for (int j = zoomSquareRect.top(); j <= zoomSquareRect.bottom(); j++)
-	for (int i = zoomSquareRect.left(); i <= zoomSquareRect.right(); i++)
-		curZoomedMap->setValue(QPoint(i, j), getTotalOverlapMapSingleValue(itemId, orientation, QPoint(i, j), solution));
+	for (int i = 0; i < problem->count(); i++) {
+		if (i == itemId) continue;
+		curZoomedMap->addVoronoi(i, problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i), problem->getItemType(itemId), orientation), solution.getPosition(i), glsWeights->getWeight(itemId, i));
+	}
 
 	return curZoomedMap;
 }

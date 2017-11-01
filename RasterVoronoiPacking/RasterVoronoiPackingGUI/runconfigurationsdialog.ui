@@ -303,5 +303,21 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>spinBox_3</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>198</x>
+     <y>488</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>390</x>
+     <y>445</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
 </ui>

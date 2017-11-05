@@ -119,7 +119,7 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 	int initialY = intersection.bottomLeft().y() % zoomFactorInt == 0 ? intersection.bottomLeft().y() : zoomFactorInt * ((intersection.bottomLeft().y() / zoomFactorInt) + 1);
 	for (int j = initialY; j <= intersection.topRight().y(); j += zoomFactorInt) {
 		int initialX = intersection.bottomLeft().x() % zoomFactorInt == 0 ? intersection.bottomLeft().x() : zoomFactorInt * ((intersection.bottomLeft().x() / zoomFactorInt) + 1);
-		quint32 *dataPt = scanLine(j / 5) + initialX / 5;
+		quint32 *dataPt = scanLine(j / zoomFactorInt) + initialX / zoomFactorInt;
 		for (int i = initialX; i <= intersection.topRight().x(); i += zoomFactorInt, dataPt++) {
 			quint32 indexValue = nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
 			*dataPt += weight * indexValue;

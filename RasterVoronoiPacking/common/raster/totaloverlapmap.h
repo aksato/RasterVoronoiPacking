@@ -78,7 +78,7 @@ namespace RASTERVORONOIPACKING {
 
         void addOverlapMap(int orbitingPieceId, int orbitingAngleId, std::shared_ptr<TotalOverlapMap> ovm);
         std::shared_ptr<TotalOverlapMap> getOverlapMap(int orbitingPieceId, int orbitingAngleId);
-		void clear() { mapSet.clear(); }
+		void clear() { mapSet = QVector<std::shared_ptr<TotalOverlapMap>>(mapSet.length()); }
 
         //QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cbegin() {return mapSet.cbegin();}
         //QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cend() {return mapSet.cend();}

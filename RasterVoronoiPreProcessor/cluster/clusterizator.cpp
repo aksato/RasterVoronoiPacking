@@ -101,7 +101,7 @@ QString Clusterizator::getClusteredPuzzle(QString original, QList<Cluster> &clus
 			itemsToRemove.push_back(staticId);
 			removedPieces.push_back((*itStatic)->getName());
 		}
-		if (puzzle.multiplicities[orbitingId] == 0) {
+		if (orbitingId != staticId && puzzle.multiplicities[orbitingId] == 0) {
 			itemsToRemove.push_back(orbitingId);
 			removedPieces.push_back((*itOrbiting)->getName());
 		}

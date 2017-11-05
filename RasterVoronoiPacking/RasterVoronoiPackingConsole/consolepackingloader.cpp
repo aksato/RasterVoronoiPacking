@@ -163,11 +163,11 @@ void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPac
 
 void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
 	if (!info.twodim) {
-		std::cout << "\n" << "New layout obtained: " << info.length / problem->getScale() << ". Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
+		std::cout << "New layout obtained: " << info.length / problem->getScale() << ". Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength(info.length, info.iteration, info.timestamp, info.seed);
 	}
 	else {
-		std::cout << "\n" << "New layout obtained: " << info.length / problem->getScale() << "x" << info.height / problem->getScale() << " ( area = " << (info.length * info.height) / (problem->getScale() * problem->getScale()) << "). Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
+		std::cout << "New layout obtained: " << info.length / problem->getScale() << "x" << info.height / problem->getScale() << " ( area = " << (info.length * info.height) / (problem->getScale() * problem->getScale()) << "). Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength2D(info, info.iteration, info.timestamp, info.seed);
 	}
 	saveXMLSolution(solution, info);

@@ -82,12 +82,14 @@ void PackingThread::run()
 				worseSolutionsCount = 0;
 			}
 			else worseSolutionsCount++;
+			#ifndef CONSOLE
 			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
 				nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
 				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit()*1000-QDateTime::currentDateTime().msecsTo(finalTime))/1000.0);
 				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, totalItNum, seed));
 				emit weightsChanged();
 			}
+			#endif
 			itNum++; totalItNum++;
 		}
 		if (!parameters.isFixedLength()) {

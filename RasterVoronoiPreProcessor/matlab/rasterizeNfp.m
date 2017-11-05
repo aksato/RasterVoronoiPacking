@@ -1,4 +1,4 @@
-function rasterVoronoiNfp = rasterizeNfp(curNfp, x0, y0, w, h, method)
+function rasterVoronoiNfp = rasterizeNfp(curNfp, x0, y0, w, h, method, distScale)
 
 curX = curNfp(:,1);
 curY = curNfp(:,2);
@@ -28,6 +28,8 @@ rasterVoronoiNfp(size(rasterVoronoiNfp,1),:) = [];
 rasterVoronoiNfp(:,size(rasterVoronoiNfp,2)) = [];
 if strcmp(method,'sqreuclidean')
     rasterVoronoiNfp = rasterVoronoiNfp.^2;
+elseif strcmp(method,'euclidean')
+    rasterVoronoiNfp = round(distScale*rasterVoronoiNfp);
 else
     rasterVoronoiNfp = round(rasterVoronoiNfp);
 end

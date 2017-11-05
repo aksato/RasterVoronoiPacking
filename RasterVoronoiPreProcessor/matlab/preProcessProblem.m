@@ -1,10 +1,13 @@
-function [nfpSizes, rasterNfps] = preProcessProblem(inputFname, outputfName, scale, method)
+function [nfpSizes, rasterNfps] = preProcessProblem(inputFname, outputfName, scale, method, distScale)
 
 if ~exist('method','var')
     method = 'sqreuclidean';
 end
 if ~exist('scale','var')
     scale = 1';
+end
+if ~exist('distScale','var')
+    distScale = 1';
 end
 if ~strcmp(method,'euclidean') && ~strcmp(method,'sqreuclidean') && ~strcmp(method,'manhattan')
     error('rasterizeNfp:InvalidaMethod', 'available methods: euclidean, sqreuclidean and manhattan');
@@ -21,9 +24,7 @@ nfpSizes = zeros(size(nfps,2),2);
 fprintf('0.00%%');
 prevPercent = 0;
 for i = 1:size(nfps,2)
-    %[matrix, rp] = rasterizeNfp(nfps{i}, method);
-    %rasterNfps(i) = struct('matrix', matrix, 'x', rp(1), 'y', rp(2));
-    matrix = rasterizeNfp(nfps(i).polygon, nfps(i).x, nfps(i).y, nfps(i).w, nfps(i).h, method);
+    matrix = rasterizeNfp(nfps(i).polygon, nfps(i).x, nfps(i).y, nfps(i).w, nfps(i).h, method, distScale);
     rasterNfps(i).matrix = matrix;
     nfpSizes(i,:) = [size(matrix,1) size(matrix,2)];
     if prevPercent >= 10

@@ -90,10 +90,12 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
     QRect intersection;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
 
-	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
-		quint32 *dataPt = scanLine(j) + intersection.bottomLeft().x();
-		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++) {
-			*dataPt += nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
+	quint32 *lineDataPt = scanLine(intersection.bottomLeft().y());
+	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++, lineDataPt += width) {
+		quint32 *dataPt = lineDataPt + intersection.bottomLeft().x();
+		quint32 *nfpPt = nfp->getPixelRef(intersection.bottomLeft().x() - relativeOrigin.x(), j - relativeOrigin.y());
+		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++, nfpPt++) {
+			*dataPt += *nfpPt;
 		}
 	}
 }
@@ -103,10 +105,12 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
     QRect intersection;
     if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
 
-	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++) {
-		quint32 *dataPt = scanLine(j) + intersection.bottomLeft().x();
-		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++) {
-			*dataPt += weight * nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
+	quint32 *lineDataPt = scanLine(intersection.bottomLeft().y());
+	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++, lineDataPt += width) {
+		quint32 *dataPt = lineDataPt + intersection.bottomLeft().x();
+		quint32 *nfpPt = nfp->getPixelRef(intersection.bottomLeft().x() - relativeOrigin.x(), j - relativeOrigin.y());
+		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++, nfpPt++) {
+			*dataPt += weight * (*nfpPt);
 		}
 	}
 }
@@ -117,12 +121,14 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 	if (!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection, zoomFactorInt)) return;
 
 	int initialY = intersection.bottomLeft().y() % zoomFactorInt == 0 ? intersection.bottomLeft().y() : zoomFactorInt * ((intersection.bottomLeft().y() / zoomFactorInt) + 1);
-	for (int j = initialY; j <= intersection.topRight().y(); j += zoomFactorInt) {
+	quint32 *lineDataPt = scanLine(initialY / zoomFactorInt);
+	int scaledWidth = zoomFactorInt*width;
+	for (int j = initialY; j <= intersection.topRight().y(); j += zoomFactorInt, lineDataPt += width) {
 		int initialX = intersection.bottomLeft().x() % zoomFactorInt == 0 ? intersection.bottomLeft().x() : zoomFactorInt * ((intersection.bottomLeft().x() / zoomFactorInt) + 1);
-		quint32 *dataPt = scanLine(j / zoomFactorInt) + initialX / zoomFactorInt;
-		for (int i = initialX; i <= intersection.topRight().x(); i += zoomFactorInt, dataPt++) {
-			quint32 indexValue = nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y());
-			*dataPt += weight * indexValue;
+		quint32 *dataPt = lineDataPt + initialX / zoomFactorInt;
+		quint32 *nfpPt = nfp->getPixelRef(initialX - relativeOrigin.x(), j - relativeOrigin.y());
+		for (int i = initialX; i <= intersection.topRight().x(); i += zoomFactorInt, dataPt++, nfpPt += zoomFactorInt) {
+			*dataPt += weight * (*nfpPt);
 		}
 	}
 }

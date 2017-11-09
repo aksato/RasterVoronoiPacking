@@ -62,7 +62,7 @@ Clusterizator::Clusterizator(RASTERPACKING::PackingProblem *_problem, qreal comp
 	containerWidth = maxX - minX; containerHeight = maxY - minY;
 }
 
-QString Clusterizator::getClusteredPuzzle(QString original, QList<Cluster> &clusters, QList<QString> &removedPieces) {
+QString Clusterizator::getClusteredPuzzle(QString original, QList<Cluster> &clusters, QList<QString> &removedPieces, qreal scaleFixFactor) {
 	// Parse original puzzle to obtain convex representation of items
 	SimplifiedPuzzleProblem puzzle(original);
 	// Create polygon map
@@ -89,7 +89,7 @@ QString Clusterizator::getClusteredPuzzle(QString original, QList<Cluster> &clus
 		int staticId = polygonsMap[(*itStatic)->getPolygon()->getName()];
 		int orbitingId = polygonsMap[(*itOrbiting)->getPolygon()->getName()];
 		QStringList staticPolygonStr = transformPolygon(puzzle.items[staticId], curCluster.noFitPolygon->getStaticAngle(), QPointF(0, 0));
-		QStringList orbitingPolygonStr = transformPolygon(puzzle.items[orbitingId], curCluster.noFitPolygon->getOrbitingAngle(), curCluster.orbitingPos);
+		QStringList orbitingPolygonStr = transformPolygon(puzzle.items[orbitingId], curCluster.noFitPolygon->getOrbitingAngle(), curCluster.orbitingPos * scaleFixFactor);
 		// Create new item
 		puzzle.items.push_back(QStringList() << staticPolygonStr << orbitingPolygonStr);
 		if (newAngles.length() == 1) puzzle.angles.push_back(QStringList()); 

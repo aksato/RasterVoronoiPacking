@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
 
 		qDebug() << "Generating clustered problem.";
 		QList<QString> removedPieces;
-		QString puzzleString = rasterClusterizator->getClusteredPuzzle(params.inputFilePath, clusters, removedPieces);
+		QString puzzleString = rasterClusterizator->getClusteredPuzzle(params.inputFilePath, clusters, removedPieces, params.scaleFixFactor);
 	
 
 		myTimer.start();

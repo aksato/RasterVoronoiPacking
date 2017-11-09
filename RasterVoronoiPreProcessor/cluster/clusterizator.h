@@ -20,7 +20,7 @@ namespace CLUSTERING {
 		QList<Cluster> getBestClusters(int numClusters);
 		QList<Cluster> getBestClusters(QList<int> rankings);
 		void getClusteredProblem(RASTERPACKING::PackingProblem &problem, QList<Cluster> &clusters);
-		QString getClusteredPuzzle(QString original, QList<Cluster> &clusters, QList<QString> &removedPieces);
+		QString getClusteredPuzzle(QString original, QList<Cluster> &clusters, QList<QString> &removedPieces, qreal scaleFixFactor);
 		QString getClusterInfo(RASTERPACKING::PackingProblem &clusterProblem, QList<Cluster> &clusters, QString outputXMLName, QList<QString> &removedPieces);
 
 	private:

@@ -2,10 +2,6 @@
 #include <algorithm>
 #include <QDir>
 
-#define COMPRESS_W 0.899
-#define INTERSECT_W 0.1
-#define WIDTH_W 0.001
-
 using namespace CLUSTERING;
 
 QPair<qreal, int> getMinimumVal(QList<Cluster> maxClusters) {
@@ -44,11 +40,7 @@ QStringList transformPolygon(QStringList &pol, int angle, QPointF displacement) 
 	return ans;
 }
 
-Clusterizator::Clusterizator(RASTERPACKING::PackingProblem *_problem) : problem(_problem), weight_compression(COMPRESS_W), weight_intersection(INTERSECT_W), weight_width(WIDTH_W) {
-	Clusterizator(_problem, COMPRESS_W, INTERSECT_W, WIDTH_W);
-}
-
-Clusterizator::Clusterizator(RASTERPACKING::PackingProblem *_problem, qreal compressW, qreal intersectW, qreal widthW) : problem(_problem), weight_compression(compressW), weight_intersection(intersectW), weight_width(widthW) {
+Clusterizator::Clusterizator(RASTERPACKING::PackingProblem *_problem) : problem(_problem) {
 	std::shared_ptr<RASTERPACKING::Container> container = *(problem->ccbegin());
 	std::shared_ptr<RASTERPACKING::Polygon> pol = container->getPolygon();
 	qreal minX = (*pol->begin()).x(); qreal minY = (*pol->begin()).y();
@@ -339,6 +331,9 @@ qreal area(QRectF &rect) {
 }
 
 qreal Clusterizator::getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTERPACKING::Polygon &polygon2, QPointF displacement) {
+	// Convex Hull Area
+	std::shared_ptr<RASTERPACKING::Polygon> convHull = RASTERPACKING::Polygon::getConvexHull(polygon1, polygon2);
+	qreal convexHullArea = qAbs(convHull->getArea());
 	// Bounding Box Area
 	QRectF bb1 = polygon1.boundingRect();
 	QRectF bb2 = polygon2.boundingRect();
@@ -347,19 +342,10 @@ qreal Clusterizator::getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTER
 	qreal bottom = bb1.bottom() > bb2.bottom() ? bb1.bottom() : bb2.bottom();
 	qreal left = bb1.left() > bb2.left() ? bb2.left() : bb1.left();
 	qreal bbArea = (bottom - top) * (right - left);
-	qreal totalArea = qAbs(polygon1.getArea()) + qAbs(polygon2.getArea());
-	//qreal compressionRate = bbArea / (area(bb1) + area(bb2));
-	qreal compressionRate = totalArea / bbArea;
-	// Intersection Area
-	QRectF intersection = bb1.intersected(bb2);
-	//qreal intArea = -area(intersection)/area(bb1);
-	qreal intArea = area(intersection) / (area(bb1) + area(bb2));
-	// Width
-	//qreal width = (right - left) / (bb1.right() - bb1.left());
-	//qreal width = qMin(bb1.left() - bb1.right(), bb2.left() - bb2.right()) / (left - right);
-	qreal width = (right - left) / containerHeight;
-
-	return weight_compression*compressionRate + weight_intersection*intArea + weight_width*width;
+	// Sum of items area
+	qreal itemsArea = qAbs(polygon1.getArea()) + qAbs(polygon2.getArea());
+	
+	return (itemsArea / convexHullArea) + (itemsArea / bbArea);
 }
 
 void Clusterizator::insertNewCluster(QList<Cluster> &minClusters, Cluster &candidateCluster, int numClusters) {

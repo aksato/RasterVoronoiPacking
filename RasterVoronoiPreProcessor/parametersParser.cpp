@@ -171,24 +171,6 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 
 	if (parser.isSet(valueCluster) && !processValueClusterOption(parser.value(valueCluster), params, errorMessage)) return CommandLineError;
 
-	if (parser.isSet(valueClusterWeight)) {
-		params->clusterWeights.clear();
-		const QString valueClusterWeightsStr = parser.value(valueClusterWeight);
-		QStringList clusterWeightsStrList = valueClusterWeightsStr.split(";");
-		bool ok = false;
-		if (clusterWeightsStrList.length() == 3) {
-			for (auto valStr : clusterWeightsStrList) {
-				const qreal number = valStr.toDouble(&ok);
-				if (!ok) break;
-				params->clusterWeights.push_back(number);
-			}
-		}
-		if (!ok) {
-			*errorMessage = "Bad cluster weight value.";
-			return CommandLineError;
-		}
-	}
-
 	if (parser.isSet(nameClusterOutputFile))
 		params->clusterPrefix = parser.value(nameClusterOutputFile);
 
@@ -315,24 +297,6 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 		}
 
 		if (line.at(0).toLower().trimmed() == "cluster"  && !processValueClusterOption(line.at(1), params, errorMessage)) return CommandLineError;
-
-		if (line.at(0).toLower().trimmed() == "cluster-weights") {
-			params->clusterWeights.clear();
-			const QString valueClusterWeightsStr = line.at(1);
-			QStringList clusterWeightsStrList = valueClusterWeightsStr.split(";");
-			bool ok = false;
-			if (clusterWeightsStrList.length() == 3) {
-				for (auto valStr : clusterWeightsStrList) {
-					const qreal number = valStr.toDouble(&ok);
-					if (!ok) break;
-					params->clusterWeights.push_back(number);
-				}
-			}
-			if (!ok) {
-				*errorMessage = "Bad cluster weight value.";
-				return CommandLineError;
-			}
-		}
 
 		if (line.at(0).toLower().trimmed() == "cluster-output")
 			params->clusterPrefix = line.at(1);

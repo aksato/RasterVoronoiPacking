@@ -15,7 +15,6 @@ namespace CLUSTERING {
 	class Clusterizator {
 	public:
 		Clusterizator(RASTERPACKING::PackingProblem *_problem);
-		Clusterizator(RASTERPACKING::PackingProblem *_problem, qreal compressW, qreal intersectW, qreal widthW);
 		~Clusterizator() {}
 		QList<Cluster> getBestClusters(int numClusters);
 		QList<Cluster> getBestClusters(QList<int> rankings);

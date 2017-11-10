@@ -343,8 +343,7 @@ int main(int argc, char *argv[])
 		qDebug() << "Clustering finished problem.";
 		qDebug() << "Determining clusters.";
 		std::shared_ptr<CLUSTERING::Clusterizator> rasterClusterizator;
-		if(params.clusterWeights.isEmpty()) rasterClusterizator = std::shared_ptr<CLUSTERING::Clusterizator>(new CLUSTERING::Clusterizator(&problem));
-		else rasterClusterizator = std::shared_ptr<CLUSTERING::Clusterizator>(new CLUSTERING::Clusterizator(&problem, params.clusterWeights[0], params.clusterWeights[1], params.clusterWeights[2]));
+		rasterClusterizator = std::shared_ptr<CLUSTERING::Clusterizator>(new CLUSTERING::Clusterizator(&problem));
 		QList<CLUSTERING::Cluster> clusters = rasterClusterizator->getBestClusters(params.clusterRankings);
 		for (int i = 0; i < clusters.length(); i++) {
 			QString clusterFileName = problem.getName() + "_" + clusters[i].noFitPolygon->getFileName().left(clusters[i].noFitPolygon->getFileName().length() - 4) + "_" + QString::number(params.clusterRankings[i] + 1) + "_" + QString::number(clusters[i].clusterValue) + ".svg";

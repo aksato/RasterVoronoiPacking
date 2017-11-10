@@ -22,7 +22,6 @@ struct PreProcessorParameters {
 	bool noOverlap; // Create nfps with contours
 	QList<int> clusterRankings;
 	QString clusterPrefix, clusterFile, clusterInfoFile;
-	QList<qreal> clusterWeights;
 	bool skipRaster;
 };
 

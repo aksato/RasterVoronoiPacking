@@ -189,7 +189,7 @@ void Clusterizator::getClusteredProblem(RASTERPACKING::PackingProblem &problem, 
 
 QList<Cluster> Clusterizator::getBestClusters(QList<int> rankings) {
 	int numClusters = (*std::max_element(rankings.cbegin(), rankings.cend())) + 1;
-	QList<Cluster> bestClusters = getBestClusters(numClusters);
+	QList<Cluster> bestClusters = getAllValidClusters();
 	std::sort(bestClusters.begin(), bestClusters.end(), [](const Cluster & a, const Cluster & b) -> bool {return a.clusterValue > b.clusterValue; });
 	QList<Cluster> chosenClusters;
 	foreach(int rank, rankings) chosenClusters << bestClusters[rank];
@@ -197,38 +197,73 @@ QList<Cluster> Clusterizator::getBestClusters(QList<int> rankings) {
 }
 
 QList<Cluster> Clusterizator::getBestClusters(int numClusters) {
+	QList<Cluster> bestClusters = getAllValidClusters();
+	std::sort(bestClusters.begin(), bestClusters.end(), [](const Cluster & a, const Cluster & b) -> bool {return a.clusterValue > b.clusterValue; });
+	QList<Cluster> chosenClusters;
+	int clusterCount = 0;
+	QMap<QString, int> pieceCounts;
+	for (QList<std::shared_ptr<RASTERPACKING::Piece>>::iterator it = problem->pbegin(); it != problem->pend(); it++) pieceCounts.insert((*it)->getPolygon()->getName(), (*it)->getMultiplicity());
+	for (int clusterCount = 0; clusterCount < numClusters; clusterCount++) {
+		Cluster currentCluster = bestClusters.first();
+		chosenClusters << currentCluster;
+		// Check multiplicity
+		QString staticPiece = currentCluster.noFitPolygon->getStaticName();
+		QString orbitingPiece = currentCluster.noFitPolygon->getOrbitingName();
+		pieceCounts[staticPiece]--; pieceCounts[orbitingPiece]--;
+
+		// Check if remaining clusters are valid and remove invalid clusters
+		QSet<QString> usedPieces; usedPieces << staticPiece; usedPieces << orbitingPiece;
+		for (auto usedPiece : usedPieces) {
+			if (pieceCounts[usedPiece] == 1) {
+				// Remove all clusters with two pieces of the same type as the static piece
+				auto new_end = std::remove_if(bestClusters.begin(), bestClusters.end(),
+					[&usedPiece](const Cluster& curCluster) { return curCluster.noFitPolygon->getStaticName() == usedPiece && curCluster.noFitPolygon->getOrbitingName() == usedPiece; });
+				bestClusters.erase(new_end, bestClusters.end());
+			}
+			else if (pieceCounts[usedPiece] == 0) {
+				// Remove all cluster with static piece
+				auto new_end = std::remove_if(bestClusters.begin(), bestClusters.end(),
+					[&usedPiece](const Cluster& curCluster) { return curCluster.noFitPolygon->getStaticName() == usedPiece || curCluster.noFitPolygon->getOrbitingName() == usedPiece; });
+				bestClusters.erase(new_end, bestClusters.end());
+			}
+		}
+	}
+	return chosenClusters;
+}
+
+QList<Cluster> Clusterizator::getAllValidClusters() {
 	QList<Cluster> bestClusters;
 	QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator it = problem->rnfpbegin();
 	QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> pairNoFitPolygons1;
-	while (bestClusters.length() < numClusters && it != problem->rnfpend()) {
+	//while (bestClusters.length() < numClusters && it != problem->rnfpend()) {
+	while (it != problem->rnfpend()) {
 		pairNoFitPolygons1.clear();
 		getNextPairNfpList(pairNoFitPolygons1, it);
 		QPointF maxPoint; qreal maxVal;
 		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> nfp = getMaximumPairCluster(pairNoFitPolygons1, maxPoint, maxVal);
 		Cluster newCluster(nfp, maxPoint, maxVal);
-		//if (checkValidClustering(bestClusters, newCluster)) bestClusters.push_back(newCluster);
-		insertNewCluster(bestClusters, newCluster, numClusters);
+		if (checkValidClustering(newCluster)) bestClusters.push_back(newCluster);
 	}
-	QPair<qreal, int> minMaxClusterVal = getMinimumVal(bestClusters);
-	while (it != problem->rnfpend()) {
-		pairNoFitPolygons1.clear();
-		getNextPairNfpList(pairNoFitPolygons1, it);
-		QPointF clusterPos;
-		qreal clusterVal;
-		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> nfp = getMaximumPairCluster(pairNoFitPolygons1, clusterPos, clusterVal);
-		if (clusterVal > minMaxClusterVal.first) {
-			//Cluster removedCluster = bestClusters.takeAt(minMaxClusterVal.second);
-			//Cluster newCluster(nfp, clusterPos, clusterVal);
-			//if (checkValidClustering(bestClusters, newCluster)) bestClusters.push_back(newCluster);
-			//else bestClusters.push_back(removedCluster);
-			//minMaxClusterVal = getMinimumVal(bestClusters);
-			Cluster newCluster(nfp, clusterPos, clusterVal);
-			insertNewCluster(bestClusters, newCluster, numClusters);
-			minMaxClusterVal = getMinimumVal(bestClusters);
-		}
-	}
+	//QPair<qreal, int> minMaxClusterVal = getMinimumVal(bestClusters);
+	//while (it != problem->rnfpend()) {
+	//	pairNoFitPolygons1.clear();
+	//	getNextPairNfpList(pairNoFitPolygons1, it);
+	//	QPointF clusterPos;
+	//	qreal clusterVal;
+	//	std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> nfp = getMaximumPairCluster(pairNoFitPolygons1, clusterPos, clusterVal);
+	//	if (clusterVal > minMaxClusterVal.first) {
+	//		//Cluster removedCluster = bestClusters.takeAt(minMaxClusterVal.second);
+	//		//Cluster newCluster(nfp, clusterPos, clusterVal);
+	//		//if (checkValidClustering(bestClusters, newCluster)) bestClusters.push_back(newCluster);
+	//		//else bestClusters.push_back(removedCluster);
+	//		//minMaxClusterVal = getMinimumVal(bestClusters);
+	//		Cluster newCluster(nfp, clusterPos, clusterVal);
+	//		insertNewCluster(bestClusters, newCluster, numClusters);
+	//		minMaxClusterVal = getMinimumVal(bestClusters);
+	//	}
+	//}
 
-	return QList<Cluster>() << bestClusters;
+	return bestClusters;
 }
 
 void Clusterizator::getNextPairNfpList(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> &noFitPolygons, QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator &curIt) {
@@ -375,6 +410,16 @@ void Clusterizator::insertNewCluster(QList<Cluster> &minClusters, Cluster &candi
 	// Exchange cluster
 	minClusters.removeAt(exchangedClusterId);
 	minClusters.push_back(candidateCluster);
+}
+
+bool Clusterizator::checkValidClustering(Cluster &candidateCluster) {
+	QString staticPiece = candidateCluster.noFitPolygon->getStaticName();
+	QString orbitingPiece = candidateCluster.noFitPolygon->getOrbitingName();
+	if (staticPiece == orbitingPiece) {
+		QList<std::shared_ptr<RASTERPACKING::Piece>>::iterator it = std::find_if(problem->pbegin(), problem->pend(), [staticPiece](std::shared_ptr<RASTERPACKING::Piece> s) { return s->getPolygon()->getName() == staticPiece; });
+		if ((*it)->getMultiplicity() < 2) return false;
+	}
+	return true;
 }
 
 bool Clusterizator::checkValidClustering(QList<Cluster> &clusterList) {

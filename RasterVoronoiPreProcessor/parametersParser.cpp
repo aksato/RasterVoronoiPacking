@@ -3,27 +3,6 @@
 #include <QTextStream>
 #include "parametersParser.h"
 
-bool processValueClusterOption(const QString &value, PreProcessorParameters *params, QString *errorMessage) {
-	params->clusterRankings.clear();
-	QStringList clusterRankingsStrList = value.split(";");
-	bool ok;
-	for (auto valStr : clusterRankingsStrList) {
-		const int number = valStr.toInt(&ok);
-		if (!ok) break;
-		if (number > 0 && number < 5) params->clusterRankings.push_back(number - 1);
-		else { ok = false; break; }
-	}
-	if (!ok && clusterRankingsStrList.length() == 1) {
-		params->clusterFile = value;
-		return true;
-	}
-	if (!ok) {
-		*errorMessage = "Bad cluster value.";
-		return false;
-	}
-	return true;
-}
-
 CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessorParameters *params, QString *errorMessage)
 {
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
@@ -51,10 +30,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	parser.addOption(valueInnerFitEps);
 	const QCommandLineOption boolNoOverlap("nooverlap", "Creates nofit polygons with contour (guarantees no overlap).");
 	parser.addOption(boolNoOverlap);
-	const QCommandLineOption valueCluster("cluster", "List of ranks of clustered items given in x;x ... ;x format OR cluster puzzle file name.", "clusterRankings");
+	const QCommandLineOption valueCluster("cluster-ratio", "Percentage of clustered items.", "ratio value");
 	parser.addOption(valueCluster);
-	const QCommandLineOption valueClusterWeight("cluster-weights", "List of weights for the cluster method given in x;x;x format.", "clusterWeights");
-	parser.addOption(valueClusterWeight);
 	const QCommandLineOption nameClusterOutputFile("cluster-output", "Prefix for cluster output files.", "prefix");
 	parser.addOption(nameClusterOutputFile);
 	const QCommandLineOption boolSkipRaster("skip", "Skip rasterization and generation of images processes, only generate xml file.");
@@ -169,7 +146,13 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	if (parser.isSet(boolNoOverlap)) params->noOverlap = true;
 	else  params->noOverlap = false;
 
-	if (parser.isSet(valueCluster) && !processValueClusterOption(parser.value(valueCluster), params, errorMessage)) return CommandLineError;
+	if (parser.isSet(valueCluster)) {
+		const QString valueClusterStr = parser.value(valueCluster);
+		bool ok; const float percentage = valueClusterStr.toFloat(&ok);
+		if (ok && percentage > 0 && percentage <= 1.0) params->clusterRatio = percentage;
+		else { *errorMessage = "Bad cluster ratio value."; return CommandLineError; }
+	}
+	else params->clusterRatio = 0.0;
 
 	if (parser.isSet(nameClusterOutputFile))
 		params->clusterPrefix = parser.value(nameClusterOutputFile);
@@ -296,7 +279,12 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 			}
 		}
 
-		if (line.at(0).toLower().trimmed() == "cluster"  && !processValueClusterOption(line.at(1), params, errorMessage)) return CommandLineError;
+		if (line.at(0).toLower().trimmed() == "cluster-ratio") {
+			const QString valueClusterStr = line.at(1);
+			bool ok; const float percentage = valueClusterStr.toFloat(&ok);
+			if (ok && percentage > 0 && percentage <= 1.0) params->clusterRatio = percentage;
+			else { *errorMessage = "Bad cluster ratio value."; return CommandLineError; }
+		}
 
 		if (line.at(0).toLower().trimmed() == "cluster-output")
 			params->clusterPrefix = line.at(1);

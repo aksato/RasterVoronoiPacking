@@ -234,6 +234,7 @@ namespace RASTERPACKING {
         void addRasterNofitPolygon(std::shared_ptr<RasterNoFitPolygon> rasterNfp) {this->rasterNofitPolygons.push_back(rasterNfp);}
         void addRasterInnerfitPolygon(std::shared_ptr<RasterInnerFitPolygon> rasterIfp) {this->rasterInnerfitPolygons.push_back(rasterIfp);}
 
+		int getItemsCount() { return std::accumulate(pieces.begin(), pieces.end(), 0, [](int lhs, std::shared_ptr<Piece> rhs){return lhs + rhs->getMultiplicity(); }); }
         int getContainersCount() {return containers.size();}
         int getPiecesCount() {return pieces.size();}
         int getNofitPolygonsCount() {return nofitPolygons.size();}

@@ -16,8 +16,9 @@ namespace CLUSTERING {
 	public:
 		Clusterizator(RASTERPACKING::PackingProblem *_problem);
 		~Clusterizator() {}
-		QList<Cluster> getBestClusters(int numClusters);
+		QList<Cluster> getAllValidClusters();
 		QList<Cluster> getBestClusters(QList<int> rankings);
+		QList<Cluster> getBestClusters(int numClusters);
 		void getClusteredProblem(RASTERPACKING::PackingProblem &problem, QList<Cluster> &clusters);
 		QString getClusteredPuzzle(QString original, QList<Cluster> &clusters, QList<QString> &removedPieces, qreal scaleFixFactor);
 		QString getClusterInfo(RASTERPACKING::PackingProblem &clusterProblem, QList<Cluster> &clusters, QString outputXMLName, QList<QString> &removedPieces);
@@ -31,6 +32,7 @@ namespace CLUSTERING {
 		qreal getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTERPACKING::Polygon &polygon2, QPointF displacement);
 		int checkValidClustering(QList<Cluster> &minClusters, Cluster &candidateCluster);
 		bool Clusterizator::checkValidClustering(QList<Cluster> &clusterList);
+		bool checkValidClustering(Cluster &candidateCluster);
 		void insertNewCluster(QList<Cluster> &minClusters, Cluster &candidateCluster, int numClusters);
 		RASTERPACKING::PackingProblem *problem;
 		qreal containerWidth, containerHeight;

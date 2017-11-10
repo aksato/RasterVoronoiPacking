@@ -41,7 +41,7 @@ bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<
 	}
 	else {
 		*problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-		if (algorithmParamsBackup.getClusterFactor() > 0) {
+		if (algorithmParamsBackup.getClusterFactor() >= 0) {
 			algorithmParamsBackup.setClusterFactor(-1.0);
 			qWarning() << "Cluster problem not detected, ignoring cluster factor value.";
 		}

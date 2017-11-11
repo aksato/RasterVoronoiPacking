@@ -86,9 +86,9 @@ QString Clusterizator::getClusteredPuzzle(QString original, QList<Cluster> &clus
 		puzzle.items.push_back(QStringList() << staticPolygonStr << orbitingPolygonStr);
 		if (newAngles.length() == 1) puzzle.angles.push_back(QStringList()); 
 		else puzzle.angles.push_back(newAngles);
-		puzzle.multiplicities.push_back(1);
+		puzzle.multiplicities.push_back(curCluster.multiplicity);
 		// Create map to erase old pieces
-		puzzle.multiplicities[staticId]--; puzzle.multiplicities[orbitingId]--;
+		puzzle.multiplicities[staticId] -= curCluster.multiplicity; puzzle.multiplicities[orbitingId] -= curCluster.multiplicity;
 		if (puzzle.multiplicities[staticId] == 0) {
 			itemsToRemove.push_back(staticId);
 			removedPieces.push_back((*itStatic)->getName());
@@ -198,14 +198,18 @@ QList<Cluster> Clusterizator::getBestClusters(QList<int> rankings) {
 
 QList<Cluster> Clusterizator::getBestClusters(int numClusters) {
 	QList<Cluster> bestClusters = getAllValidClusters();
-	std::sort(bestClusters.begin(), bestClusters.end(), [](const Cluster & a, const Cluster & b) -> bool {return a.clusterValue > b.clusterValue; });
+	std::sort(bestClusters.begin(), bestClusters.end(), [](const Cluster & a, const Cluster & b) -> bool {
+		if (qFuzzyCompare(0.0 + a.clusterValue, 0.0 + b.clusterValue)) return a.convexHullArea > b.convexHullArea;
+		return a.clusterValue > b.clusterValue; 
+	});
 	QList<Cluster> chosenClusters;
 	int clusterCount = 0;
 	QMap<QString, int> pieceCounts;
 	for (QList<std::shared_ptr<RASTERPACKING::Piece>>::iterator it = problem->pbegin(); it != problem->pend(); it++) pieceCounts.insert((*it)->getPolygon()->getName(), (*it)->getMultiplicity());
 	for (int clusterCount = 0; clusterCount < numClusters; clusterCount++) {
 		Cluster currentCluster = bestClusters.first();
-		chosenClusters << currentCluster;
+		if (!chosenClusters.isEmpty() && currentCluster.noFitPolygon == chosenClusters.last().noFitPolygon) chosenClusters.last().multiplicity++;
+		else chosenClusters << currentCluster;
 		// Check multiplicity
 		QString staticPiece = currentCluster.noFitPolygon->getStaticName();
 		QString orbitingPiece = currentCluster.noFitPolygon->getOrbitingName();
@@ -239,9 +243,9 @@ QList<Cluster> Clusterizator::getAllValidClusters() {
 	while (it != problem->rnfpend()) {
 		pairNoFitPolygons1.clear();
 		getNextPairNfpList(pairNoFitPolygons1, it);
-		QPointF maxPoint; qreal maxVal;
-		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> nfp = getMaximumPairCluster(pairNoFitPolygons1, maxPoint, maxVal);
-		Cluster newCluster(nfp, maxPoint, maxVal);
+		QPointF maxPoint; qreal maxVal, area;
+		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> nfp = getMaximumPairCluster(pairNoFitPolygons1, maxPoint, maxVal, area);
+		Cluster newCluster(nfp, maxPoint, maxVal, area);
 		if (checkValidClustering(newCluster)) bestClusters.push_back(newCluster);
 	}
 	//QPair<qreal, int> minMaxClusterVal = getMinimumVal(bestClusters);
@@ -280,28 +284,32 @@ void Clusterizator::getNextPairNfpList(QList<std::shared_ptr<RASTERPACKING::Rast
 	}
 }
 
-std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> Clusterizator::getMaximumPairCluster(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> noFitPolygons, QPointF &displacement, qreal &value) {
+std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> Clusterizator::getMaximumPairCluster(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> noFitPolygons, QPointF &displacement, qreal &value, qreal &area) {
 	QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator it = noFitPolygons.begin();
 	QPointF maxPos;
 	std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> maxNfp = *it;
 
-	qreal maxVal = getMaximumClusterPosition(*it, maxPos);
+	qreal maxArea;
+	qreal maxVal = getMaximumClusterPosition(*it, maxPos, maxArea);
 	for (; it != noFitPolygons.end(); it++) {
 		QPointF curPos;
-		qreal curVal = getMaximumClusterPosition(*it, curPos);
+		qreal curArea;
+		qreal curVal = getMaximumClusterPosition(*it, curPos, curArea);
 		if (curVal > maxVal) {
 			maxPos = curPos;
 			maxVal = curVal;
+			maxArea = curArea;
 			maxNfp = *it;
 		}
 	}
 	displacement.setX(maxPos.x()); displacement.setY(maxPos.y());
 	value = maxVal;
+	area = maxArea;
 
 	return maxNfp;
 }
 
-qreal Clusterizator::getMaximumClusterPosition(std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> noFitPolygon, QPointF &displacement) {
+qreal Clusterizator::getMaximumClusterPosition(std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> noFitPolygon, QPointF &displacement, qreal &area) {
 	// Get candidate displacements
 	QList<QPointF> candidates = getContourPlacements(noFitPolygon);
 
@@ -324,10 +332,12 @@ qreal Clusterizator::getMaximumClusterPosition(std::shared_ptr<RASTERPACKING::Ra
 		//newOrbitingPolygon = QTransform().translate(pt.x(), pt.y()).rotate(noFitPolygon->getOrbitingAngle()).map(newOrbitingPolygon);
 		//RASTERPACKING::Polygon rpNewOrbitingPolygon; rpNewOrbitingPolygon << newOrbitingPolygon;
 		RASTERPACKING::Polygon rpNewOrbitingPolygon = QTransform().translate(pt.x(), pt.y()).rotate(noFitPolygon->getOrbitingAngle()).map(*orbitingPolygon);
-		qreal curVal = getClusterFunction(rpNewStaticPolygon, rpNewOrbitingPolygon, pt);
+		qreal curArea;
+		qreal curVal = getClusterFunction(rpNewStaticPolygon, rpNewOrbitingPolygon, curArea);
 		if (curVal > maxClusterVal) {
 			maxClusterPt = pt;
 			maxClusterVal = curVal;
+			area = curArea;
 		}
 	}
 
@@ -365,10 +375,15 @@ qreal area(QRectF &rect) {
 	return rect.width()*rect.height();
 }
 
-qreal Clusterizator::getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTERPACKING::Polygon &polygon2, QPointF displacement) {
+qreal Clusterizator::getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTERPACKING::Polygon &polygon2, qreal &convexHullArea) {
 	// Convex Hull Area
 	std::shared_ptr<RASTERPACKING::Polygon> convHull = RASTERPACKING::Polygon::getConvexHull(polygon1, polygon2);
-	qreal convexHullArea = qAbs(convHull->getArea());
+	convexHullArea = qAbs(convHull->getArea());
+	// Convex Hull Intersection
+	std::shared_ptr<RASTERPACKING::Polygon> ch1 = RASTERPACKING::Polygon::getConvexHull(polygon1);
+	std::shared_ptr<RASTERPACKING::Polygon> ch2 = RASTERPACKING::Polygon::getConvexHull(polygon2);
+	std::shared_ptr<RASTERPACKING::Polygon> chIntersection = std::shared_ptr<RASTERPACKING::Polygon>(new RASTERPACKING::Polygon(ch1->intersected(*ch2)));
+	qreal chIntersectionArea = qAbs(chIntersection->getArea());
 	// Bounding Box Area
 	QRectF bb1 = polygon1.boundingRect();
 	QRectF bb2 = polygon2.boundingRect();
@@ -380,7 +395,7 @@ qreal Clusterizator::getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTER
 	// Sum of items area
 	qreal itemsArea = qAbs(polygon1.getArea()) + qAbs(polygon2.getArea());
 	
-	return (itemsArea / convexHullArea) + (itemsArea / bbArea);
+	return (itemsArea / convexHullArea) + (chIntersectionArea / convexHullArea);// +(itemsArea / bbArea);
 }
 
 void Clusterizator::insertNewCluster(QList<Cluster> &minClusters, Cluster &candidateCluster, int numClusters) {

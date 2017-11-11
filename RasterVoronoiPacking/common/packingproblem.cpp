@@ -24,6 +24,38 @@ qreal cross(const QPointF &O, const QPointF &A, const QPointF &B) {
 	return (A.x() - O.x()) * (B.y() - O.y()) - (A.y() - O.y()) * (B.x() - O.x());
 }
 
+std::shared_ptr<Polygon> Polygon::getConvexHull(Polygon& polygon) {
+	std::shared_ptr<Polygon> P(new Polygon());
+	for (auto vertex : polygon) *P << vertex;
+
+	int n = P->size(), k = 0;
+	if (n == 1) return P;
+	std::shared_ptr<Polygon> H(new Polygon(QVector<QPointF>(2 * n)));
+
+	// Sort points lexicographically
+	std::sort(P->begin(), P->end(),
+		[](const QPointF & a, const QPointF & b) -> bool
+	{
+		return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
+	});
+
+	// Build lower hull
+	for (int i = 0; i < n; ++i) {
+		while (k >= 2 && cross((*H)[k - 2], (*H)[k - 1], (*P)[i]) <= 0) k--;
+		(*H)[k++] = (*P)[i];
+	}
+
+	// Build upper hull
+	for (int i = n - 2, t = k + 1; i >= 0; i--) {
+		while (k >= t && cross((*H)[k - 2], (*H)[k - 1], (*P)[i]) <= 0) k--;
+		(*H)[k++] = (*P)[i];
+	}
+
+	H->resize(k - 1);
+	return H;
+
+}
+
 std::shared_ptr<Polygon> Polygon::getConvexHull(Polygon& polygon1, Polygon& polygon2) {
 	std::shared_ptr<Polygon> P(new Polygon());
 	for (auto vertex : polygon1) *P << vertex;

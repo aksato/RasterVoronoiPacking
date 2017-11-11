@@ -6,10 +6,12 @@
 namespace CLUSTERING {
 
 	struct Cluster {
-		Cluster(std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> _noFitPolygon, QPointF _orbitingPos, qreal _clusterValue) : noFitPolygon(_noFitPolygon), orbitingPos(_orbitingPos), clusterValue(_clusterValue) {}
+		Cluster(std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> _noFitPolygon, QPointF _orbitingPos, qreal _clusterValue, qreal _convexHullArea) : noFitPolygon(_noFitPolygon), orbitingPos(_orbitingPos), clusterValue(_clusterValue), convexHullArea(_convexHullArea), multiplicity(1) {}
 		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> noFitPolygon;
 		QPointF orbitingPos;
 		qreal clusterValue;
+		qreal convexHullArea;
+		int multiplicity;
 	};
 
 	class Clusterizator {
@@ -25,11 +27,11 @@ namespace CLUSTERING {
 
 	private:
 		void getNextPairNfpList(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> &noFitPolygons, QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::iterator &curIt);
-		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> getMaximumPairCluster(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> noFitPolygons, QPointF &displacement, qreal &value);
-		qreal getMaximumClusterPosition(std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> noFitPolygon, QPointF &displacement);
+		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> getMaximumPairCluster(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>> noFitPolygons, QPointF &displacement, qreal &value, qreal &area);
+		qreal getMaximumClusterPosition(std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> noFitPolygon, QPointF &displacement, qreal &area);
 		QList<QPointF> getContourPlacements(std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> noFitPolygon);
 		void printCluster(QString fileName, std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> noFitPolygon, QList<QPointF> &displacements);
-		qreal getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTERPACKING::Polygon &polygon2, QPointF displacement);
+		qreal getClusterFunction(RASTERPACKING::Polygon &polygon1, RASTERPACKING::Polygon &polygon2, qreal &convexHullArea);
 		int checkValidClustering(QList<Cluster> &minClusters, Cluster &candidateCluster);
 		bool Clusterizator::checkValidClustering(QList<Cluster> &clusterList);
 		bool checkValidClustering(Cluster &candidateCluster);

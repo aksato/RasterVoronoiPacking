@@ -131,14 +131,15 @@ quint32 RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &soluti
 	int overlapIndex = 0;
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
 		quint32 curOverlap = 0;
-		for (int i = 0; i < originalProblem->count(); i++) {
-			if (i == itemId) { overlaps[overlapIndex++] = 0; continue; }
+		int i = 0;
+		for (; i < itemId + 1; i++) overlaps[overlapIndex++] = 0;
+		for (; i < originalProblem->count(); i++) {
 			quint32 individualOverlap = originalProblem->getDistanceValue(itemId, solution.getPosition(itemId), solution.getOrientation(itemId), i, solution.getPosition(i), solution.getOrientation(i));
 			overlaps[overlapIndex++] = individualOverlap;
 			curOverlap += individualOverlap;
 			if (individualOverlap > maxOverlap) maxOverlap = individualOverlap;
 		}
-		totalOverlap += curOverlap;
+		totalOverlap += 2*curOverlap;
 	}
 	return totalOverlap;
 }

@@ -16,17 +16,20 @@ void GlsWeightSet::init(int numItems) {
 
 int GlsWeightSet::getWeight(int itemId1, int itemId2) {
     Q_ASSERT_X(itemId1 != itemId2, "GlsWeightSet::getWeigth", "Cannot verify collision with itself");
-	return weights[itemId1 + numItems*itemId2];
+	if (itemId1 > itemId2) return weights[itemId1 + numItems*itemId2];
+	return weights[itemId2 + numItems*itemId1];
 }
 
 void GlsWeightSet::addWeight(int itemId1, int itemId2, int weight) {
     Q_ASSERT_X(itemId1 != itemId2, "GlsWeightSet::getWeigth", "Cannot verify collision with itself");
-	weights[itemId1 + numItems*itemId2] = weight;
+	if (itemId1 > itemId2) { weights[itemId1 + numItems*itemId2] = weight; return; }
+	weights[itemId2 + numItems*itemId1] = weight;
 }
 
 void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
     std::for_each(increments.begin(), increments.end(), [this](WeightIncrement &inc){
-		weights[inc.id1 + numItems*inc.id2] += inc.value;
+		if (inc.id1 > inc.id2) weights[inc.id1 + numItems*inc.id2] += inc.value;
+		else weights[inc.id2 + numItems*inc.id1] += inc.value;
     });
 }
 

@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QRegExp>
 #include <QDir>
+#include <QDateTime>
 #include "packingParametersParser.h"
 
 struct CaseExecutionParam {
@@ -136,7 +137,7 @@ int main(int argc, char *argv[])
 		for (int i = pastExecutionCount; i < params.executionCount; i += params.threadCount) {
 			// Check the number of necessary threads to reach desired execution count
 			int executionsCount = i + params.threadCount > params.executionCount ? params.executionCount - i : params.threadCount;
-			qDebug() << "Executions" << i + 1 << "-" << i + executionsCount << "of" << (curCase.zoomFactor == 1 ? "case" : "zoom case") << curCase.problemFileName << "output to" << outputDir.absolutePath();
+			qDebug() << "[" << QDateTime::currentDateTime().toString(Qt::ISODate).toLatin1().data() << "]" << "Executions" << i + 1 << "-" << i + executionsCount << "of" << (curCase.zoomFactor == 1 ? "case" : "zoom case") << curCase.problemFileName << "output to" << outputDir.absolutePath();
 			QStringList curArguments = QStringList() << arguments << "--parallel=" + QString::number(executionsCount);
 
 			// Start process

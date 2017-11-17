@@ -63,8 +63,7 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
 	QPoint minRelativePos;
 	val = map->getMinimum(minRelativePos);
-	if (minRelativePos.x() == map->getWidth() - 1) border = true; // FIXME: Does not work in 2D case!
-	else false;
+	if (minRelativePos.x() == map->getWidth() - 1) border = true; else border = false; // FIXME: Does not work in 2D case!
 
 	// Rescale position before returning
 	return (int) zoomFactorInt * minRelativePos;

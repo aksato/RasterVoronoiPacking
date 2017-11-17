@@ -56,18 +56,18 @@ namespace RASTERVORONOIPACKING {
         quint32 *data;
         int width;
         int height;
+		QPoint reference;
 		const int originalWidth, originalHeight;
 		#ifdef QT_DEBUG
 		int initialWidth;
 		#endif
+		bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);
 
     private:
 		quint32 *scanLine(int y);
 		quint32 getLocalValue(int i, int j) { return data[j*width + i]; }
 		void setLocalValue(int i, int j, quint32 value) { data[j*width + i] = value; }
-        bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);
 		bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection, int zoomFactorInt);
-        QPoint reference;
     };
 
     class TotalOverlapMapSet

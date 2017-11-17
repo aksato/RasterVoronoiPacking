@@ -258,7 +258,7 @@ void MainWindow::translateCurrentToMinimumPosition() {
 	QTime myTimer; myTimer.start();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = createBasicSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->overlapEvaluator->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution);
-	QPoint minPos = solver->getMinimumOverlapPosition(itemId, solution.getOrientation(itemId), solution, minVal);
+	QPoint minPos = solver->overlapEvaluator->getMinimumOverlapPosition(itemId, solution.getOrientation(itemId), solution, minVal);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
     ui->graphicsView->setCurrentSolution(solution);
@@ -358,7 +358,7 @@ void MainWindow::translateCurrentToGlsWeightedMinimumPosition() {
 	QTime myTimer; myTimer.start();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverGls = createGLSSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solverGls->overlapEvaluator->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution);
-	QPoint minPos = solverGls->getMinimumOverlapPosition(itemId, solution.getOrientation(itemId), solution, minVal);
+	QPoint minPos = solverGls->overlapEvaluator->getMinimumOverlapPosition(itemId, solution.getOrientation(itemId), solution, minVal);
 	int milliseconds = myTimer.elapsed();
 	solution.setPosition(itemId, minPos);
 	ui->graphicsView->setCurrentSolution(solution);
@@ -435,10 +435,10 @@ void MainWindow::translateCurrentToMinimumZoomedPosition() {
 
 	quint32 minValue; QPoint minPos; int minAngle = 0;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverDoubleGls = createDoubleGLSSolver();
-	minPos = solverDoubleGls->getMinimumOverlapPosition(itemId, minAngle, solution, minValue);
+	minPos = solverDoubleGls->overlapEvaluator->getMinimumOverlapPosition(itemId, minAngle, solution, minValue);
 	for (uint curAngle = 1; curAngle < this->rasterProblem->getItem(itemId)->getAngleCount(); curAngle++) {
 		quint32 curValue; QPoint curPos;
-		curPos = solverDoubleGls->getMinimumOverlapPosition(itemId, curAngle, solution, curValue);
+		curPos = solverDoubleGls->overlapEvaluator->getMinimumOverlapPosition(itemId, curAngle, solution, curValue);
 		if (curValue < minValue) { minValue = curValue; minPos = curPos; minAngle = curAngle; }
 	}
 	solution.setOrientation(itemId, minAngle);
@@ -465,7 +465,7 @@ void MainWindow::generateCurrentTotalSearchOverlapMap() {
 
 void MainWindow::setExplicityZoomValue() {
 	bool ok;
-	zoomFactor = QInputDialog::getInt(this, "Explicity Zoom Value", "Zoom:", this->rasterProblem->getScale(), 1, this->rasterProblem->getScale(), 1, &ok);
+	zoomFactor = QInputDialog::getInt(this, "Explicity Zoom Value", "Zoom:", this->rasterProblem->getScale(), 1, 1000, 1, &ok);
 	if (!ok) return;
 	int zoomSquareSize = ZOOMNEIGHBORHOOD * zoomFactor;
 	zoomedMapViewer.getMapView()->init(zoomSquareSize, 1.0 / (qreal)zoomFactor);

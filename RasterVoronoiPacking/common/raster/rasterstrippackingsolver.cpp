@@ -13,7 +13,7 @@ std::shared_ptr<RasterStripPackingSolver> RasterStripPackingSolver::createRaster
 	else weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); // GLS
 
 	// Determine overlap evaluator
-	if (parameters.getZoomFactor() > 1 && parameters.getZoomFactor() <= problem->getScale())
+	if (parameters.getZoomFactor() > 1)
 		overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(problem, parameters.getZoomFactor(), weights, true));
 	else overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problem, weights, true)); 
 	
@@ -179,11 +179,11 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 		int shuffledId = sequence[i];
 		if (!detectItemTotalOverlap(shuffledId, solution)) continue;
 		quint32 minValue; QPoint minPos; int minAngle = 0;
-		minPos = getMinimumOverlapPosition(shuffledId, minAngle, solution, minValue);
+		minPos = overlapEvaluator->getMinimumOverlapPosition(shuffledId, minAngle, solution, minValue);
 		if (minValue != 0) {
 			for (uint curAngle = 1; curAngle < originalProblem->getItem(shuffledId)->getAngleCount(); curAngle++) {
 				quint32 curValue; QPoint curPos;
-				curPos = getMinimumOverlapPosition(shuffledId, curAngle, solution, curValue);
+				curPos = overlapEvaluator->getMinimumOverlapPosition(shuffledId, curAngle, solution, curValue);
 				if (curValue < minValue) {
 					minValue = curValue; minPos = curPos; minAngle = curAngle;
 					if (minValue == 0) break;
@@ -193,14 +193,6 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 		solution.setOrientation(shuffledId, minAngle);
 		solution.setPosition(shuffledId, minPos);
 	}
-}
-
-// --> Get absolute minimum overlap position
-QPoint RasterStripPackingSolver::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value) {
-	std::shared_ptr<TotalOverlapMap> map = overlapEvaluator->getTotalOverlapMap(itemId, orientation, solution);
-	QPoint minRelativePos;
-	value = map->getMinimum(minRelativePos);
-	return minRelativePos;
 }
 
 void getNextBLPosition(QPoint &curPos, int  minIfpX, int minIfpY, int maxIfpX, int maxIfpY) {

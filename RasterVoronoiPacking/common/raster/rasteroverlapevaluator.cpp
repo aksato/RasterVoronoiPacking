@@ -27,6 +27,13 @@ RasterTotalOverlapMapEvaluator::RasterTotalOverlapMapEvaluator(std::shared_ptr<R
 	}
 }
 
+QPoint RasterTotalOverlapMapEvaluator::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value) {
+	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapMap(itemId, orientation, solution);
+	QPoint minRelativePos;
+	value = map->getMinimum(minRelativePos);
+	return minRelativePos;
+}
+
 // Determines the item total overlap map for a given orientation in a solution
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluator::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) {
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);

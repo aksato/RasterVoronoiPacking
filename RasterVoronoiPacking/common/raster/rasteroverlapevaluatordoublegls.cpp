@@ -18,8 +18,26 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
-			int newWidth = 1 + (curIfp->width() - 1) / zoomFactorInt; int newHeight = 1 + (curIfp->height() - 1) / zoomFactorInt;
-			QPoint newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
+			// Check if points are on grid
+			int newWidth, newHeight;
+			QPoint newReferencePoint;
+			if ((curIfp->width() - 1) % zoomFactorInt == 0 && (curIfp->height() - 1) % zoomFactorInt == 0 && curIfp->getOrigin().x() % zoomFactorInt == 0 && (curIfp->height() - 1) % zoomFactorInt == 0) {
+				newWidth = 1 + (curIfp->width() - 1) / zoomFactorInt; newHeight = 1 + (curIfp->height() - 1) / zoomFactorInt;
+				newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
+			}
+			else {
+				if (curIfp->getOrigin().x() % zoomFactorInt == 0) newReferencePoint.setX(curIfp->getOrigin().x() / zoomFactorInt);
+				else newReferencePoint.setX(qFloor((qreal)curIfp->getOrigin().x() / (qreal)zoomFactorInt));
+				if (curIfp->getOrigin().y() % zoomFactorInt == 0) newReferencePoint.setY(curIfp->getOrigin().y() / zoomFactorInt);
+				else newReferencePoint.setY(qFloor((qreal)curIfp->getOrigin().y() / (qreal)zoomFactorInt));
+				int right = -curIfp->getOrigin().x() + curIfp->width() - 1; newWidth = right + newReferencePoint.x() * zoomFactorInt;
+				if (newWidth % zoomFactorInt == 0) newWidth = newWidth / zoomFactorInt;
+				else newWidth = qFloor((qreal)newWidth / (qreal)zoomFactorInt);
+				int top = -curIfp->getOrigin().y() + curIfp->height() - 1; newHeight = top + newReferencePoint.y() * zoomFactorInt;
+				if (newHeight % zoomFactorInt == 0) newHeight = newHeight / zoomFactorInt;
+				else newHeight = qFloor((qreal)newHeight / (qreal)zoomFactorInt);
+				newWidth = newWidth + 1;  newHeight = newHeight + 1;
+			}
 			std::shared_ptr<TotalOverlapMap> curMap = cacheMaps ?
 				std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, this->problem->count())) :
 				std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
@@ -29,17 +47,21 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 	}
 }
 
-std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) {
-	QPoint pos = getMinimumOverlapSearchPosition(itemId, orientation, solution);
+QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value) {
+	QPoint pos = getMinimumOverlapSearchPosition(itemId, orientation, solution, value);
+	if (value == 0) return pos;
 	int zoomSquareSize = ZOOMNEIGHBORHOOD*zoomFactorInt;
-	return getRectTotalOverlapMap(itemId, orientation, pos, zoomSquareSize, zoomSquareSize, solution);
+	std::shared_ptr<TotalOverlapMap> map = getRectTotalOverlapMap(itemId, orientation, pos, zoomSquareSize, zoomSquareSize, solution);
+	QPoint minRelativePos;
+	value = map->getMinimum(minRelativePos);
+	return minRelativePos;
 }
 
 // --> Get absolute minimum overlap position
-QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution) {
+QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val) {
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
 	QPoint minRelativePos;
-	map->getMinimum(minRelativePos);
+	val = map->getMinimum(minRelativePos);
 
 	// Rescale position before returning
 	return (int) zoomFactorInt * minRelativePos;
@@ -65,11 +87,17 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getRec
 
 	// Create zoomed overlap Map. FIXME: Use cache map?
 	std::shared_ptr<TotalOverlapMap> curZoomedMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(zoomSquareRect));
+	#ifndef INDIVIDUAL_RECT
 	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
 		curZoomedMap->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i), glsWeights->getWeight(itemId, i));
 	}
+	#else
+	for (int j = zoomSquareRect.top(); j <= zoomSquareRect.bottom(); j++)
+	for (int i = zoomSquareRect.left(); i <= zoomSquareRect.right(); i++)
+		curZoomedMap->setValue(QPoint(i, j), getTotalOverlapMapSingleValue(itemId, orientation, QPoint(i, j), solution));
+	#endif
 
 	return curZoomedMap;
 }

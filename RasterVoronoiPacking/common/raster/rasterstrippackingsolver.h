@@ -48,9 +48,6 @@ namespace RASTERVORONOIPACKING {
 		int getMinimumContainerHeight() { return originalProblem->getMaxHeight(); }
 
 	protected:
-		// --> Get minimum overlap position for item
-		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);
-
 		// --> Overlap determination functions
 		// Detect if item is in overlapping position for a subset of fixed items
 		bool detectItemPartialOverlap(QVector<int> sequence, int itemSequencePos, QPoint itemPos, int itemAngle, RasterPackingSolution &solution);

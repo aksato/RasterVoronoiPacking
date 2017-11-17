@@ -101,7 +101,7 @@ void ConsolePackingLoader::run() {
 
 	// Print configurations
 	qDebug() << "Solver configured. The following parameters were set:";
-	if (algorithmParamsBackup.getZoomFactor() > 1 && algorithmParamsBackup.getZoomFactor() <= problem->getScale())
+	if (algorithmParamsBackup.getZoomFactor() > 1)
 		qDebug() << "Problem Scale:" << problem->getScale() << ". Auxiliary problem scale:" << problem->getScale() / algorithmParamsBackup.getZoomFactor();
 	else qDebug() << "Problem Scale:" << problem->getScale();
 	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) qDebug() << "Length:" << algorithmParamsBackup.getInitialLenght();
@@ -117,7 +117,7 @@ void ConsolePackingLoader::run() {
 }
 
 void ConsolePackingLoader::printExecutionStatus(int curLength, int totalItNum, int worseSolutionsCount, qreal  curOverlap, qreal minOverlap, qreal elapsed) {
-	if (algorithmParamsBackup.getZoomFactor() > 1 && algorithmParamsBackup.getZoomFactor() <= problem->getScale())
+	if (algorithmParamsBackup.getZoomFactor() > 1)
 		std::cout << std::fixed << std::setprecision(2) << "\r" << "L: " << curLength / problem->getScale() <<
 		". It: " << totalItNum << " (" << worseSolutionsCount << "). Min overlap: " << minOverlap / (qreal)(problem->getScale() / algorithmParamsBackup.getZoomFactor()) << ". Time: " << elapsed << " s.";
 	else
@@ -135,7 +135,7 @@ void ConsolePackingLoader::writeNewLength(int length, int totalItNum, qreal elap
 	QString *threadOutlogContens = outlogContents[threadSeed]; 
 	if (!threadOutlogContens) { threadOutlogContens = new QString; outlogContents.insert(threadSeed, threadOutlogContens); }
 	QTextStream out(threadOutlogContens);
-	if (algorithmParamsBackup.getZoomFactor() > 1 && algorithmParamsBackup.getZoomFactor() <= problem->getScale())
+	if (algorithmParamsBackup.getZoomFactor() > 1)
 		out << problem->getScale() << " " << problem->getScale() / algorithmParamsBackup.getZoomFactor() << " " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
 	else 
 		out << problem->getScale() << " - " << length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
@@ -145,7 +145,7 @@ void ConsolePackingLoader::writeNewLength2D(const ExecutionSolutionInfo &info, i
 	QString *threadOutlogContens = outlogContents[threadSeed];
 	if (!threadOutlogContens) { threadOutlogContens = new QString; outlogContents.insert(threadSeed, threadOutlogContens); }
 	QTextStream out(threadOutlogContens);
-	if (algorithmParamsBackup.getZoomFactor() > 1 && algorithmParamsBackup.getZoomFactor() <= problem->getScale())
+	if (algorithmParamsBackup.getZoomFactor() > 1)
 		out << problem->getScale() << " " << problem->getScale() / algorithmParamsBackup.getZoomFactor() << " " << info.length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
 	else
 		out << problem->getScale() << " - " << info.length / problem->getScale() << " " << totalItNum << " " << elapsed << " " << totalItNum / elapsed << " " << threadSeed << "\n";
@@ -200,7 +200,7 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		QFile file(processedOutputTXTFile);
 		if (!file.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << processedOutputTXTFile << ": " << qPrintable(file.errorString());
 		QTextStream out(&file);
-		if (algorithmParamsBackup.getZoomFactor() > 1 && algorithmParamsBackup.getZoomFactor() <= problem->getScale())
+		if (algorithmParamsBackup.getZoomFactor() > 1)
 			out << problem->getScale() << " " << problem->getScale() / algorithmParamsBackup.getZoomFactor() << " " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";
 		else
 			out << problem->getScale() << " - " << info.length << " " << minOverlap << " " << totalIt << " " << totalTime << " " << totalIt / totalTime << " " << seed << "\n";

@@ -42,9 +42,6 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 				std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, this->problem->count())) :
 				std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
 			maps.addOverlapMap(itemId, angle, curMap);
-
-			std::shared_ptr<TotalOverlapMap> curZoomedMap = std::shared_ptr<TotalOverlapMap>(new CachedTotalRectOverlapMap(ZOOMNEIGHBORHOOD*zoomFactorInt, ZOOMNEIGHBORHOOD*zoomFactorInt, QPoint(0, 0), this->problem->count()));
-			zoomedMaps.addOverlapMap(itemId, angle, curZoomedMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}
 	}
@@ -91,9 +88,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getRec
 	zoomSquareRect = zoomSquareRect.intersected(curIfpBoundingBox);
 
 	// Create zoomed overlap Map. FIXME: Use cache map?
-	//std::shared_ptr<CachedTotalRectOverlapMap> curZoomedMap = std::dynamic_pointer_cast<CachedTotalRectOverlapMap>(zoomedMaps.getOverlapMap(itemId, orientation)); curZoomedMap->setRectangle(zoomSquareRect);
 	std::shared_ptr<TotalOverlapMap> curZoomedMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(zoomSquareRect));
-	
 	#ifndef INDIVIDUAL_RECT
 	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
 	for (int i = 0; i < problem->count(); i++) {

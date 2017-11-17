@@ -48,8 +48,9 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 }
 
 QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value) {
-	QPoint pos = getMinimumOverlapSearchPosition(itemId, orientation, solution, value);
-	if (value == 0) return pos;
+	bool border;
+	QPoint pos = getMinimumOverlapSearchPosition(itemId, orientation, solution, value, border);
+	if (value == 0 && !border) return pos;
 	int zoomSquareSize = ZOOMNEIGHBORHOOD*zoomFactorInt;
 	std::shared_ptr<TotalOverlapMap> map = getRectTotalOverlapMap(itemId, orientation, pos, zoomSquareSize, zoomSquareSize, solution);
 	QPoint minRelativePos;
@@ -58,10 +59,12 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapPosition(int it
 }
 
 // --> Get absolute minimum overlap position
-QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val) {
+QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val, bool &border) {
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
 	QPoint minRelativePos;
 	val = map->getMinimum(minRelativePos);
+	if (minRelativePos.x() == map->getWidth() - 1) border = true; // FIXME: Does not work in 2D case!
+	else false;
 
 	// Rescale position before returning
 	return (int) zoomFactorInt * minRelativePos;

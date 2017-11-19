@@ -14,10 +14,10 @@ namespace RASTERVORONOIPACKING {
 		TotalOverlapMap(QRect &boundingBox);
 		virtual ~TotalOverlapMap() { delete[] data; }
 
-        virtual void init(uint _width, uint _height);
+        void init(uint _width, uint _height);
         virtual void reset();
 
-		void setDimensions(int _width, int _height) {
+		virtual void setDimensions(int _width, int _height) {
 			Q_ASSERT_X(_width > 0 && _height > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
 			if (_width > this->width || _height > this->height) {
 				// Expanding the map buffer

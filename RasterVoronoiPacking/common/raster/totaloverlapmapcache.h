@@ -13,7 +13,7 @@ namespace RASTERVORONOIPACKING {
 		CachedTotalOverlapMap(int width, int height, QPoint _reference, int _totalNumItems) : TotalOverlapMap(width, height, _reference), totalNumItems(_totalNumItems), currentCount(0) { };
 		~CachedTotalOverlapMap() {}
 
-		void init(uint _width, uint _height); // FIXME: Is it really necessary to reimplement?
+		void setDimensions(int _width, int _height);
 		void reset() {}
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);

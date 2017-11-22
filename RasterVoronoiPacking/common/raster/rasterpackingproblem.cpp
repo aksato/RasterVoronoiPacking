@@ -151,7 +151,7 @@ quint32 *RasterPackingProblem::loadBinaryNofitPolygons(QString fileName, QVector
 	quint32 numNfps;
 	in >> numNfps;
 	sizes.reserve(numNfps); rps.reserve(numNfps);
-	int numElements = 0;
+	quint32 numElements = 0;
 	for (unsigned int i = 0; i < numNfps; i++) {
 		quint32 width, height, rpx, rpy;
 		in >> width >> height >> rpx >> rpy;
@@ -160,7 +160,17 @@ quint32 *RasterPackingProblem::loadBinaryNofitPolygons(QString fileName, QVector
 		rps << QPoint(rpx, rpy);
 	}
 	quint32 *data = new quint32[numElements];
-	in.readRawData((char *)data, numElements * sizeof(quint32));
+	quint64 numBytes = numElements * sizeof(quint32);
+	quint64 maxInt = (quint32)std::numeric_limits<int>::max();
+	if (numBytes > maxInt) {
+		char *dataPtr = (char *)data;
+		for (; numBytes > maxInt; numBytes -= maxInt) {
+			in.readRawData(dataPtr, maxInt);
+			dataPtr += maxInt;
+		}
+		in.readRawData(dataPtr, numBytes);
+	}
+	else in.readRawData((char *)data, numBytes);
 	file.close();
 	return data;
 }

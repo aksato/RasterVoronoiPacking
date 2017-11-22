@@ -7,7 +7,7 @@
 #include "annealing/cShapeInlines.h"
 #include "annealing/problemInstance.h"
 
-#define RASTER_EPS 0.0001
+#define RASTER_EPS 0.0000001
 using namespace RASTERPACKING;
 
 void Bresenham(int x1, int y1, int const x2, int const y2, QImage &image) {
@@ -130,95 +130,6 @@ int floorEpsilon(qreal v1, qreal eps) {
 	return qFloor(v1);
 }
 
-int *Polygon::getRasterImageVector(QPoint &RP, qreal scale, int &width, int &height, bool skipRaster) {
-	QPolygonF polygon;
-	qreal xMin, xMax, yMin, yMax;
-
-	const_iterator it = cbegin();
-	xMin = scale*(*it).x(); xMax = scale*(*it).x();
-	yMin = scale*(*it).y(); yMax = scale*(*it).y();
-	for (int i = 0; i < size(); i++) {
-		qreal x = scale*at(i).x();
-		qreal y = scale*at(i).y();
-
-		if (x < xMin) xMin = x;
-		if (x > xMax) xMax = x;
-		if (y < yMin) yMin = y;
-		if (y > yMax) yMax = y;
-
-		polygon << QPointF(x, y);
-	}
-	RP.setX(-ceilEpsilon(xMin, RASTER_EPS)); RP.setY(-ceilEpsilon(yMin, RASTER_EPS));
-	polygon.translate(RP.x(), RP.y());
-
-	width = floorEpsilon(xMax, RASTER_EPS) + RP.x() + 1;
-	height = floorEpsilon(yMax, RASTER_EPS) + RP.y() + 1;
-	if (skipRaster) return nullptr;
-	int *S = new int[width*height];
-	std::fill_n(S, width*height, 1);
-
-	int curScanline = width;
-	for (int pixelY = 1; pixelY < height - 1; pixelY++) {
-
-		//  Build a list of nodes.
-		QVector<int> nodeX;
-		int j = polygon.size() - 1;
-		for (int i = 0; i < polygon.size(); i++) {
-			qreal polyYi = polygon[i].y();
-			qreal polyXi = polygon[i].x();
-			qreal polyYj = polygon[j].y();
-			qreal polyXj = polygon[j].x();
-
-			if ((polyYi<(double)pixelY && polyYj >= (double)pixelY) || (polyYj<(double)pixelY && polyYi >= (double)pixelY)) {
-				nodeX.push_back((int)(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi)));
-			}
-			j = i;
-		}
-
-		// Sort
-		qSort(nodeX);
-
-
-		//  Fill the pixels between node pairs.
-		for (int i = 0; i<nodeX.size(); i += 2) {
-			int line = curScanline;
-			line += nodeX[i] + 1;
-			for (j = nodeX[i] + 1; j < nodeX[i + 1]; j++, line += 1)
-				S[line] = 0;
-		}
-
-		curScanline += width;
-	}
-
-
-	// FIXME: Delete horizontal lines
-	QPolygonF::const_iterator itj;
-	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
-		if (iti + 1 == polygon.cend()) itj = polygon.cbegin();
-		else itj = iti + 1;
-		if ((int)(*iti).y() == (int)(*itj).y()) {
-			int left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
-			int right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
-			for (int i = left; i <= right; i++) {
-				S[(int)(*iti).y()*width + i] = 1;
-			}
-		}
-	}
-
-	// FIXME: Test
-	for (QVector<QPair<QPointF, QPointF>>::const_iterator it = this->degLines.cbegin(); it != this->degLines.cend(); it++) {
-		QPointF p1 = scale*(*it).first; p1 -= QPointF(xMin, yMin);
-		QPointF p2 = scale*(*it).second; p2 -= QPointF(xMin, yMin);
-		BresenhamVec(qRound(p1.x()), qRound(p1.y()), qRound(p2.x()), qRound(p2.y()), S, width);
-	}
-	for (QVector<QPointF>::const_iterator it = this->degNodes.cbegin(); it != this->degNodes.cend(); it++) {
-		QPointF p1 = scale*(*it); p1 -= QPointF(xMin, yMin);
-		S[(int)p1.y()*width + (int)p1.x()] = 1;
-	}
-
-	return S;
-}
-
 bool compareEpsilon(qreal v1, qreal v2, qreal eps) {
 	return qAbs(v2 - v1) < eps;
 }
@@ -239,7 +150,7 @@ bool lessThanNotEqualEpsilon(qreal v1, qreal v2, qreal eps) {
 	else return v1 < v2;
 }
 
-int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height, bool skipRaster) {
+int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height) {
 	QPolygonF polygon;
 	qreal xMin, xMax, yMin, yMax;
 
@@ -262,7 +173,6 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 
 	width = ceilEpsilon(xMax, RASTER_EPS) + RP.x() + 1;
 	height = ceilEpsilon(yMax, RASTER_EPS) + RP.y() + 1;
-	if (skipRaster) return nullptr;
 	int *S = new int[width*height];
 	std::fill_n(S, width*height, 1);
 
@@ -307,6 +217,13 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 		curScanline += width;
 	}
 
+	// Delete vertex points on grid
+	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
+		qreal x = (*iti).x();
+		qreal y = (*iti).y();
+		if ((qAbs(x - qRound(x)) < RASTER_EPS) && (qAbs(y - qRound(y)) < RASTER_EPS)) S[qRound(y)*width + qRound(x)] = 1;
+	}
+
 	// FIXME: Delete horizontal lines
 	QPolygonF::const_iterator itj;
 	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
@@ -339,7 +256,7 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 	return S;
 }
 
-int *Polygon::getRasterBoundingBoxImageVector(QPoint &RP, qreal scale, qreal epsilon, int &width, int &height) {
+void Polygon::getRasterBoundingBox(QPoint &RP, qreal scale, int &width, int &height) {
 	qreal xMin, xMax, yMin, yMax;
 
 	const_iterator it = cbegin();
@@ -357,23 +274,14 @@ int *Polygon::getRasterBoundingBoxImageVector(QPoint &RP, qreal scale, qreal eps
 	xMin = scale*xMin; xMax = scale*xMax;
 	yMin = scale*yMin; yMax = scale*yMax;
 	int xMinInt, yMinInt, xMaxInt, yMaxInt;
-	if (abs(xMin - qRound(xMin)) < epsilon) xMinInt = qRound(xMin);
-	else xMinInt = qCeil(xMin);
-	if (abs(yMin - qRound(yMin)) < epsilon) yMinInt = qRound(yMin);
-	else yMinInt = qCeil(yMin);
-	//polygon.translate(-xMin, -yMin);
-	if (abs(xMax - qRound(xMax)) < epsilon) xMaxInt = qRound(xMax);
-	else xMaxInt = qFloor(xMax);
-	if (abs(yMax - qRound(yMax)) < epsilon) yMaxInt = qRound(yMax);
-	else yMaxInt = qFloor(yMax);
+	xMinInt = ceilEpsilon(xMin, RASTER_EPS);
+	yMinInt = ceilEpsilon(yMin, RASTER_EPS);
+	xMaxInt = floorEpsilon(xMax, RASTER_EPS);
+	yMaxInt = floorEpsilon(yMax, RASTER_EPS);
 
 	RP.setX(-xMinInt); RP.setY(-yMinInt);
 	width = xMaxInt - xMinInt + 1;
 	height = yMaxInt - yMinInt + 1;
-	int *S = new int[width*height];
-	std::fill_n(S, width*height, 0);
-
-	return S;
 }
 
 QImage Polygon::getRasterImage8bit(QPoint &RP, qreal scale) {

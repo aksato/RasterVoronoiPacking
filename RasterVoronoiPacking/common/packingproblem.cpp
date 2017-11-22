@@ -617,7 +617,7 @@ void processXMLCommands(QStringList &commands, QXmlStreamWriter &stream) {
     }
 }
 
-bool PackingProblem::save(QString fileName, QString clusterInfo) {
+bool PackingProblem::save(QString fileName, QString binFileName, QString clusterInfo) {
 	folder = QFileInfo(fileName).absolutePath();
     QFile file(fileName);
     if(!file.open(QIODevice::WriteOnly)) {
@@ -693,6 +693,7 @@ bool PackingProblem::save(QString fileName, QString clusterInfo) {
     // --> Write raster results
     if(!this->rasterNofitPolygons.empty()) {
         stream.writeStartElement("raster");
+		if(!binFileName.isEmpty()) stream.writeAttribute("data", binFileName);
         for(QList<std::shared_ptr<RasterNoFitPolygon>>::const_iterator it = this->crnfpbegin(); it != this->crnfpend(); it++) {
             QStringList rnfpCommand = (*it)->getXML();
             processXMLCommands(rnfpCommand, stream);

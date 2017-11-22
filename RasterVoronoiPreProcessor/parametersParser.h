@@ -5,7 +5,7 @@ class QCommandLineParser;
 class QString;
 
 struct PreProcessorParameters {
-	PreProcessorParameters() : noOverlap(true) {}
+	PreProcessorParameters() {}
 
     QString inputFilePath;
     QString inputFileType;
@@ -13,16 +13,11 @@ struct PreProcessorParameters {
     QString outputDir;
     qreal rasterScaleFactor; // Rasterization precision
 	qreal scaleFixFactor; // Correction scale factor for CFREFP problems
-    bool saveRaster;
+    bool outputImages;
+	bool skipDt;
     QString outputXMLName;
-    QString outputFormat;
     QString headerFile;
     QString optionsFile;
-	qreal innerFitEpsilon; // Epsilon for ifp rasterization
-	bool noOverlap; // Create nfps with contours
-	QString clusterPrefix, clusterFile, clusterInfoFile;
-	qreal clusterRatio;
-	bool skipRaster;
 };
 
 enum CommandLineParseResult

@@ -10,116 +10,6 @@
 #define RASTER_EPS 0.0000001
 using namespace RASTERPACKING;
 
-void Bresenham(int x1, int y1, int const x2, int const y2, QImage &image) {
-	int delta_x(x2 - x1);
-	// if x1 == x2, then it does not matter what we set here
-	signed char const ix((delta_x > 0) - (delta_x < 0));
-	delta_x = std::abs(delta_x) << 1;
-
-	int delta_y(y2 - y1);
-	// if y1 == y2, then it does not matter what we set here
-	signed char const iy((delta_y > 0) - (delta_y < 0));
-	delta_y = std::abs(delta_y) << 1;
-
-	image.setPixel(x1, y1, 0);
-
-	if (delta_x >= delta_y)
-	{
-		// error may go below zero
-		int error(delta_y - (delta_x >> 1));
-
-		while (x1 != x2)
-		{
-			if ((error >= 0) && (error || (ix > 0)))
-			{
-				error -= delta_x;
-				y1 += iy;
-			}
-			// else do nothing
-
-			error += delta_y;
-			x1 += ix;
-
-			image.setPixel(x1, y1, 0);
-		}
-	}
-	else
-	{
-		// error may go below zero
-		int error(delta_x - (delta_y >> 1));
-
-		while (y1 != y2)
-		{
-			if ((error >= 0) && (error || (iy > 0)))
-			{
-				error -= delta_y;
-				x1 += ix;
-			}
-			// else do nothing
-
-			error += delta_x;
-			y1 += iy;
-
-			image.setPixel(x1, y1, 0);
-		}
-	}
-}
-
-void BresenhamVec(int x1, int y1, int const x2, int const y2, int *S, int width) {
-	int delta_x(x2 - x1);
-	// if x1 == x2, then it does not matter what we set here
-	signed char const ix((delta_x > 0) - (delta_x < 0));
-	delta_x = std::abs(delta_x) << 1;
-
-	int delta_y(y2 - y1);
-	// if y1 == y2, then it does not matter what we set here
-	signed char const iy((delta_y > 0) - (delta_y < 0));
-	delta_y = std::abs(delta_y) << 1;
-
-	S[y1*width + x1] = 1;
-
-	if (delta_x >= delta_y)
-	{
-		// error may go below zero
-		int error(delta_y - (delta_x >> 1));
-
-		while (x1 != x2)
-		{
-			if ((error >= 0) && (error || (ix > 0)))
-			{
-				error -= delta_x;
-				y1 += iy;
-			}
-			// else do nothing
-
-			error += delta_y;
-			x1 += ix;
-
-			S[y1*width + x1] = 1;
-		}
-	}
-	else
-	{
-		// error may go below zero
-		int error(delta_x - (delta_y >> 1));
-
-		while (y1 != y2)
-		{
-			if ((error >= 0) && (error || (iy > 0)))
-			{
-				error -= delta_y;
-				x1 += ix;
-			}
-			// else do nothing
-
-			error += delta_x;
-			y1 += iy;
-
-			S[y1*width + x1] = 1;
-		}
-	}
-}
-
 int ceilEpsilon(qreal v1, qreal eps) {
 	if (qAbs(qRound(v1) - v1) < eps) return qRound(v1);
 	return qCeil(v1);
@@ -150,7 +40,16 @@ bool lessThanNotEqualEpsilon(qreal v1, qreal v2, qreal eps) {
 	else return v1 < v2;
 }
 
-int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height) {
+bool isCoordOnGrid(qreal coord, qreal eps) {
+	if (qAbs(qRound(coord) - coord) < eps) return true;
+	return false;
+}
+
+bool isPointOnGrid(QPointF &pt, qreal eps) {
+	if (qAbs(qRound(pt.x()) - pt.x()) < eps && qAbs(qRound(pt.y()) - pt.y()) < eps) return true;
+	return false;
+}
+int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 	QPolygonF polygon;
 	qreal xMin, xMax, yMin, yMax;
 
@@ -244,13 +143,36 @@ int *Polygon::getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &widt
 
 	// FIXME: Use scan line to detect degenerated edges and nodes
 	for (QVector<QPair<QPointF, QPointF>>::const_iterator it = this->degLines.cbegin(); it != this->degLines.cend(); it++) {
-		QPointF p1 = scale*(*it).first; p1 -= QPointF(xMin, yMin);
-		QPointF p2 = scale*(*it).second; p2 -= QPointF(xMin, yMin);
-		BresenhamVec(qRound(p1.x()), qRound(p1.y()), qRound(p2.x()), qRound(p2.y()), S, width);
+		QPointF p1, p2;
+		if ((*it).first.y() < (*it).second.y()) { p1 = scale*(*it).first; p2 = scale*(*it).second; }
+		else { p1 = scale*(*it).second; p2 = scale*(*it).first; }
+		p1 -= QPointF(xMin, yMin); p2 -= QPointF(xMin, yMin);
+
+		int initY = ceilEpsilon(p1.y(), RASTER_EPS); int endY = floorEpsilon(p2.y(), RASTER_EPS);
+		qreal polyXi = p1.x(); qreal polyYi = p1.y();
+		qreal polyXj = p2.x(); qreal polyYj = p2.y();
+
+		// Check if lines are horizontal
+		if (compareEpsilon(polyYi, polyYj, RASTER_EPS)) {
+			if(isCoordOnGrid(polyYi, RASTER_EPS)) continue;
+			int initX = ceilEpsilon(p1.x(), RASTER_EPS); int endX = floorEpsilon(p2.x(), RASTER_EPS);
+			//for (int pixelX = initX; pixelX <= endX; pixelX++) S[qRound(polyYi)*width + pixelX] = 1;
+			int index = qRound(polyYi)*width + initX;
+			for (int pixelX = initX; pixelX <= endX; pixelX++) S[index++] = 1;
+			continue;
+		}
+		
+		for (int pixelY = initY; pixelY <= endY; pixelY++) {
+			qreal crossX = polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi);
+			QPointF crossPt(crossX, pixelY);
+			if (isPointOnGrid(crossPt, RASTER_EPS)) S[qRound(crossPt.y())*width + qRound(crossPt.x())] = 1;	
+		}
 	}
+
+	// Delete degenerate vertexes
 	for (QVector<QPointF>::const_iterator it = this->degNodes.cbegin(); it != this->degNodes.cend(); it++) {
 		QPointF p1 = scale*(*it); p1 -= QPointF(xMin, yMin);
-		S[(int)p1.y()*width + (int)p1.x()] = 1;
+		if (isPointOnGrid(p1, RASTER_EPS)) S[qRound(p1.y())*width + qRound(p1.x())] = 1;
 	}
 
 	return S;
@@ -282,235 +204,6 @@ void Polygon::getRasterBoundingBox(QPoint &RP, qreal scale, int &width, int &hei
 	RP.setX(-xMinInt); RP.setY(-yMinInt);
 	width = xMaxInt - xMinInt + 1;
 	height = yMaxInt - yMinInt + 1;
-}
-
-QImage Polygon::getRasterImage8bit(QPoint &RP, qreal scale) {
-	int width, heigth;
-	QPolygonF polygon;
-	qreal xMin, xMax, yMin, yMax;
-
-	const_iterator it = cbegin();
-	xMin = scale*(*it).x(); xMax = scale*(*it).x();
-	yMin = scale*(*it).y(); yMax = scale*(*it).y();
-	for (int i = 0; i < size(); i++) {
-		qreal x = scale*at(i).x();
-		qreal y = scale*at(i).y();
-
-		if (x < xMin) xMin = x;
-		if (x > xMax) xMax = x;
-		if (y < yMin) yMin = y;
-		if (y > yMax) yMax = y;
-
-		polygon << QPointF(x, y);
-	}
-	RP.setX(-qRound(xMin)); RP.setY(-qRound(yMin));
-	polygon.translate(-xMin, -yMin);
-
-	width = qRound(xMax - xMin) + 1;
-	heigth = qRound(yMax - yMin) + 1;
-	QImage image(width, heigth, QImage::Format_Indexed8);
-	image.setColor(0, qRgb(255, 255, 255));
-	image.setColor(1, qRgb(255, 0, 0));
-	image.fill(0);
-
-
-	for (int pixelY = 1; pixelY < image.height() - 1; pixelY++) {
-		//  Build a list of nodes.
-		QVector<int> nodeX;
-		int j = polygon.size() - 1;
-		for (int i = 0; i < polygon.size(); i++) {
-			qreal polyYi = polygon[i].y();
-			qreal polyXi = polygon[i].x();
-			qreal polyYj = polygon[j].y();
-			qreal polyXj = polygon[j].x();
-
-			if ((polyYi<(double)pixelY && polyYj >= (double)pixelY) || (polyYj<(double)pixelY && polyYi >= (double)pixelY)) {
-				nodeX.push_back((int)(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi)));
-			}
-			j = i;
-		}
-
-		// Sort
-		qSort(nodeX);
-
-
-		//  Fill the pixels between node pairs.
-		for (int i = 0; i<nodeX.size(); i += 2) {
-			uchar *line = (uchar *)image.scanLine(pixelY);
-			line += nodeX[i] + 1;
-			for (j = nodeX[i] + 1; j < nodeX[i + 1]; j++, line += 1)
-				*line = 1;
-		}
-
-		//        for(int i=0; i<nodeX.size(); i+=2) {
-
-		//            // FIXME: Special Case verification necessary?
-		//            if(nodeX[i]+1 > nodeX[i+1]-1) continue;
-
-		//            uchar *line = (uchar *)image.scanLine(pixelY);
-		//            int curLineIndex = 0;
-
-		//            int initialCurLineIndex = (nodeX[i]+1) / 8;
-		//            int initialCurLineOffset = (nodeX[i]+1) % 8;
-		//            int finalCurLineIndex = (nodeX[i+1]-1) / 8;
-		//            int finalCurLineOffset = (nodeX[i+1]-1) % 8;
-
-		//            line += (curLineIndex = initialCurLineIndex);
-		//            if(initialCurLineIndex != finalCurLineIndex) *line = *line | 255 >> initialCurLineOffset;
-		//            else {
-		//                *line = *line | ( (uchar)(255 >> initialCurLineOffset) & (uchar)(255 << (7-finalCurLineOffset)) );
-		//                continue;
-		//            }
-
-		//            curLineIndex++;
-		//            line++;
-		//            while(curLineIndex < finalCurLineIndex) {
-		//                *line = 255;
-		//                curLineIndex++;
-		//                line++;
-		//            }
-
-		//            *line = (uchar)(255 << (7-finalCurLineOffset));
-		//        }
-	}
-
-
-	// FIXME: Delete horizontal lines
-	QPolygonF::const_iterator itj;
-	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
-		if (iti + 1 == polygon.cend()) itj = polygon.cbegin();
-		else itj = iti + 1;
-		if ((int)(*iti).y() == (int)(*itj).y()) {
-			int left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
-			int right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
-			for (int i = left; i <= right; i++) {
-				image.setPixel(i, (int)(*iti).y(), 0);
-			}
-		}
-	}
-
-	// FIXME: Test
-	for (QVector<QPair<QPointF, QPointF>>::const_iterator it = this->degLines.cbegin(); it != this->degLines.cend(); it++) {
-		QPointF p1 = scale*(*it).first; p1 -= QPointF(xMin, yMin);
-		QPointF p2 = scale*(*it).second; p2 -= QPointF(xMin, yMin);
-		Bresenham(qRound(p1.x()), qRound(p1.y()), qRound(p2.x()), qRound(p2.y()), image);
-	}
-	for (QVector<QPointF>::const_iterator it = this->degNodes.cbegin(); it != this->degNodes.cend(); it++) {
-		QPointF p1 = scale*(*it); p1 -= QPointF(xMin, yMin);
-		image.setPixel(p1.x(), p1.y(), 0);
-	}
-
-	return image;
-}
-
-QImage Polygon::getRasterImage(QPoint &RP, qreal scale) {
-	int width, heigth;
-	QPolygonF polygon;
-	qreal xMin, xMax, yMin, yMax;
-
-	const_iterator it = cbegin();
-	xMin = scale*(*it).x(); xMax = scale*(*it).x();
-	yMin = scale*(*it).y(); yMax = scale*(*it).y();
-	for (int i = 0; i < size(); i++) {
-		qreal x = scale*at(i).x();
-		qreal y = scale*at(i).y();
-
-		if (x < xMin) xMin = x;
-		if (x > xMax) xMax = x;
-		if (y < yMin) yMin = y;
-		if (y > yMax) yMax = y;
-
-		polygon << QPointF(x, y);
-	}
-	RP.setX(-qRound(xMin)); RP.setY(-qRound(yMin));
-	polygon.translate(-xMin, -yMin);
-
-	width = qRound(xMax - xMin) + 1;
-	heigth = qRound(yMax - yMin) + 1;
-	QImage image(width, heigth, QImage::Format_Mono);
-	image.setColor(0, qRgb(255, 255, 255));
-	image.setColor(1, qRgb(255, 0, 0));
-	image.fill(0);
-
-
-	for (int pixelY = 1; pixelY < image.height() - 1; pixelY++) {
-		//  Build a list of nodes.
-		QVector<int> nodeX;
-		int j = polygon.size() - 1;
-		for (int i = 0; i < polygon.size(); i++) {
-			qreal polyYi = polygon[i].y();
-			qreal polyXi = polygon[i].x();
-			qreal polyYj = polygon[j].y();
-			qreal polyXj = polygon[j].x();
-
-			if ((polyYi<(double)pixelY && polyYj >= (double)pixelY) || (polyYj<(double)pixelY && polyYi >= (double)pixelY)) {
-				nodeX.push_back((int)(polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi)));
-			}
-			j = i;
-		}
-
-		// Sort
-		qSort(nodeX);
-
-		for (int i = 0; i<nodeX.size(); i += 2) {
-
-			// FIXME: Special Case verification necessary?
-			if (nodeX[i] + 1 > nodeX[i + 1] - 1) continue;
-
-			uchar *line = (uchar *)image.scanLine(pixelY);
-			int curLineIndex = 0;
-
-			int initialCurLineIndex = (nodeX[i] + 1) / 8;
-			int initialCurLineOffset = (nodeX[i] + 1) % 8;
-			int finalCurLineIndex = (nodeX[i + 1] - 1) / 8;
-			int finalCurLineOffset = (nodeX[i + 1] - 1) % 8;
-
-			line += (curLineIndex = initialCurLineIndex);
-			if (initialCurLineIndex != finalCurLineIndex) *line = *line | 255 >> initialCurLineOffset;
-			else {
-				*line = *line | ((uchar)(255 >> initialCurLineOffset) & (uchar)(255 << (7 - finalCurLineOffset)));
-				continue;
-			}
-
-			curLineIndex++;
-			line++;
-			while (curLineIndex < finalCurLineIndex) {
-				*line = 255;
-				curLineIndex++;
-				line++;
-			}
-
-			*line = (uchar)(255 << (7 - finalCurLineOffset));
-		}
-	}
-
-
-	// FIXME: Delete horizontal lines
-	QPolygonF::const_iterator itj;
-	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
-		if (iti + 1 == polygon.cend()) itj = polygon.cbegin();
-		else itj = iti + 1;
-		if ((int)(*iti).y() == (int)(*itj).y()) {
-			int left = (*iti).x() < (*itj).x() ? (*iti).x() : (*itj).x();
-			int right = (*iti).x() < (*itj).x() ? (*itj).x() : (*iti).x();
-			for (int i = left; i <= right; i++) {
-				image.setPixel(i, (int)(*iti).y(), 0);
-			}
-		}
-	}
-
-	// FIXME: Test
-	for (QVector<QPair<QPointF, QPointF>>::const_iterator it = this->degLines.cbegin(); it != this->degLines.cend(); it++) {
-		QPointF p1 = scale*(*it).first; p1 -= QPointF(xMin, yMin);
-		QPointF p2 = scale*(*it).second; p2 -= QPointF(xMin, yMin);
-		Bresenham(qRound(p1.x()), qRound(p1.y()), qRound(p2.x()), qRound(p2.y()), image);
-	}
-	for (QVector<QPointF>::const_iterator it = this->degNodes.cbegin(); it != this->degNodes.cend(); it++) {
-		QPointF p1 = scale*(*it); p1 -= QPointF(xMin, yMin);
-		image.setPixel(p1.x(), p1.y(), 0);
-	}
-
-	return image;
 }
 
 bool PackingProblem::load(QString fileName, QString fileType, qreal scale, qreal auxScale) {

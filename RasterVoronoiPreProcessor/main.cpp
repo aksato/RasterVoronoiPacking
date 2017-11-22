@@ -78,7 +78,7 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 		// --> Rasterize polygon
 		int width, height;
 		int *rasterCurPolygonVec;
-		rasterCurPolygonVec = curPolygon->getRasterImageVectorWithContour(referencePoint, params.rasterScaleFactor, width, height);
+		rasterCurPolygonVec = curPolygon->getRasterImage(referencePoint, params.rasterScaleFactor, width, height);
 		
 		imageSizes.push_back(QPair<int, int>(width, height));
 		refPts.push_back(referencePoint);

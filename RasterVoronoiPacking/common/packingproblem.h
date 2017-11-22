@@ -30,9 +30,7 @@ namespace RASTERPACKING {
 		static std::shared_ptr<Polygon> getConvexHull(Polygon& polygon);
 		static std::shared_ptr<Polygon> getConvexHull(Polygon& polygon1, Polygon& polygon2);
         static std::shared_ptr<Polygon> getNofitPolygon(std::shared_ptr<Polygon> staticPolygon, std::shared_ptr<Polygon> orbitingPolygon); // FIXME: Does not work for concave polygons
-        QImage getRasterImage(QPoint &RP, qreal scale = 1.0);
-        QImage getRasterImage8bit(QPoint &RP, qreal scale = 1.0);
-		int *getRasterImageVectorWithContour(QPoint &RP, qreal scale, int &width, int &height);
+		int *getRasterImage(QPoint &RP, qreal scale, int &width, int &height);
 		void getRasterBoundingBox(QPoint &RP, qreal scale, int &width, int &height);
 		void fromPolybool(POLYBOOLEAN::PAREA *area, qreal scale);
 		qreal getArea();

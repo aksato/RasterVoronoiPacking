@@ -18,6 +18,7 @@ namespace RASTERVORONOIPACKING {
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
+		void changeTotalItems(int _totalNumItems) { this->totalNumItems = _totalNumItems; }
 	private:
 		struct TotalOverlapMapEntry {
 			TotalOverlapMapEntry() {}
@@ -34,7 +35,7 @@ namespace RASTERVORONOIPACKING {
 		int currentCount;
 		QList<TotalOverlapMapEntry> toAddEntries, toRemoveEntries;
 		QMap<int, TotalOverlapMapEntry> currentEntries;
-		const int totalNumItems;
+		int totalNumItems;
 	};
 }
 

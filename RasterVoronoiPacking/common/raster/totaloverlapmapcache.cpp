@@ -81,8 +81,6 @@ void CachedTotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPo
 
 void CachedTotalOverlapMap::setDimensions(int _width, int _height) {
 	TotalOverlapMap::setDimensions(_width, _height);
-	currentCount = 0;
-	toAddEntries.clear();
-	toRemoveEntries.clear();
+	resetVoronoiEntriesCache();
 	currentEntries.clear();
 }

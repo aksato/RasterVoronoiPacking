@@ -71,27 +71,36 @@ void RasterStripPackingSolver::generateBottomLeftSolution(RasterPackingSolution 
 	}
 }
 
+qreal getItemMaxDimension(std::shared_ptr<RasterPackingProblem> problem, int itemId) {
+	qreal maxDim = 0;
+	for (unsigned int angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+		qreal curMaxDim = problem->getItem(itemId)->getMaxX(angle) - problem->getItem(itemId)->getMinX(angle);
+		if (curMaxDim > maxDim) maxDim = curMaxDim;
+	}
+	return maxDim;
+}
+
 void RasterStripPackingSolver::generateBottomLeftStripSolution(RasterPackingSolution &solution) {
 	QVector<int> sequence;
 	for (int i = 0; i < originalProblem->count(); i++) sequence.append(i);
 	std::random_shuffle(sequence.begin(), sequence.end());
 	int layoutLength = 0;
+	QList<int> placedItems;
+	int partialLength = 0;
 	for (int k = 0; k < originalProblem->count(); k++) {
 		int shuffledId = sequence[k];
 		int minMaxItemX;
-		// Find left bottom placement for item
+
+		// Resize container to maximum
+		int angle = 0;
+		int curMaxItemLength = qCeil(originalProblem->getScale()*getItemMaxDimension(originalProblem,shuffledId));
+		int partialLayoutMaximumLength = curMaxItemLength + layoutLength;
+		int newWidth = partialLayoutMaximumLength < getMinimumContainerWidth() ? getMinimumContainerWidth() : partialLayoutMaximumLength;
+		this->setContainerWidth(newWidth);
+
+		// Find best oriantation
 		for (unsigned int angle = 0; angle < originalProblem->getItem(shuffledId)->getAngleCount(); angle++) {
-			// Get IFP bounding box
-			int  minIfpX, minIfpY, maxIfpX, maxIfpY;
-			originalProblem->getIfpBoundingBox(shuffledId, angle, minIfpX, minIfpY, maxIfpX, maxIfpY);
-			QPoint curPos(minIfpX, minIfpY);
-			while (1) { // FIXME: Infinite loop?
-				//if (qFuzzyCompare(1.0 + 0.0, 1.0 + overlap)) break;
-				if (!detectItemPartialOverlap(sequence, k, curPos, angle, solution))
-					break;
-				// Get next position
-				curPos.setY(curPos.y() + 1); if (curPos.y() > maxIfpY) { curPos.setY(minIfpY); curPos.setX(curPos.x() + 1); }
-			}
+			QPoint curPos = overlapEvaluator->getBottomLeftPosition(shuffledId, angle, solution, placedItems);
 			// Check minimum X coordinate
 			int maxItemX = curPos.x() + qCeil(originalProblem->getScale()*originalProblem->getItem(shuffledId)->getMaxX(angle));
 			if (angle == 0 || maxItemX < minMaxItemX) {
@@ -100,7 +109,10 @@ void RasterStripPackingSolver::generateBottomLeftStripSolution(RasterPackingSolu
 			}
 		}
 		if (minMaxItemX > layoutLength) layoutLength = minMaxItemX;
+		placedItems << shuffledId;
 	}
+
+	// Set new dimension for the container
 	setContainerWidth(layoutLength, solution);
 }
 

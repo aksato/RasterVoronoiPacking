@@ -13,6 +13,19 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorGLS::getTotalOver
 	return currrentPieceMap;
 }
 
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorGLS::getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	currrentPieceMap->reset();
+	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
+	currrentPieceMap->changeTotalItems(placedItems.length()+1); // FIXME: Better way to deal with cached maps
+	for (int i : placedItems) {
+		if (i == itemId) continue;
+		currrentPieceMap->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i), glsWeights->getWeight(itemId, i));
+	}
+	currrentPieceMap->changeTotalItems(problem->count()); // FIXME: Better way to deal with cached maps
+	return currrentPieceMap;
+}
+
 void RasterTotalOverlapMapEvaluatorGLS::updateWeights(RasterPackingSolution &solution) {
 	QVector<WeightIncrement> solutionOverlapValues;
 	//quint32 maxOValue = 0;

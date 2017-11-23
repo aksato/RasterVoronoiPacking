@@ -43,6 +43,14 @@ namespace RASTERVORONOIPACKING {
 			if (getAngleValue(orientation) == 270) return this->maxY;
 			return 0; // FIXME: Implement continuous rotations?
 		}
+		qreal getMinX(int orientation) {
+			if (getAngleValue(orientation) == 0) return this->minX;
+			if (getAngleValue(orientation) == 90) return -this->maxY;
+			if (getAngleValue(orientation) == 180) return -this->maxX;
+			if (getAngleValue(orientation) == 270) return this->minY;
+			return 0; // FIXME: Implement continuous rotations?
+		}
+
 		qreal getMaxY(int orientation) {
 			if (getAngleValue(orientation) == 0) return this->maxY;
 			if (getAngleValue(orientation) == 90) return this->maxX;

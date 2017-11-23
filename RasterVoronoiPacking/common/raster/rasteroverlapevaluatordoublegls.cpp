@@ -64,6 +64,13 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapPosition(int it
 	return minRelativePos;
 }
 
+QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getBottomLeftPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
+	std::shared_ptr<TotalOverlapMap> map = getPartialTotalOverlapSearchMap(itemId, orientation, solution, placedItems);
+	QPoint minRelativePos;
+	map->getBottomLeft(minRelativePos, false);
+	return (int)zoomFactorInt * minRelativePos;
+}
+
 // --> Get absolute minimum overlap position
 QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val, bool &border) {
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
@@ -162,4 +169,17 @@ quint32 RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapMapSingleValue(i
 		totalOverlap += glsWeights->getWeight(itemId, i) * problem->getDistanceValue(itemId, pos, orientation, i, solution.getPosition(i), solution.getOrientation(i));
 	}
 	return totalOverlap;
+}
+
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getPartialTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	currrentPieceMap->reset();
+	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
+	currrentPieceMap->changeTotalItems(placedItems.length()+1); // FIXME: Better way to deal with cached maps
+	for (int i : placedItems) {
+		if (i == itemId) continue;
+		currrentPieceMap->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i), glsWeights->getWeight(itemId, i), zoomFactorInt);
+	}
+	currrentPieceMap->changeTotalItems(problem->count()); // FIXME: Better way to deal with cached maps
+	return currrentPieceMap;
 }

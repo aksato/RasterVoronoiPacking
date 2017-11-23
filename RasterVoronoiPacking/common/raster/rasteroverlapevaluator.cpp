@@ -34,6 +34,13 @@ QPoint RasterTotalOverlapMapEvaluator::getMinimumOverlapPosition(int itemId, int
 	return minRelativePos;
 }
 
+QPoint RasterTotalOverlapMapEvaluator::getBottomLeftPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
+	std::shared_ptr<TotalOverlapMap> map = getPartialTotalOverlapMap(itemId, orientation, solution, placedItems);
+	QPoint minRelativePos;
+	map->getBottomLeft(minRelativePos);
+	return minRelativePos;
+}
+
 // Determines the item total overlap map for a given orientation in a solution
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluator::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) {
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
@@ -44,6 +51,20 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluator::getTotalOverlap
 		//currrentPieceMap->addVoronoi(i, problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i), problem->getItemType(itemId), orientation), solution.getPosition(i));
 		currrentPieceMap->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i));
 	}
+	return currrentPieceMap;
+}
+
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluator::getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	currrentPieceMap->reset();
+	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
+	currrentPieceMap->changeTotalItems(placedItems.length()+1); // FIXME: Better way to deal with cached maps
+	for (int i : placedItems) {
+		if (i == itemId) continue;
+		//currrentPieceMap->addVoronoi(i, problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i), problem->getItemType(itemId), orientation), solution.getPosition(i));
+		currrentPieceMap->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i));
+	}
+	currrentPieceMap->changeTotalItems(problem->count()); // FIXME: Better way to deal with cached maps
 	return currrentPieceMap;
 }
 

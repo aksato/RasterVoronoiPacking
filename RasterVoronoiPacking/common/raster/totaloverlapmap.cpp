@@ -141,13 +141,38 @@ quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 	int numVals = height*width;
 	for (int id = 0; id < numVals; id++, curPt++) {
 		quint32 curVal = *curPt;
-		if (curVal < minVal) {
+		if (curVal < minVal || minVal == 0) {
 			minVal = curVal;
 			minid = id;
 			if (minVal == 0) break;
 		}
 	}
 	minPt = QPoint(minid % width, minid / width) - this->reference;
+	return minVal;
+}
+
+quint32 TotalOverlapMap::getBottomLeft(QPoint &minPt, bool borderOk) {
+	quint32 *curPt = data;
+	quint32 minVal = *curPt;
+	int minid = 0;
+	minPt = QPoint(0, 0);
+	int numVals = height*width;
+	for (int i = 0; i < width; i++) {
+		if (!borderOk && (i == 0)) continue;
+		curPt = data + i;
+		for (int j = 0; j < height; j++, curPt += width) {
+			if (!borderOk && (j == 0 || j == height - 1)) continue;
+			quint32 curVal = *curPt;
+			if (curVal < minVal || minVal == 0) {
+				minVal = curVal;
+				minPt.setX(i); minPt.setY(j);
+				if (minVal == 0) break;
+			}
+		}
+		if (minVal == 0) break;
+	}
+	Q_ASSERT_X(minVal == 0, "TotalOverlapMap::getBottomLeft", "No feasible bottom left position was found");
+	minPt = minPt - this->reference;
 	return minVal;
 }
 

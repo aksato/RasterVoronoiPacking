@@ -22,6 +22,7 @@ namespace RASTERVORONOIPACKING {
 
 		// --> Determines the item total overlap map
 		virtual QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);
+		virtual QPoint getBottomLeftPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 
 		// --> Guided Local Search functions
 		virtual void updateWeights(RasterPackingSolution &solution) = 0;
@@ -35,6 +36,7 @@ namespace RASTERVORONOIPACKING {
 
 	protected:
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+		virtual std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 
 		// --> Pointer to problem
 		std::shared_ptr<RasterPackingProblem> problem;
@@ -66,6 +68,7 @@ namespace RASTERVORONOIPACKING {
 	protected:
 		// --> Determines the item total overlap map with guided local search
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+		virtual std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 
 		// Guided local search weights
 		std::shared_ptr<GlsWeightSet> glsWeights;
@@ -93,6 +96,7 @@ namespace RASTERVORONOIPACKING {
 
 		// --> Determines the item total overlap map
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);
+		QPoint getBottomLeftPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 
 		// --> Container size update functions
 		void updateMapsLength(int pixelWidth);
@@ -104,6 +108,7 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<TotalOverlapMap> getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution);
 		quint32 getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution);
 		QPoint getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val, bool &border);
+		std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 		const int zoomFactorInt;
 	};
 }

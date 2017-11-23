@@ -73,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBox->setVisible(false);
     ui->comboBox_3->setVisible(false);
     ui->graphicsView->setBackgroundBrush(QBrush(qRgb(240,240,240)));
+	zoomFactor = 1;
     qsrand(4939495);
 }
 
@@ -242,7 +243,7 @@ void MainWindow::createRandomLayout() {
 
 void MainWindow::createBottomLeftLayout() {
 	QTime myTimer; myTimer.start();
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = createBasicSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = zoomFactor == 1 ? createBasicSolver() : createDoubleGLSSolver();
 	solver->generateBottomLeftSolution(solution);
 	currentContainerWidth = solver->getCurrentWidth(); currentContainerHeight = solver->getCurrentHeight();
 	int milliseconds = myTimer.elapsed();

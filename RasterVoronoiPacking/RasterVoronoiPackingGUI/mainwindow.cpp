@@ -421,10 +421,8 @@ void MainWindow::showZoomedMap() {
     int itemId = ui->graphicsView->getCurrentItemId();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverDoubleGls = createDoubleGLSSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS>(solverDoubleGls->overlapEvaluator)->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution);
-    //QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
-    //zoomedMapViewer.setImage(zoomImage);
-        QPoint curItemPosition = solution.getPosition(itemId);
-        zoomedMapViewer.getMapView()->updateMap(zoomMap, curItemPosition);
+    QPoint curItemPosition = solution.getPosition(itemId);
+    zoomedMapViewer.getMapView()->updateMap(zoomMap, curItemPosition);
     zoomedMapViewer.show();
 }
 
@@ -446,9 +444,8 @@ void MainWindow::translateCurrentToMinimumZoomedPosition() {
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> zoomMap = std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorDoubleGLS>(solverDoubleGls->overlapEvaluator)->getRectTotalOverlapMap(itemId, solution.getOrientation(itemId), solution.getPosition(itemId), zoomSquareSize, zoomSquareSize, solution);
     ui->graphicsView->setCurrentSolution(solution);
     QPixmap zoomImage = QPixmap::fromImage(zoomMap->getImage());
-    //zoomedMapViewer.setImage(zoomImage);
-        QPoint curItemPosition = solution.getPosition(itemId);
-        zoomedMapViewer.getMapView()->updateMap(zoomMap, curItemPosition);
+    QPoint curItemPosition = solution.getPosition(itemId);
+    zoomedMapViewer.getMapView()->updateMap(zoomMap, curItemPosition);
     zoomedMapViewer.show();
 }
 
@@ -468,7 +465,7 @@ void MainWindow::setExplicityZoomValue() {
 	zoomFactor = QInputDialog::getInt(this, "Explicity Zoom Value", "Zoom:", this->rasterProblem->getScale(), 1, 1000, 1, &ok);
 	if (!ok) return;
 	int zoomSquareSize = ZOOMNEIGHBORHOOD * zoomFactor;
-	zoomedMapViewer.getMapView()->init(zoomSquareSize, 1.0 / (qreal)zoomFactor);
+	zoomedMapViewer.getMapView()->init(zoomSquareSize + 1 - zoomSquareSize % 2, 1.0 / (qreal)zoomFactor);
 	ui->pushButton_16->setEnabled(true); ui->pushButton_17->setEnabled(true); ui->pushButton_18->setEnabled(true); ui->pushButton_20->setEnabled(true);
 	this->overlapEvaluatorDoubleGls = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(this->rasterProblem, zoomFactor, weights, true));
 }

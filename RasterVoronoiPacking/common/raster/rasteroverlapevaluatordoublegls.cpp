@@ -4,6 +4,16 @@
 
 using namespace RASTERVORONOIPACKING;
 
+int floorDivide(int coord, int scale) {
+	if (coord % scale == 0) return coord / scale;
+	return qFloor((qreal)coord / (qreal)scale);
+}
+
+int ceilDivide(int coord, int scale) {
+	if (coord % scale == 0) return coord / scale;
+	return qCeil((qreal)coord / (qreal)scale);
+}
+
 void getScaledSolution(RasterPackingSolution &originalSolution, RasterPackingSolution &newSolution, qreal scaleFactor) {
 	newSolution = RasterPackingSolution(originalSolution.getNumItems());
 	for (int i = 0; i < originalSolution.getNumItems(); i++) {
@@ -26,17 +36,13 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 				newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
 			}
 			else {
-				if (curIfp->getOrigin().x() % zoomFactorInt == 0) newReferencePoint.setX(curIfp->getOrigin().x() / zoomFactorInt);
-				else newReferencePoint.setX(qFloor((qreal)curIfp->getOrigin().x() / (qreal)zoomFactorInt));
-				if (curIfp->getOrigin().y() % zoomFactorInt == 0) newReferencePoint.setY(curIfp->getOrigin().y() / zoomFactorInt);
-				else newReferencePoint.setY(qFloor((qreal)curIfp->getOrigin().y() / (qreal)zoomFactorInt));
-				int right = -curIfp->getOrigin().x() + curIfp->width() - 1; newWidth = right + newReferencePoint.x() * zoomFactorInt;
-				if (newWidth % zoomFactorInt == 0) newWidth = newWidth / zoomFactorInt;
-				else newWidth = qFloor((qreal)newWidth / (qreal)zoomFactorInt);
-				int top = -curIfp->getOrigin().y() + curIfp->height() - 1; newHeight = top + newReferencePoint.y() * zoomFactorInt;
-				if (newHeight % zoomFactorInt == 0) newHeight = newHeight / zoomFactorInt;
-				else newHeight = qFloor((qreal)newHeight / (qreal)zoomFactorInt);
-				newWidth = newWidth + 1;  newHeight = newHeight + 1;
+				int zoomSquareSize = ZOOMNEIGHBORHOOD*zoomFactorInt;
+				newReferencePoint.setX(floorDivide(curIfp->getOrigin().x() + zoomSquareSize / 2, zoomFactorInt));
+				newReferencePoint.setY(floorDivide(curIfp->getOrigin().y() + zoomSquareSize / 2, zoomFactorInt));
+				int right = ceilDivide(-curIfp->getOrigin().x() + curIfp->width() - 1 - zoomSquareSize / 2, zoomFactorInt);
+				int top = ceilDivide(-curIfp->getOrigin().y() + curIfp->height() - 1 - zoomSquareSize / 2, zoomFactorInt);
+				newWidth = right + newReferencePoint.x() + 1;
+				newHeight = top + newReferencePoint.y() + 1;
 			}
 			std::shared_ptr<TotalOverlapMap> curMap = cacheMaps ?
 				std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, this->problem->count())) :
@@ -63,7 +69,12 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
 	QPoint minRelativePos;
 	val = map->getMinimum(minRelativePos);
-	if (minRelativePos.x() == map->getWidth() - map->getReferencePoint().x() - 1) border = true; else border = false; // FIXME: Does not work in 2D case!
+	border = false;
+	if (minRelativePos.x() == map->getWidth() - map->getReferencePoint().x() - 1 ||
+		minRelativePos.y() == map->getHeight() - map->getReferencePoint().y() - 1 || 
+		minRelativePos.x() == - map->getReferencePoint().x() || 
+		minRelativePos.y() == - map->getReferencePoint().y()) 
+		border = true; // FIXME: Does not work in 2D case!
 
 	// Rescale position before returning
 	return (int) zoomFactorInt * minRelativePos;
@@ -84,7 +95,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getRec
 	// Determine zoomed area inside the innerfit polygon
 	std::shared_ptr<RasterNoFitPolygon> curIfp = this->problem->getIfps()->getRasterNoFitPolygon(0, 0, this->problem->getItemType(itemId), orientation);
 	QRect curIfpBoundingBox(QPoint(-curIfp->getOriginX(), -curIfp->getOriginY()), QSize(curIfp->width() - maps.getShrinkValX(), curIfp->height() - maps.getShrinkValY()));
-	QRect zoomSquareRect(QPoint(pos.x() - width / 2, pos.y() - height / 2), QSize(width, height));
+	QRect zoomSquareRect(QPoint(pos.x() - width / 2, pos.y() - height / 2), QPoint(pos.x() + width / 2, pos.y() + height / 2));
 	zoomSquareRect = zoomSquareRect.intersected(curIfpBoundingBox);
 
 	// Create zoomed overlap Map. FIXME: Use cache map?
@@ -113,12 +124,17 @@ int getRoughShrinkage(int deltaPixels, int zoomFactorInt) {
 void RasterTotalOverlapMapEvaluatorDoubleGLS::updateMapsLength(int pixelWidth) {
 	int deltaPixels = problem->getContainerWidth() - pixelWidth;
 	maps.setShrinkVal(deltaPixels);
-	int deltaPixelsRough = getRoughShrinkage(deltaPixels, zoomFactorInt);
 
 	for (int itemId = 0; itemId < problem->count(); itemId++)
 	for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
-		curMap->setRelativeWidth(deltaPixelsRough);
+		// Determine new width
+		std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
+		int zoomSquareSize = ZOOMNEIGHBORHOOD*zoomFactorInt;
+		int curWidth = curIfp->width() - deltaPixels;
+		int right = ceilDivide(-curIfp->getOrigin().x() + curWidth - 1 - zoomSquareSize / 2, zoomFactorInt);
+		int newWidth = right + curMap->getReferencePoint().x() + 1;
+		curMap->setRelativeWidth(curMap->getOriginalWidth() - newWidth);
 	}
 }
 
@@ -126,13 +142,16 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::updateMapsDimensions(int pixelWidt
 	int deltaPixelsX = problem->getContainerWidth() - pixelWidth;
 	int deltaPixelsY = problem->getContainerHeight() - pixelHeight;
 	maps.setShrinkVal(deltaPixelsX, deltaPixelsY);
-	int deltaPixelsRoughX = getRoughShrinkage(deltaPixelsX, zoomFactorInt);
-	int deltaPixelsRoughY = getRoughShrinkage(deltaPixelsY, zoomFactorInt);
 
 	for (int itemId = 0; itemId < problem->count(); itemId++)
 	for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 		std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
-		curMap->setRelativeDimensions(deltaPixelsRoughX, deltaPixelsRoughY);
+		// Determine new dimensions
+		std::shared_ptr<RasterNoFitPolygon> curIfp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
+		int zoomSquareSize = ZOOMNEIGHBORHOOD*zoomFactorInt;
+		int curWidth  = curIfp->width()  - deltaPixelsX; int right = ceilDivide(-curIfp->getOrigin().x() + curWidth  - 1 - zoomSquareSize / 2, zoomFactorInt); int newWidth  = right + curMap->getReferencePoint().x() + 1;
+		int curHeight = curIfp->height() - deltaPixelsY; int   top = ceilDivide(-curIfp->getOrigin().y() + curHeight - 1 - zoomSquareSize / 2, zoomFactorInt); int newHeight =   top + curMap->getReferencePoint().y() + 1;
+		curMap->setRelativeDimensions(curMap->getOriginalWidth() - newWidth, curMap->getOriginalHeight() - newHeight);
 	}
 }
 

@@ -35,7 +35,6 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 	std::cout.precision(2);
 	for (QList<std::shared_ptr<RASTERPACKING::InnerFitPolygon>>::const_iterator it = problem.cifpbegin(); it != problem.cifpend(); it++, numProcessed++) {
 		std::shared_ptr<RASTERPACKING::Polygon> curPolygon = (*it)->getPolygon();
-
 		QPoint referencePoint;
 
 		// --> Rasterize polygon
@@ -146,8 +145,8 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 		}
 	}
 	std::cout << std::endl;
-	float totalArea = 0;
-	std::for_each(imageSizes.begin(), imageSizes.end(), [&totalArea](QPair<int, int> &size){totalArea += (float)(size.first*size.second); });
+	qreal totalArea = 0;
+	std::for_each(imageSizes.begin(), imageSizes.end(), [&totalArea](QPair<int, int> &size){totalArea += (qreal)(size.first*size.second); });
 	qDebug() << "Nofit polygons rasterization finished." << problem.getNofitPolygonsCount() << "polygons processed in" << myTimer.elapsed() / 1000.0 << "seconds. Total area:" << totalArea;
 
 	qDebug() << "Saving output files.";

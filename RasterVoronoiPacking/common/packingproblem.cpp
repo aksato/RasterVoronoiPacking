@@ -540,7 +540,7 @@ bool PackingProblem::load(QString fileName) {
              curGeometricTool = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon);
          if(xml.name()=="resultingImage" && xml.tokenType() == QXmlStreamReader::StartElement) {
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setFileName(xml.attributes().value("path").toString());
-             std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setScale(xml.attributes().value("scale").toFloat());
+             std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setScale(xml.attributes().value("scale").toDouble());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setReferencePoint(QPoint(xml.attributes().value("x0").toInt(),xml.attributes().value("y0").toInt()));
 			 std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setWidth(xml.attributes().value("width").toInt());
 			 std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setHeight(xml.attributes().value("height").toInt());
@@ -750,7 +750,7 @@ bool PackingProblem::loadClusterInfo(QString fileName) {
 
 		if (xml.name() == "piece" && xml.tokenType() == QXmlStreamReader::StartElement) {
 			currentCluster.push_back(CLUSTERING::ClusterPiece(xml.attributes().value("id").toString(), xml.attributes().value("angle").toInt(), 
-			QPointF(xml.attributes().value("xOffset").toFloat(), xml.attributes().value("yOffset").toFloat())));
+				QPointF(xml.attributes().value("xOffset").toDouble(), xml.attributes().value("yOffset").toDouble())));
 		}
 	}
 

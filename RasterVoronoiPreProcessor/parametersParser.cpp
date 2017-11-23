@@ -49,7 +49,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
     if (parser.isSet(valuePuzzleScale)) {
         const QString puzzleScale = parser.value(valuePuzzleScale);
         bool ok;
-        const float scale = puzzleScale.toFloat(&ok);
+		const double scale = puzzleScale.toDouble(&ok);
         if(ok && scale > 0) params->puzzleScaleFactor = scale;
         else {
             *errorMessage = "Bad nofit polygon scale value.";
@@ -71,7 +71,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
     if (parser.isSet(valueRasterScale)) {
         const QString rasterScale = parser.value(valueRasterScale);
         bool ok;
-        const float scale = rasterScale.toFloat(&ok);
+		const double scale = rasterScale.toDouble(&ok);
         if(ok && scale > 0) params->rasterScaleFactor = scale;
         else {
             *errorMessage = "Bad raster scale value.";
@@ -83,7 +83,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	if (parser.isSet(valueFixScale)) {
         const QString fixScale = parser.value(valueFixScale);
         bool ok;
-        const float scale = fixScale.toFloat(&ok);
+		const double scale = fixScale.toDouble(&ok);
 		if(ok && scale > 0) params->scaleFixFactor = scale;
         else {
             *errorMessage = "Bad fix scale value.";
@@ -145,7 +145,7 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 
         if (line.at(0).toLower().trimmed() == "nfp-scale") {
             const QString puzzleScale = line.at(1).trimmed();
-            const float scale = puzzleScale.toFloat(&ok);
+            const double scale = puzzleScale.toDouble(&ok);
             if(ok && scale > 0) params->puzzleScaleFactor = scale;
             else {
                 *errorMessage = "Bad nofit polygon scale value.";
@@ -164,7 +164,7 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 
         if (line.at(0).toLower().trimmed() == "raster-scale") {
             const QString rasterScale = line.at(1);
-            const float scale = rasterScale.toFloat(&ok);
+			const double scale = rasterScale.toDouble(&ok);
             if(ok && scale > 0) params->rasterScaleFactor = scale;
             else {
                 *errorMessage = "Bad raster scale value.";
@@ -174,7 +174,7 @@ CommandLineParseResult parseOptionsFile(QString fileName, PreProcessorParameters
 
 		if (line.at(0).toLower().trimmed() == "fix-scale") {
             const QString fixScale = line.at(1);
-            const float scale = fixScale.toFloat(&ok);
+			const double scale = fixScale.toDouble(&ok);
 			if(ok && scale > 0) params->scaleFixFactor = scale;
             else {
                 *errorMessage = "Bad fix scale value.";

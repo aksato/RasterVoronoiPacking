@@ -112,7 +112,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     // 4. Load nofit polygons
 	noFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet(items.length()));
 	int i = 0;
-    for(QList<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++, i++) {
+	for(QVector<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++, i++) {
         std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
         // Create image. FIXME: Use data file instead?
         QImage curImage(curRasterNfp->getFileName());

@@ -559,7 +559,7 @@ bool PackingProblem::load(QString fileName) {
          // do error handling
      }
 
-     for(QList<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
+	 for (QVector<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
          QMap<QString, std::shared_ptr<Polygon> >::iterator resultingPolygonIt = polygonsTempSet.find((*it)->getName());
          if( resultingPolygonIt != polygonsTempSet.end())
              (*it)->setPolygon(*resultingPolygonIt);
@@ -666,7 +666,7 @@ bool PackingProblem::save(QString fileName, QString binFileName, QString cluster
         QStringList piecePolCommand = (*it)->getPolygon()->getXML();
         processXMLCommands(piecePolCommand, stream);
     }
-    for(QList<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
+	for (QVector<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
         QStringList nfpPolCommand = (*it)->getPolygon()->getXML();
         processXMLCommands(nfpPolCommand, stream);
     }
@@ -678,7 +678,7 @@ bool PackingProblem::save(QString fileName, QString binFileName, QString cluster
 
     // --> Write nfps and ifps
     stream.writeStartElement("nfps");
-    for(QList<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
+	for (QVector<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
         QStringList nfpCommand = (*it)->getXML();
         processXMLCommands(nfpCommand, stream);
     }
@@ -694,7 +694,7 @@ bool PackingProblem::save(QString fileName, QString binFileName, QString cluster
     if(!this->rasterNofitPolygons.empty()) {
         stream.writeStartElement("raster");
 		if(!binFileName.isEmpty()) stream.writeAttribute("data", binFileName);
-        for(QList<std::shared_ptr<RasterNoFitPolygon>>::const_iterator it = this->crnfpbegin(); it != this->crnfpend(); it++) {
+		for (QVector<std::shared_ptr<RasterNoFitPolygon>>::const_iterator it = this->crnfpbegin(); it != this->crnfpend(); it++) {
             QStringList rnfpCommand = (*it)->getXML();
             processXMLCommands(rnfpCommand, stream);
         }

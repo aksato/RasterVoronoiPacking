@@ -229,7 +229,9 @@ namespace RASTERPACKING {
         bool copyHeader(QString fileName);
 		QString getNfpDataFileName() { return this->nfpDataFileName; }
 		
+		void resizeRasterNoFitPolygon() { this->rasterNofitPolygons.resize(nofitPolygons.size()); }
         void addRasterNofitPolygon(std::shared_ptr<RasterNoFitPolygon> rasterNfp) {this->rasterNofitPolygons.push_back(rasterNfp);}
+		void addRasterNofitPolygon(std::shared_ptr<RasterNoFitPolygon> rasterNfp, int index) { this->rasterNofitPolygons[index] = rasterNfp; }
         void addRasterInnerfitPolygon(std::shared_ptr<RasterInnerFitPolygon> rasterIfp) {this->rasterInnerfitPolygons.push_back(rasterIfp);}
 
 		int getItemsCount() { return std::accumulate(pieces.begin(), pieces.end(), 0, [](int lhs, std::shared_ptr<Piece> rhs){return lhs + rhs->getMultiplicity(); }); }
@@ -255,21 +257,22 @@ namespace RASTERPACKING {
         QList<std::shared_ptr<Piece>>::const_iterator cpend() {return this->pieces.cend();}
 		QList<std::shared_ptr<Piece>>::iterator erasep(QList<std::shared_ptr<Piece>>::iterator pos) {return this->pieces.erase(pos);}
 
-        QList<std::shared_ptr<NoFitPolygon>>::iterator nfpbegin() {return this->nofitPolygons.begin();}
-        QList<std::shared_ptr<NoFitPolygon>>::iterator nfpend() {return this->nofitPolygons.end();}
-        QList<std::shared_ptr<NoFitPolygon>>::const_iterator cnfpbegin() {return this->nofitPolygons.cbegin();}
-        QList<std::shared_ptr<NoFitPolygon>>::const_iterator cnfpend() {return this->nofitPolygons.cend();}
-		QList<std::shared_ptr<NoFitPolygon>>::iterator erasenfp(QList<std::shared_ptr<NoFitPolygon>>::iterator pos) { return this->nofitPolygons.erase(pos); }
+		std::shared_ptr<NoFitPolygon> getNofitPolygon(int index) { return this->nofitPolygons[index]; }
+		QVector<std::shared_ptr<NoFitPolygon>>::iterator nfpbegin() { return this->nofitPolygons.begin(); }
+		QVector<std::shared_ptr<NoFitPolygon>>::iterator nfpend() { return this->nofitPolygons.end(); }
+		QVector<std::shared_ptr<NoFitPolygon>>::const_iterator cnfpbegin() { return this->nofitPolygons.cbegin(); }
+		QVector<std::shared_ptr<NoFitPolygon>>::const_iterator cnfpend() { return this->nofitPolygons.cend(); }
+		QVector<std::shared_ptr<NoFitPolygon>>::iterator erasenfp(QVector<std::shared_ptr<NoFitPolygon>>::iterator pos) { return this->nofitPolygons.erase(pos); }
 
         QList<std::shared_ptr<InnerFitPolygon>>::iterator ifpbegin() {return this->innerfitPolygons.begin();}
         QList<std::shared_ptr<InnerFitPolygon>>::iterator ifpend() {return this->innerfitPolygons.end();}
         QList<std::shared_ptr<InnerFitPolygon>>::const_iterator cifpbegin() {return this->innerfitPolygons.cbegin();}
         QList<std::shared_ptr<InnerFitPolygon>>::const_iterator cifpend() {return this->innerfitPolygons.cend();}
 
-        QList<std::shared_ptr<RasterNoFitPolygon>>::iterator rnfpbegin() {return this->rasterNofitPolygons.begin();}
-        QList<std::shared_ptr<RasterNoFitPolygon>>::iterator rnfpend() {return this->rasterNofitPolygons.end();}
-        QList<std::shared_ptr<RasterNoFitPolygon>>::const_iterator crnfpbegin() {return this->rasterNofitPolygons.cbegin();}
-        QList<std::shared_ptr<RasterNoFitPolygon>>::const_iterator crnfpend() {return this->rasterNofitPolygons.cend();}
+		QVector<std::shared_ptr<RasterNoFitPolygon>>::iterator rnfpbegin() { return this->rasterNofitPolygons.begin(); }
+		QVector<std::shared_ptr<RasterNoFitPolygon>>::iterator rnfpend() { return this->rasterNofitPolygons.end(); }
+		QVector<std::shared_ptr<RasterNoFitPolygon>>::const_iterator crnfpbegin() { return this->rasterNofitPolygons.cbegin(); }
+		QVector<std::shared_ptr<RasterNoFitPolygon>>::const_iterator crnfpend() { return this->rasterNofitPolygons.cend(); }
 
         QList<std::shared_ptr<RasterInnerFitPolygon>>::iterator rifpbegin() {return this->rasterInnerfitPolygons.begin();}
         QList<std::shared_ptr<RasterInnerFitPolygon>>::iterator rifpend() {return this->rasterInnerfitPolygons.end();}
@@ -293,9 +296,9 @@ namespace RASTERPACKING {
 
         QList<std::shared_ptr<Container>> containers;
         QList<std::shared_ptr<Piece>> pieces;
-        QList<std::shared_ptr<NoFitPolygon>> nofitPolygons;
+		QVector<std::shared_ptr<NoFitPolygon>> nofitPolygons;
         QList<std::shared_ptr<InnerFitPolygon>> innerfitPolygons;
-        QList<std::shared_ptr<RasterNoFitPolygon>> rasterNofitPolygons;
+        QVector<std::shared_ptr<RasterNoFitPolygon>> rasterNofitPolygons;
         QList<std::shared_ptr<RasterInnerFitPolygon>> rasterInnerfitPolygons;
 		QMap<QString, CLUSTERING::Cluster> clusteredPieces;
 		QString originalProblem;

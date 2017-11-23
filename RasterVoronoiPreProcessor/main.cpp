@@ -1,4 +1,3 @@
-
 #include <QtCore/QCoreApplication>
 #include <QDebug>
 #include <QImage>
@@ -14,6 +13,7 @@
 #include "dt\dt.h"
 #include "dt\pnmfile.h"
 #include "dt\imconv.h"
+#include <omp.h>
 
 QImage getImageFromVec(int *S, int width, int height) {
     QImage result(width, height, QImage::Format_Mono);
@@ -60,18 +60,23 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 
 	qDebug() << "Nofit polygons rasterization started.";
 	myTimer.start();
-	numProcessed = 1;
+	
 	int onePercentNfpCount = qRound(0.01 * (qreal)problem.getNofitPolygonsCount());
 	std::cout.precision(2);
 	QVector<QPair<int, int>> imageSizes;
 	QVector<QPoint> refPts;
-	QStringList distTransfNames;
+	//QStringList distTransfNames;
 	QVector<quint32 *> rasterPolygonVecs;
 	QString binFileName = params.outputXMLName;
 	binFileName.replace(".xml", ".bin");
-	for (QList<std::shared_ptr<RASTERPACKING::NoFitPolygon>>::const_iterator it = problem.cnfpbegin(); it != problem.cnfpend(); it++, numProcessed++) {
-		std::shared_ptr<RASTERPACKING::Polygon> curPolygon = (*it)->getPolygon();
-
+	imageSizes.resize(problem.getNofitPolygonsCount());
+	refPts.resize(problem.getNofitPolygonsCount());
+	rasterPolygonVecs.resize(problem.getNofitPolygonsCount());
+	problem.resizeRasterNoFitPolygon();
+	numProcessed = 0;
+	#pragma omp parallel for
+	for (int polygonId = 0; polygonId < problem.getNofitPolygonsCount(); polygonId++) {
+		std::shared_ptr<RASTERPACKING::Polygon> curPolygon = problem.getNofitPolygon(polygonId)->getPolygon();
 		QPoint referencePoint;
 
 		// --> Rasterize polygon
@@ -79,15 +84,15 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 		int *rasterCurPolygonVec;
 		rasterCurPolygonVec = curPolygon->getRasterImage(referencePoint, params.rasterScaleFactor, width, height);
 		
-		imageSizes.push_back(QPair<int, int>(width, height));
-		refPts.push_back(referencePoint);
-		distTransfNames.push_back(curPolygon->getName() + ".png");
+		imageSizes[polygonId] = QPair<int, int>(width, height);
+		refPts[polygonId] = referencePoint;
+		//distTransfNames.push_back(curPolygon->getName() + ".png");
 
 		if (params.skipDt) {
 			quint32 *nonDistTransfotmedVec = new quint32[width*height];
 			for (int index = 0; index < width*height; index++)
 				nonDistTransfotmedVec[index] = (quint32)rasterCurPolygonVec[index];
-			rasterPolygonVecs.push_back(nonDistTransfotmedVec);
+			rasterPolygonVecs[polygonId] = nonDistTransfotmedVec;
 
 			if (params.outputImages) {
 				QImage rasterCurPolygon = getImageFromVec(rasterCurPolygonVec, width, height);
@@ -114,7 +119,7 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 					imRef(out, x, y) = sqrt(imRef(out, x, y));
 				}
 			}
-			rasterPolygonVecs.push_back(distTransfotmedVec);
+			rasterPolygonVecs[polygonId] = distTransfotmedVec;
 
 			if (params.outputImages) {
 				// convert to grayscale
@@ -129,19 +134,25 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 			}
 
 		}
-		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNFP(new RASTERPACKING::RasterNoFitPolygon(*it, width, height));
+		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNFP(new RASTERPACKING::RasterNoFitPolygon(problem.getNofitPolygon(polygonId), width, height));
 		curRasterNFP->setScale(params.rasterScaleFactor);
 		curRasterNFP->setReferencePoint(referencePoint);
 		curRasterNFP->setFileName(curPolygon->getName());
-		problem.addRasterNofitPolygon(curRasterNFP);
+		problem.addRasterNofitPolygon(curRasterNFP, polygonId);
 
-		if (onePercentNfpCount == 0 || numProcessed % onePercentNfpCount == 0) {
-			qreal progress = (qreal)numProcessed / (qreal)problem.getNofitPolygonsCount();
-			std::cout << "\r" << "Progress : [" << std::fixed << 100.0*progress << "%] [";
-			int k = 0;
-			for (; k < progress * 56; k++) std::cout << "#";
-			for (; k < 56; k++) std::cout << ".";
-			std::cout << "]";
+		#pragma omp atomic
+		numProcessed++;
+
+		if (onePercentNfpCount == 0 || numProcessed % onePercentNfpCount == 0 || numProcessed == problem.getNofitPolygonsCount()) {
+			#pragma omp critical
+			{
+				qreal progress = (qreal)numProcessed / (qreal)problem.getNofitPolygonsCount();
+				std::cout << "\r" << "Progress : [" << std::fixed << 100.0*progress << "%] [";
+				int k = 0;
+				for (; k < progress * 56; k++) std::cout << "#";
+				for (; k < 56; k++) std::cout << ".";
+				std::cout << "]";
+			}
 		}
 	}
 	std::cout << std::endl;

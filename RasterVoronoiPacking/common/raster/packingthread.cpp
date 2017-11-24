@@ -55,9 +55,10 @@ void PackingThread::run()
 		// Generate initial bottom left solution and determine the initial length
 		solver->generateBottomLeftSolution(threadSolution);
 		curLength = solver->getCurrentWidth();
-		minSuccessfullSol = ExecutionSolutionInfo(curLength, (qreal)curLength * (qreal)containerHeight, 0.0, 1, seed);
+		minSuccessfullSol = ExecutionSolutionInfo(curLength, (qreal)curLength * (qreal)containerHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed);
 		emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
-		
+		bestSolution = threadSolution;
+
 		// Execution the first container reduction
 		curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
 		curLength = qRound(curRealLength);

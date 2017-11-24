@@ -86,32 +86,46 @@ bool TotalOverlapMap::getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight
 }
 
 void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
-    QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
-    QRect intersection;
-    if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
+	// Get intersection between innerfit and nofit polygon bounding boxes
+	QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
+	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? -relativeOrigin.x() : 0;
+	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? -relativeOrigin.y() : 0;
+	int relativeTopRightX = width - relativeOrigin.x(); relativeTopRightX = relativeTopRightX <  nfp->width() ? relativeTopRightX - 1 : nfp->width() - 1;
+	int relativeTopRightY = height - relativeOrigin.y(); relativeTopRightY = relativeTopRightY < nfp->height() ? relativeTopRightY - 1 : nfp->height() - 1;
 
-	quint32 *lineDataPt = scanLine(intersection.bottomLeft().y());
-	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++, lineDataPt += width) {
-		quint32 *dataPt = lineDataPt + intersection.bottomLeft().x();
-		quint32 *nfpPt = nfp->getPixelRef(intersection.bottomLeft().x() - relativeOrigin.x(), j - relativeOrigin.y());
-		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++, nfpPt++) {
-			*dataPt += *nfpPt;
-		}
+	// Create pointers to initial positions and calculate offsets for moving vertically
+	int offsetWidth = width - (relativeTopRightX - relativeBotttomLeftX + 1);
+	int nfpOffsetWidth = nfp->width() - (relativeTopRightX - relativeBotttomLeftX + 1);
+	quint32 *mapPointer = scanLine(relativeBotttomLeftY + relativeOrigin.y()) + relativeBotttomLeftX + relativeOrigin.x();
+	quint32 *nfpPointer = nfp->getPixelRef(relativeBotttomLeftX, relativeBotttomLeftY);
+
+	// Add nofit polygon values to overlap map
+	for (int j = relativeBotttomLeftY; j <= relativeTopRightY; j++) {
+		for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++, mapPointer++, nfpPointer++)
+			*mapPointer += *nfpPointer;
+		mapPointer += offsetWidth; nfpPointer += nfpOffsetWidth;
 	}
 }
 
 void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {
+	// Get intersection between innerfit and nofit polygon bounding boxes
     QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
-    QRect intersection;
-    if(!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection)) return;
+	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? -relativeOrigin.x() : 0;
+	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? -relativeOrigin.y() : 0;
+	int relativeTopRightX =  width - relativeOrigin.x(); relativeTopRightX = relativeTopRightX <  nfp->width() ? relativeTopRightX - 1 :  nfp->width() - 1;
+	int relativeTopRightY = height - relativeOrigin.y(); relativeTopRightY = relativeTopRightY < nfp->height() ? relativeTopRightY - 1 : nfp->height() - 1;
 
-	quint32 *lineDataPt = scanLine(intersection.bottomLeft().y());
-	for (int j = intersection.bottomLeft().y(); j <= intersection.topRight().y(); j++, lineDataPt += width) {
-		quint32 *dataPt = lineDataPt + intersection.bottomLeft().x();
-		quint32 *nfpPt = nfp->getPixelRef(intersection.bottomLeft().x() - relativeOrigin.x(), j - relativeOrigin.y());
-		for (int i = intersection.bottomLeft().x(); i <= intersection.topRight().x(); i++, dataPt++, nfpPt++) {
-			*dataPt += weight * (*nfpPt);
-		}
+	// Create pointers to initial positions and calculate offsets for moving vertically
+	int offsetWidth = width - (relativeTopRightX - relativeBotttomLeftX + 1);
+	int nfpOffsetWidth = nfp->width() - (relativeTopRightX - relativeBotttomLeftX + 1);
+	quint32 *mapPointer = scanLine(relativeBotttomLeftY + relativeOrigin.y()) + relativeBotttomLeftX + relativeOrigin.x();
+	quint32 *nfpPointer = nfp->getPixelRef(relativeBotttomLeftX, relativeBotttomLeftY);
+
+	// Add nofit polygon values to overlap map
+	for (int j = relativeBotttomLeftY; j <= relativeTopRightY; j++) {
+		for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++, mapPointer++, nfpPointer++)
+			*mapPointer += weight * (*nfpPointer);
+		mapPointer += offsetWidth; nfpPointer += nfpOffsetWidth;
 	}
 }
 

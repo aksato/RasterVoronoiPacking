@@ -22,18 +22,19 @@ void Packing2DThread::changeKeepAspectRatio(int &curLenght, int &curHeight, cons
 }
 
 void Packing2DThread::bagpipeChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio) {
+	qreal rinc = ratio - 1.0;
+	int expansion = qMax(qCeil(rinc*(qreal)curLenght), qCeil(rinc*(qreal)curHeight));
 	qreal curArea = (qreal)curLenght * (qreal)curHeight;
 	if (bagpipeDirection) {
-		int expandedHeight = std::ceil(ratio * (qreal)curHeight);
+		int expandedHeight = curHeight + expansion;
 		int reducedLength = qFloor(curArea / (qreal)expandedHeight);
-		
 		getShrinkedDimension(curLenght, reducedLength, true);
 
 		curLenght = reducedLength;
 		curHeight = expandedHeight;
 	}
 	else {
-		int expandedWidth = std::ceil(ratio * (qreal)curLenght);
+		int expandedWidth = curLenght + expansion;
 		int reducedHeight = qFloor(curArea / (qreal)expandedWidth);
 		getShrinkedDimension(curHeight, reducedHeight, false);
 
@@ -43,14 +44,6 @@ void Packing2DThread::bagpipeChangeContainerDimensions(int &curLenght, int &curH
 	if (curLenght == solver->getMinimumContainerWidth() || curHeight == solver->getMinimumContainerHeight()) {
 		bagpipeDirection = !bagpipeDirection;
 	}
-	//qreal curArea = (qreal)curLenght * (qreal)curHeight;
-	//qreal ratioWmin = ((qreal)solver->getMinimumContainerWidth() * (qreal)solver->getMinimumContainerWidth()) / curArea;
-	//qreal ratioHmin = curArea / ((qreal)solver->getMinimumContainerHeight() * (qreal)solver->getMinimumContainerHeight());
-
-	//float ratio = ratioWmin + static_cast <float> (qrand()) / (static_cast <float> (RAND_MAX / (ratioHmin - ratioWmin)));
-
-	//curLenght = qRound(sqrt(curArea * ratio));
-	//curHeight = qRound(sqrt(curArea / ratio));
 }
 
 bool Packing2DThread::getShrinkedDimension(int dim, int &newDim, bool length) {

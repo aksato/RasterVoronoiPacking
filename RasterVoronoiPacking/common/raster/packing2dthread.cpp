@@ -8,111 +8,132 @@
 #define MAXLOOPSPERLENGTH 5
 #define UPDATEINTERVAL 0.2
 
-void Packing2DThread::changeKeepAspectRatio(int &curLenght, int &curHeight, const qreal ratio) {
-	qreal ratioSqr = sqrt(ratio);
+bool getShrinkedDimension(qreal realDim, qreal &newRealDim, int minimumDimension) {
+	// Check if dimension is already minimum
+	if (qRound(realDim) == minimumDimension) return false;
+
+	// Get next dimension and check limit
+	if (qRound(newRealDim) < minimumDimension) newRealDim = minimumDimension;
+
+	return true;
+}
+
+void Packing2DThread::randomChangeContainerDimensions(int &curLength, int &curHeight, qreal &curRealLength, qreal &curRealHeight, const qreal ratio) {
+	bool changeLength = qrand() % 2 - 1;
+
+	// Expansion
 	if (ratio > 1) {
-		curLenght = std::ceil(ratioSqr * (qreal)curLenght);
-		curHeight = std::ceil(ratioSqr * (qreal)curHeight);
+		if (changeLength) { curRealLength = ratio * curRealLength; curLength = qRound(curRealLength); }
+		else { curRealHeight = ratio * curRealHeight; curHeight = qRound(curRealHeight); }
 		return;
 	}
-	int reducedLength, reducedHeight;
-	if (!checkShrinkSizeConstraint(curLenght, curHeight, reducedLength, reducedHeight, ratioSqr)) return;
-	curLenght = reducedLength;
-	curHeight = reducedHeight;
-}
 
-void Packing2DThread::bagpipeChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio) {
-	qreal rinc = ratio - 1.0;
-	int expansion = qMax(qCeil(rinc*(qreal)curLenght), qCeil(rinc*(qreal)curHeight));
-	qreal curArea = (qreal)curLenght * (qreal)curHeight;
-	if (bagpipeDirection) {
-		int expandedHeight = curHeight + expansion;
-		int reducedLength = qFloor(curArea / (qreal)expandedHeight);
-		getShrinkedDimension(curLenght, reducedLength, true);
-
-		curLenght = reducedLength;
-		curHeight = expandedHeight;
+	// Reduction
+	if (changeLength) {
+		qreal reducedRealLength = ratio * curRealLength;
+		if (getShrinkedDimension(curRealLength, reducedRealLength, solver->getMinimumContainerWidth())) {
+			curRealLength = reducedRealLength; curLength = qRound(curRealLength);
+			return;
+		}
 	}
-	else {
-		int expandedWidth = curLenght + expansion;
-		int reducedHeight = qFloor(curArea / (qreal)expandedWidth);
-		getShrinkedDimension(curHeight, reducedHeight, false);
-
-		curLenght = expandedWidth;
-		curHeight = reducedHeight;
+	qreal reducedRealHeight = ratio * curRealHeight;
+	if (getShrinkedDimension(curRealHeight, reducedRealHeight, solver->getMinimumContainerHeight())) {
+		curRealHeight = reducedRealHeight; curHeight = qRound(curRealHeight);
+		return;
 	}
-	if (curLenght == solver->getMinimumContainerWidth() || curHeight == solver->getMinimumContainerHeight()) {
-		bagpipeDirection = !bagpipeDirection;
+	qreal reducedRealLength = ratio * curRealLength;
+	if (getShrinkedDimension(curRealLength, reducedRealLength, solver->getMinimumContainerWidth())) {
+		curRealLength = reducedRealLength; curLength = qRound(curRealLength);
 	}
 }
 
-bool Packing2DThread::getShrinkedDimension(int dim, int &newDim, bool length) {
-	// Get minimum dimension
-	int minimumDimension = length ? solver->getMinimumContainerWidth() : solver->getMinimumContainerHeight();
-	
-	// Check if dimension is already minimum
-	if (dim == minimumDimension) return false;
-	
-	// Get next dimension and check limit
-	newDim = newDim < minimumDimension ? minimumDimension : newDim;
-	return true;
-}
-
-void Packing2DThread::randomChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio) {
-	bool changeLenght = qrand() % 2 - 1;
-
+void Packing2DThread::costChangeContainerDimensions(int &curLength, int &curHeight, qreal &curRealLength, qreal &curRealHeight, RASTERVORONOIPACKING::RasterPackingSolution &currentSolution, const qreal ratio) {
+	// Expansion
 	if (ratio > 1) {
-		if(changeLenght) curLenght = std::ceil(ratio * (qreal)curLenght);
-		else curHeight = std::ceil(ratio * (qreal)curHeight);
+		// Keep aspect ratio
+		curRealLength = sqrt(ratio) * curRealLength; curLength = qRound(curRealLength);
+		curRealHeight = sqrt(ratio) * curRealHeight; curHeight = qRound(curRealHeight);
+		return;
 	}
-	else{
-		int reducedLength, reducedHeight;
-		if (!checkShrinkSizeConstraint(curLenght, curHeight, reducedLength, reducedHeight, ratio)) return;
-		if (changeLenght) curLenght = reducedLength;
-		else curHeight = reducedHeight;
-	}
-}
 
-void expandSmallerDimension(int &curLenght, int &curHeight, const qreal ratio) {
-	curLenght = std::ceil(sqrt(ratio) * (qreal)curLenght);
-	curHeight = std::ceil(sqrt(ratio) * (qreal)curHeight);
-}
-
-bool Packing2DThread::checkShrinkSizeConstraint(int &curLength, int &curHeight, int &reducedLength, int &reducedHeight, qreal ratio) {
-	// Verify size constraints
-	reducedLength = std::floor(ratio * (qreal)curLength);
-	reducedHeight = std::floor(ratio * (qreal)curHeight);
-	bool isPossibleToReduceLength = getShrinkedDimension(curLength, reducedLength, true);
-	bool isPossibleToReduceHeight = getShrinkedDimension(curHeight, reducedHeight, false);
-	if (!isPossibleToReduceLength && isPossibleToReduceHeight) curHeight = reducedHeight;
-	if (!isPossibleToReduceHeight && isPossibleToReduceLength) curLength = reducedLength;
-	if (!isPossibleToReduceLength || !isPossibleToReduceHeight) return false;
-	return true;
-}
-
-void Packing2DThread::costShrinkContainerDimensions(int &curLenght, int &curHeight, RASTERVORONOIPACKING::RasterPackingSolution &currentSolution, const qreal ratio) {
+	// Reduction
 	RASTERVORONOIPACKING::RasterPackingSolution tempSolution = currentSolution;
-
-	// Verify size constraints
-	int reducedLength, reducedHeight;
-	if (!checkShrinkSizeConstraint(curLenght, curHeight, reducedLength, reducedHeight, ratio)) return;
-	// FIXME: What if both are not reduceable??
+	qreal costX, costY;
+	qreal reducedRealLength = ratio * curRealLength;
+	qreal reducedRealHeight = ratio * curRealHeight;
 
 	// Estimate cost in X
-	this->solver->setContainerDimensions(reducedLength, curHeight, tempSolution);
-	qreal costX = this->solver->getGlobalOverlap(tempSolution);
+	if (getShrinkedDimension(curRealLength, reducedRealLength, solver->getMinimumContainerWidth())) {
+		int reducedLength = qRound(reducedRealLength);
+		this->solver->setContainerDimensions(reducedLength, curHeight, tempSolution);
+		costX = this->solver->getGlobalOverlap(tempSolution);
+	}
+	else {
+		// FIXME: What if both dimensions are minimum!
+		curRealHeight = reducedRealHeight; curHeight = qRound(curRealHeight);
+		return;
+	}
 
 	// Reset container and solution
-	this->solver->setContainerDimensions(curLenght, curHeight, tempSolution);
+	this->solver->setContainerDimensions(curLength, curHeight, tempSolution);
 	tempSolution = currentSolution;
 
 	// Estimate cost in Y
-	this->solver->setContainerDimensions(curLenght, reducedHeight, tempSolution);
-	qreal costY = this->solver->getGlobalOverlap(tempSolution);
+	if (getShrinkedDimension(curRealHeight, reducedRealHeight, solver->getMinimumContainerHeight())) {
+		int reducedHeight = qRound(reducedRealHeight);
+		this->solver->setContainerDimensions(curLength, reducedHeight, tempSolution);
+		costY = this->solver->getGlobalOverlap(tempSolution);
+	}
+	else return; // FIXME: Should never happen with morethan one item!
 
 	// Determine new height and length
-	if (costX > costY) curHeight = reducedHeight;
-	else curLenght = reducedLength;
+	if (costX > costY) { curRealHeight = reducedRealHeight; curHeight = qRound(curRealHeight); }
+	else { curRealLength = reducedRealLength; curLength = qRound(curRealLength); }
+}
+
+void Packing2DThread::bagpipeChangeContainerDimensions(int &curLength, int &curHeight, qreal &curRealLength, qreal &curRealHeight, int bestArea, const qreal ratio) {
+	if (ratio > 1) {
+		// Keep aspect ratio
+		qreal expandedRealLength = sqrt(ratio) * curRealLength;
+		qreal expandedRealHeight = sqrt(ratio) * curRealHeight;
+		if (qRound(expandedRealLength) * qRound(expandedRealHeight) < bestArea) {
+			curRealHeight = expandedRealHeight; curHeight = qRound(curRealHeight);
+			curRealLength = expandedRealLength; curLength = qRound(curRealLength);
+			return;
+		}
+
+		qreal rinc = ratio - 1.0;
+		qreal expansionDelta = qMax(rinc*curRealLength, rinc*curRealHeight);
+		qreal curArea = curRealLength * curRealHeight;
+		if (bagpipeDirection) {
+			expandedRealHeight = curRealHeight + expansionDelta;
+			qreal reducedRealLength = curArea / expandedRealHeight;
+			getShrinkedDimension(curRealLength, reducedRealLength, solver->getMinimumContainerWidth());
+
+			curRealLength = reducedRealLength; curLength = qRound(curRealLength);
+			curRealHeight = expandedRealHeight;  curHeight = qRound(curRealHeight);
+		}
+		else {
+			expandedRealLength = curRealLength + expansionDelta;
+			qreal reducedRealHeight = curArea / expandedRealLength;
+			getShrinkedDimension(curRealHeight, reducedRealHeight, solver->getMinimumContainerHeight());
+
+			curRealLength = expandedRealLength; curLength = qRound(curRealLength);
+			curRealHeight = reducedRealHeight; curHeight = qRound(curRealHeight);
+		}
+		if (curLength == solver->getMinimumContainerWidth() || curHeight == solver->getMinimumContainerHeight()) {
+			bagpipeDirection = !bagpipeDirection;
+		}
+		return;
+	}
+
+	// Reduction
+	qreal reducedRealLength = ratio * curRealLength;
+	qreal reducedRealHeight = ratio * curRealHeight;
+	if (getShrinkedDimension(curRealLength, reducedRealLength, solver->getMinimumContainerWidth()) && getShrinkedDimension(curRealHeight, reducedRealHeight, solver->getMinimumContainerHeight())) {
+		curRealHeight = reducedRealHeight; curHeight = qRound(curRealHeight);
+		curRealLength = reducedRealLength; curLength = qRound(curRealLength);
+	}
 }
 
 void Packing2DThread::run() {
@@ -131,6 +152,7 @@ void Packing2DThread::run() {
 void Packing2DThread::runSquare() {
 	m_abort = false;
 	seed = QDateTime::currentDateTime().toTime_t();
+	seed = 4939495;
 	qsrand(seed);
 	int itNum = 0;
 	int totalItNum = 0;
@@ -252,9 +274,9 @@ void Packing2DThread::runRectangle() {
 	int totalItNum = 0;
 	int worseSolutionsCount = 0;
 	bool success = false;
-	int curLenght = solver->getCurrentWidth();
+	int curLength = solver->getCurrentWidth();
 	int curHeight = solver->getCurrentHeight();
-	ExecutionSolutionInfo minSuccessfullSol(curLenght, curHeight, 0, seed);
+	ExecutionSolutionInfo minSuccessfullSol(curLength, curHeight, 0, seed);
 	qreal curRealLength = (qreal)minSuccessfullSol.length;
 	qreal curRealHeight = (qreal)minSuccessfullSol.height;
 	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
@@ -275,18 +297,22 @@ void Packing2DThread::runRectangle() {
 	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) solver->generateRandomSolution(threadSolution);
 	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::BOTTOMLEFT)  {
 		solver->generateBottomLeftSolution(threadSolution, RASTERVORONOIPACKING::BL_RECTANGULAR);
-		curLenght = solver->getCurrentWidth(); curHeight = solver->getCurrentHeight();
-		minSuccessfullSol = ExecutionSolutionInfo(curLenght, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed);
+		curLength = solver->getCurrentWidth(); curHeight = solver->getCurrentHeight();
+		minSuccessfullSol = ExecutionSolutionInfo(curLength, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed);
 		emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
 		bestSolution = threadSolution;
 
 		// Execution the first container reduction
-		randomChangeContainerDimensions(curLenght, curHeight, areaDec);
-		solver->setContainerDimensions(curLenght, curHeight, threadSolution);
+		switch (parameters.getRectangularPackingMethod()) {
+			case RASTERVORONOIPACKING::RANDOM_ENCLOSED: randomChangeContainerDimensions(curLength, curHeight, curRealLength, curRealHeight, areaDec); break;
+			case RASTERVORONOIPACKING::COST_EVALUATION: costChangeContainerDimensions(curLength, curHeight, curRealLength, curRealHeight, threadSolution, areaDec); break;
+			case RASTERVORONOIPACKING::BAGPIPE: bagpipeChangeContainerDimensions(curLength, curHeight, curRealLength, curRealHeight, minSuccessfullSol.area, areaDec); break;
+		}
+		solver->setContainerDimensions(curLength, curHeight, threadSolution);
 	}
 	minOverlap = solver->getGlobalOverlap(threadSolution);
 	itNum++; totalItNum++;
-	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLenght, curHeight, 1, seed));
+	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, 1, seed));
 
 	qreal nextUpdateTime = QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 - UPDATEINTERVAL;
 	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
@@ -306,8 +332,8 @@ void Packing2DThread::runRectangle() {
 			#ifndef CONSOLE
 			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
 				nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
-				emit statusUpdated(curLenght, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
-				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLenght, curHeight, totalItNum, seed));
+				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
+				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, totalItNum, seed));
 				emit weightsChanged();
 			}
 			#endif
@@ -316,29 +342,29 @@ void Packing2DThread::runRectangle() {
 		if (!parameters.isFixedLength()) {
 			// Reduce or expand container
 			int currentArea = solver->getCurrentWidth() * solver->getCurrentHeight();
+			qreal ratio;
 			if (success) {
 				numLoops = 1;
 				if (currentArea < minSuccessfullSol.area) {
-					bestSolution = threadSolution; minSuccessfullSol = ExecutionSolutionInfo(curLenght, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
+					bestSolution = threadSolution; minSuccessfullSol = ExecutionSolutionInfo(curLength, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
 					emit minimumLenghtUpdated(bestSolution, minSuccessfullSol);
 				}
-				if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaDec);
-				else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::COST_EVALUATION) costShrinkContainerDimensions(curLenght, curHeight, threadSolution, areaDec);
-				else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::BAGPIPE) changeKeepAspectRatio(curLenght, curHeight, areaDec);
+				ratio = areaDec;
 			}
 			else if (numLoops >= MAXLOOPSPERLENGTH) {
 				numLoops = 1;
-				if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::RANDOM_ENCLOSED) randomChangeContainerDimensions(curLenght, curHeight, areaInc);
-				else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::COST_EVALUATION) expandSmallerDimension(curLenght, curHeight, areaInc);
-				else if (parameters.getRectangularPackingMethod() == RASTERVORONOIPACKING::BAGPIPE) {
-					changeKeepAspectRatio(curLenght, curHeight, areaInc);
-					int newArea = curLenght * curHeight;
-					if (newArea >= minSuccessfullSol.area) bagpipeChangeContainerDimensions(curLenght, curHeight, areaInc);
-				}
+				ratio = areaInc;
 			}
 			else numLoops++;
+			if (numLoops == 1) {
+				switch (parameters.getRectangularPackingMethod()) {
+					case RASTERVORONOIPACKING::RANDOM_ENCLOSED: randomChangeContainerDimensions(curLength, curHeight, curRealLength, curRealHeight, ratio); break;
+					case RASTERVORONOIPACKING::COST_EVALUATION: costChangeContainerDimensions(curLength, curHeight, curRealLength, curRealHeight, threadSolution, ratio); break;
+					case RASTERVORONOIPACKING::BAGPIPE: bagpipeChangeContainerDimensions(curLength, curHeight, curRealLength, curRealHeight, minSuccessfullSol.area, ratio); break;
+				}
+			}
 
-			solver->setContainerDimensions(curLenght, curHeight, threadSolution);
+			solver->setContainerDimensions(curLength, curHeight, threadSolution);
 			success = false;
 			minOverlap = solver->getGlobalOverlap(threadSolution);
 		}

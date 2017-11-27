@@ -137,8 +137,12 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
     this->scale = (*problem.crnfpbegin())->getScale();
 
 	// 6. Read max size for container
-	this->maxWidth = std::ceil(problem.getMaxLength() * this->scale);
-	this->maxHeight = std::ceil(problem.getMaxWidth() * this->scale);
+	qreal scaledMaxWidth = problem.getMaxLength() * this->scale;
+	qreal scaledMaxHeight = problem.getMaxWidth() * this->scale;
+	if (std::floor(scaledMaxWidth) == scaledMaxWidth) this->maxWidth = qRound(scaledMaxWidth);
+	else this->maxWidth = std::ceil(scaledMaxWidth) + 1; // FIXME: Determine if +1 is necessary
+	if (std::floor(scaledMaxHeight) == scaledMaxHeight) this->maxHeight = qRound(scaledMaxHeight);
+	else this->maxHeight = std::ceil(scaledMaxHeight) + 1; // FIXME: Determine if +1 is necessary
 
     return true;
 }

@@ -152,7 +152,6 @@ void Packing2DThread::run() {
 void Packing2DThread::runSquare() {
 	m_abort = false;
 	seed = QDateTime::currentDateTime().toTime_t();
-	seed = 4939495;
 	qsrand(seed);
 	int itNum = 0;
 	int totalItNum = 0;

@@ -6,7 +6,7 @@
 class Packing2DThread : public PackingThread {
 	Q_OBJECT
 public:
-	Packing2DThread(QObject *parent = 0) : bagpipeDirection(0) {};
+	Packing2DThread(QObject *parent = 0) : bagpipeDirection(1) {};
 	~Packing2DThread() {};
 	
 protected:

@@ -280,8 +280,8 @@ void Packing2DThread::runRectangle() {
 	qreal curRealHeight = (qreal)minSuccessfullSol.height;
 	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
 	const qreal areaDec = 1 - rdec, areaInc = 1 + rinc;
-	qreal minOverlap = std::numeric_limits<qreal>::max();
-	qreal curOverlap = minOverlap;
+	quint32 minOverlap = std::numeric_limits<quint32>::max();
+	quint32 curOverlap = minOverlap;
 	RASTERVORONOIPACKING::RasterPackingSolution bestSolution = threadSolution;
 	solver->resetWeights();
 	int numLoops = 1;
@@ -296,6 +296,7 @@ void Packing2DThread::runRectangle() {
 	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) solver->generateRandomSolution(threadSolution);
 	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::BOTTOMLEFT)  {
 		solver->generateBottomLeftSolution(threadSolution, RASTERVORONOIPACKING::BL_RECTANGULAR);
+		curRealLength = (qreal)solver->getCurrentWidth(); curRealHeight = (qreal)solver->getCurrentHeight();
 		curLength = solver->getCurrentWidth(); curHeight = solver->getCurrentHeight();
 		minSuccessfullSol = ExecutionSolutionInfo(curLength, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed);
 		emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
@@ -316,28 +317,31 @@ void Packing2DThread::runRectangle() {
 	qreal nextUpdateTime = QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 - UPDATEINTERVAL;
 	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
 		if (m_abort) break;
-		while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
-			if (m_abort) break;
-			solver->performLocalSearch(threadSolution);
-			curOverlap = solver->getGlobalOverlap(threadSolution, currentOverlaps, maxItemOverlap);
-			solver->updateWeights(threadSolution, currentOverlaps, maxItemOverlap);
-			if (curOverlap < minOverlap) {
-				minOverlap = curOverlap;
-				if (parameters.isFixedLength()) bestSolution = threadSolution; // Best solution for the minimum overlap problem
-				if (curOverlap == 0) { success = true; break; }
-				worseSolutionsCount = 0;
+		if (minOverlap != 0) {
+			while (worseSolutionsCount < parameters.getNmo() && QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
+				if (m_abort) break;
+				solver->performLocalSearch(threadSolution);
+				curOverlap = solver->getGlobalOverlap(threadSolution, currentOverlaps, maxItemOverlap);
+				solver->updateWeights(threadSolution, currentOverlaps, maxItemOverlap);
+				if (curOverlap < minOverlap) {
+					minOverlap = curOverlap;
+					if (parameters.isFixedLength()) bestSolution = threadSolution; // Best solution for the minimum overlap problem
+					if (curOverlap == 0) { success = true; break; }
+					worseSolutionsCount = 0;
+				}
+				else worseSolutionsCount++;
+				#ifndef CONSOLE
+				if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
+					nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
+					emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
+					emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, totalItNum, seed));
+					emit weightsChanged();
+				}
+				#endif
+				itNum++; totalItNum++;
 			}
-			else worseSolutionsCount++;
-			#ifndef CONSOLE
-			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
-				nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
-				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
-				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, totalItNum, seed));
-				emit weightsChanged();
-			}
-			#endif
-			itNum++; totalItNum++;
 		}
+		else success = true;
 		if (!parameters.isFixedLength()) {
 			// Reduce or expand container
 			int currentArea = solver->getCurrentWidth() * solver->getCurrentHeight();

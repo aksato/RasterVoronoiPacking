@@ -39,7 +39,7 @@ namespace RASTERVORONOIPACKING {
         bool save(QString fileName, std::shared_ptr<RasterPackingProblem> problem, qreal length, bool printSeed, uint seed = 0);
 		bool save(QXmlStreamWriter &stream, std::shared_ptr<RasterPackingProblem> problem, qreal length, bool printSeed, uint seed = 0);
 		bool save(QXmlStreamWriter &stream, std::shared_ptr<RasterPackingProblem> problem, qreal length, qreal height, int iteration, bool printSeed, uint seed = 0);
-		bool exportToPgf(QString fileName, std::shared_ptr<RasterPackingProblem> problem, int length, int height);
+		bool exportToPgf(QString fileName, std::shared_ptr<RasterPackingProblem> problem, int length, int height, qreal scale);
     private:
         QVector<RasterItemPlacement> placements;
     };

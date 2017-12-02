@@ -230,6 +230,7 @@ void MainWindow::generateCurrentTotalOverlapMap() {
 	QTime myTimer; myTimer.start();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = createBasicSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->overlapEvaluator->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution);
+	
 	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
@@ -538,20 +539,30 @@ void MainWindow::loadSolution() {
 	// Searches for minimum area solution
     xml.setDevice(&file);
 	int mostCompactSolId = 0;
+	int mostCompactSolAreaId = -1;
+	qreal minArea = -1;
 	qreal minLength = -1;
-	qreal curLength = -1, curHeight = -2;
+	qreal curLength = -1, curArea = -1;
 	int id = 0;
 	while (!xml.atEnd()) {
 		xml.readNext();
 		if (xml.name() == "length"  && xml.tokenType() == QXmlStreamReader::StartElement) {
 			qreal curLength = xml.readElementText().toFloat();
-			if (curHeight == -2 && (minLength < 0 || curLength < minLength)) {
+			if (minLength < 0 || curLength < minLength) {
 				minLength = curLength;
 				mostCompactSolId = id;
 			}
 			id++;
 		}
+		if (xml.name() == "area"  && xml.tokenType() == QXmlStreamReader::StartElement) {
+			qreal curArea = xml.readElementText().toFloat();
+			if (minArea < 0 || curArea < minArea) {
+				minArea = curArea;
+				mostCompactSolAreaId = id - 1;
+			}
+		}
 	}
+	if (mostCompactSolAreaId > 0) mostCompactSolId = mostCompactSolAreaId;
 
 	file.close();
 	file.open(QFile::ReadOnly | QFile::Text);
@@ -623,7 +634,7 @@ void MainWindow::exportSolutionToSvg() {
 
 void MainWindow::exportSolutionTikz() {
 	QString  fileName = QFileDialog::getSaveFileName(this, tr("Export solution"), "", tr("Portable Graphics Format (*.pgf)"));
-	solution.exportToPgf(fileName, this->rasterProblem, currentContainerWidth, currentContainerHeight);
+	solution.exportToPgf(fileName, this->rasterProblem, currentContainerWidth, currentContainerHeight, this->rasterProblem->getScale() < 1 ? this->rasterProblem->getScale() : 1);
 }
 
 void MainWindow::printDensity() {

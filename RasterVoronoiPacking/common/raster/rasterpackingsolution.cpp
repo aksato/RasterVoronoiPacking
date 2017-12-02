@@ -3,7 +3,7 @@
 #include <QXmlStreamWriter>
 #include <QFile>
 
-#define TIKZ_SCALE 0.01
+#define TIKZ_SCALE 1
 
 using namespace RASTERVORONOIPACKING;
 
@@ -67,19 +67,19 @@ bool RasterPackingSolution::save(QString fileName, std::shared_ptr<RasterPacking
     return true;
 }
 
-bool RasterPackingSolution::exportToPgf(QString fileName, std::shared_ptr<RasterPackingProblem> problem, int length, int height) {
+bool RasterPackingSolution::exportToPgf(QString fileName, std::shared_ptr<RasterPackingProblem> problem, int length, int height, qreal scale) {
 	QFile file(fileName);
 	if (!file.open(QIODevice::WriteOnly)) return false;
 	QTextStream stream(&file);
 	stream << "\\begin{tikzpicture}" << endl;
-	stream << "\\draw (0,0) -- (" << TIKZ_SCALE*(qreal)length / problem->getScale() << ", 0) -- (" << TIKZ_SCALE*(qreal)length / problem->getScale() << "," << TIKZ_SCALE*(qreal)height / problem->getScale() << ") -- (0," << TIKZ_SCALE*(qreal)height / problem->getScale() << ") -- cycle;" << endl;
+	stream << "\\draw (0,0) -- (" << scale*TIKZ_SCALE*(qreal)length / problem->getScale() << ", 0) -- (" << scale*TIKZ_SCALE*(qreal)length / problem->getScale() << "," << scale*TIKZ_SCALE*(qreal)height / problem->getScale() << ") -- (0," << scale*TIKZ_SCALE*(qreal)height / problem->getScale() << ") -- cycle;" << endl;
 	for (int i = 0; i < placements.size(); i++) {
 		std::shared_ptr<RasterPackingItem> curItem = problem->getItem(i);
 		QPolygonF::iterator it = curItem->getPolygon()->begin();
-		stream << "\\draw[shift ={(" << TIKZ_SCALE*(qreal)placements.at(i).getPos().x() / problem->getScale() << "," << TIKZ_SCALE*(qreal)placements.at(i).getPos().y() / problem->getScale() << ")}, rotate=" << problem->getItem(i)->getAngleValue(placements.at(i).getOrientation()) << "] ";
-		stream << "(" << TIKZ_SCALE*(*it).x() << "," << TIKZ_SCALE*(*it).y() << ")";
+		stream << "\\draw[shift ={(" << scale*TIKZ_SCALE*(qreal)placements.at(i).getPos().x() / problem->getScale() << "," << scale*TIKZ_SCALE*(qreal)placements.at(i).getPos().y() / problem->getScale() << ")}, rotate=" << problem->getItem(i)->getAngleValue(placements.at(i).getOrientation()) << "] ";
+		stream << "(" << scale*TIKZ_SCALE*(*it).x() << "," << scale*TIKZ_SCALE*(*it).y() << ")";
 		for (it++; it != curItem->getPolygon()->end(); it++) {
-			stream << " -- (" << TIKZ_SCALE*(*it).x() << "," << TIKZ_SCALE*(*it).y() << ")";
+			stream << " -- (" << scale*TIKZ_SCALE*(*it).x() << "," << scale*TIKZ_SCALE*(*it).y() << ")";
 		}
 		stream << " -- cycle;" << endl;
 	}

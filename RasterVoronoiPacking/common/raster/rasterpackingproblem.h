@@ -59,6 +59,14 @@ namespace RASTERVORONOIPACKING {
 			return 0; // FIXME: Implement continuous rotations?
 		}
 
+		qreal getMinY(int orientation) {
+			if (getAngleValue(orientation) == 0) return this->minY;
+			if (getAngleValue(orientation) == 90) return this->minX;
+			if (getAngleValue(orientation) == 180) return -this->maxY;
+			if (getAngleValue(orientation) == 270) return -this->maxX;
+			return 0; // FIXME: Implement continuous rotations?
+		}
+
     private:
         unsigned int id;
         unsigned int pieceType;
@@ -72,16 +80,18 @@ namespace RASTERVORONOIPACKING {
 
     class RasterPackingProblem
     {
+		friend class ::MainWindow;
     public:
         RasterPackingProblem();
         RasterPackingProblem(RASTERPACKING::PackingProblem &problem);
         ~RasterPackingProblem() {}
 
-    public:
         virtual bool load(RASTERPACKING::PackingProblem &problem);
         std::shared_ptr<RasterPackingItem> getItem(int id) {return items[id];}
 		QVector<std::shared_ptr<RasterPackingItem>>::iterator ibegin() { return items.begin(); }
 		QVector<std::shared_ptr<RasterPackingItem>>::iterator iend() { return items.end(); }
+		qreal getDensity(RasterPackingSolution &solution);
+		qreal getRectangularDensity(RasterPackingSolution &solution);
 
         std::shared_ptr<RasterNoFitPolygonSet> getIfps() {return innerFitPolygons;}
         std::shared_ptr<RasterNoFitPolygonSet> getNfps() {return noFitPolygons;}
@@ -105,13 +115,20 @@ namespace RASTERVORONOIPACKING {
         QString containerName;
         unsigned int maxOrientations;
         QVector<std::shared_ptr<RasterPackingItem>> items;
+		std::shared_ptr<RasterPackingItem> container;
         std::shared_ptr<RasterNoFitPolygonSet> noFitPolygons;
         std::shared_ptr<RasterNoFitPolygonSet> innerFitPolygons;
         qreal scale;
+		qreal totalArea;
 
 	private:
 		quint32 *loadBinaryNofitPolygons(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
 		quint32 getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
+		// Debug functions. TODO: remove them!
+		qreal getCurrentWidth(RasterPackingSolution &solution);
+		qreal getCurrentHeight(RasterPackingSolution &solution);
+		qreal getOriginalWidth();
+		qreal getOriginalHeight();
     };
 
 	struct RasterPackingClusterItem {

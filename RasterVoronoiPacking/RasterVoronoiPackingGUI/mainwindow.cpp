@@ -639,12 +639,16 @@ void MainWindow::exportSolutionTikz() {
 
 void MainWindow::printDensity() {
 	qDebug() << "Total area:" << totalArea;
-	qDebug() << "Container width:" << (qreal)currentContainerHeight / rasterProblem->getScale();
-	qDebug() << "Container length:" << (qreal)currentContainerWidth / rasterProblem->getScale();
-	qDebug() << qSetRealNumberPrecision(2) << "Density" << qPrintable(QString::number((100 * rasterProblem->getScale()*totalArea) / ((qreal)currentContainerHeight*(qreal)currentContainerWidth), 'f', 2)) << "%";
+	ui->graphicsView->getCurrentSolution(solution);
+	qDebug() << "Container Width:" << rasterProblem->getCurrentHeight(solution) << "(original:" << rasterProblem->getOriginalHeight() << ")";
+	qDebug() << "Container Length:" << rasterProblem->getCurrentWidth(solution); // << "(original:" << rasterProblem->getOriginalWidth() << ").";
+	QString densityStr = QString::number((100 * rasterProblem->getDensity(solution)), 'f', 2);
+	QString density2dStr = QString::number((100 * rasterProblem->getRectangularDensity(solution)), 'f', 2);
+	qDebug() << qSetRealNumberPrecision(2) << "Density:" << qPrintable(densityStr) << "%";
+	qDebug() << qSetRealNumberPrecision(2) << "Density 2D:" << qPrintable(density2dStr) << "%";
 
 	QMessageBox msgBox;
-	msgBox.setText("The density of the layout is " + QString::number((100 * rasterProblem->getScale() * rasterProblem->getScale() * totalArea) / ((qreal)currentContainerHeight*(qreal)currentContainerWidth), 'f', 2) + "%.");
+	msgBox.setText("The strip density of the layout is " + densityStr + "% and the rectangular density is " + density2dStr + "%.");
 	msgBox.exec();
 }
 

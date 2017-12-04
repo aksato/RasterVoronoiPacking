@@ -48,10 +48,8 @@ private:
 	bool appendSeedToOutputFiles;
 	int numProcesses;
 	QVector<std::shared_ptr<PackingThread>> threadVector;
-	QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>> solutionsCompilation;
+	QMap<uint, QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>> solutionsCompilation;
 	QMap<uint, QList<ExecutionSolutionInfo>> solutionInfoHistory;
-	qreal totalArea;
-	int containerWidth;
 };
 
 #endif // CONSOLEPACKINGLOADER_H

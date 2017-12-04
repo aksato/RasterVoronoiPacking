@@ -22,6 +22,7 @@ struct ExecutionSolutionInfo {
 	int iteration;
 	bool twodim;
 	uint seed;
+	qreal density;
 };
 
 class PackingThread : public QThread

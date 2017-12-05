@@ -143,24 +143,23 @@ void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPac
 		newSolution->setOrientation(i, solution.getOrientation(i));
 	}
 	// Add new solution
-	solutionsCompilation[info.seed] = QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>(newSolution, info);
+	solutionsCompilation[info.seed].push_back(QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>(newSolution, info));
 }
 
 void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
 	ExecutionSolutionInfo infoCopy = info;
 	if (!info.twodim) {
-		infoCopy.density = this->problem->getDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
+		//infoCopy.density = this->problem->getDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
 		std::cout << "New layout obtained: " << info.length / problem->getScale() << ". Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength(info.length, info.iteration, info.timestamp, info.seed);
 	}
 	else {
-		infoCopy.density = this->problem->getRectangularDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
+		//infoCopy.density = this->problem->getRectangularDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
 		std::cout << "New layout obtained: " << info.length / problem->getScale() << "x" << info.height / problem->getScale() << " ( area = " << (info.length * info.height) / (problem->getScale() * problem->getScale()) << "). Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength2D(info, info.iteration, info.timestamp, info.seed);
 	}
 	solutionInfoHistory[info.seed].push_back(infoCopy);
-	if (!solutionsCompilation.contains(info.seed) || infoCopy.density > solutionsCompilation[info.seed].second.density)
-		saveXMLSolution(solution, infoCopy);
+	saveXMLSolution(solution, infoCopy);
 }
 
 void ConsolePackingLoader::updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed) {
@@ -205,6 +204,13 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	}
 
 	// Print solutions collection xml file
+	for (auto &entry : solutionsCompilation[seed])
+		entry.second.density = entry.second.twodim ? this->problem->getRectangularDensity(*entry.first) : this->problem->getDensity(*entry.first);
+	auto bestResult = std::min_element(solutionsCompilation[seed].begin(), solutionsCompilation[seed].end(),
+		[](QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo> &lhs, QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo> & rhs) {
+		//if (lhs.area == rhs.area) return lhs.iteration < rhs.iteration;
+		return lhs.second.density > rhs.second.density;
+	});
 	QFile file(processedOutputXMLFile);
 	if (!file.open(QIODevice::WriteOnly))
 		qCritical() << "Error: Cannot create output file" << processedOutputXMLFile << ": " << qPrintable(file.errorString());
@@ -214,35 +220,30 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		stream.setAutoFormatting(true);
 		stream.writeStartDocument();
 		stream.writeStartElement("layouts");
-		for (auto it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
-			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> curSolution = (*it).first;
-			qreal realLength = (*it).second.length / problem->getScale();
-			std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> solutionProblem = algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count() ?
-				std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem() : this->problem;
-			if (!info.twodim) curSolution->save(stream, solutionProblem, realLength, true, seed);
-			else {
-				qreal realHeight = (*it).second.height / problem->getScale();
-				curSolution->save(stream, solutionProblem, realLength, realHeight, (*it).second.iteration, true, seed);
-			}
+		//for (auto it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
+		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> curSolution = (*bestResult).first;
+		qreal realLength = (*bestResult).second.length / problem->getScale();
+		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> solutionProblem = algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count() ?
+			std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem() : this->problem;
+		if (!info.twodim) curSolution->save(stream, solutionProblem, realLength, true, seed);
+		else {
+			qreal realHeight = (*bestResult).second.height / problem->getScale();
+			curSolution->save(stream, solutionProblem, realLength, realHeight, (*bestResult).second.iteration, true, seed);
 		}
+		//}
 		stream.writeEndElement(); // layouts
 		file.close();
 	}
 
 	// Print compiled results
-	auto bestResult = std::min_element(solutionInfoHistory[seed].begin(), solutionInfoHistory[seed].end(),
-		[](ExecutionSolutionInfo const & lhs, ExecutionSolutionInfo const & rhs) {
-		//if (lhs.area == rhs.area) return lhs.iteration < rhs.iteration;
-		return lhs.density > rhs.density;
-	});
 	QFileInfo fileInfo(processedOutputTXTFile);
 	QString compilationFileName = QDir(fileInfo.path()).filePath("compiledResults.txt");
 	QFile fileComp(compilationFileName);
 	if (!fileComp.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << processedOutputTXTFile << ": " << qPrintable(file.errorString());
 	else {
 		QTextStream out(&fileComp);
-		out << problem->getScale() << "\t" << bestResult->density << "\t" << bestResult->length / problem->getScale() << "\t" <<
-			(bestResult->twodim ? QString::number(bestResult->height / problem->getScale()) : "-") << "\t" << bestResult->area / (problem->getScale()*problem->getScale()) << "\t" << bestResult->timestamp << "\t" << bestResult->iteration << "\t" <<
+		out << problem->getScale() << "\t" << bestResult->second.density << "\t" << bestResult->second.length / problem->getScale() << "\t" <<
+			(bestResult->second.twodim ? QString::number(bestResult->second.height / problem->getScale()) : "-") << "\t" << bestResult->second.area / (problem->getScale()*problem->getScale()) << "\t" << bestResult->second.timestamp << "\t" << bestResult->second.iteration << "\t" <<
 			totalTime << "\t" << totalIt << "\t" << seed << "\n";
 		fileComp.close();
 	}

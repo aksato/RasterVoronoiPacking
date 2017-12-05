@@ -48,7 +48,7 @@ private:
 	bool appendSeedToOutputFiles;
 	int numProcesses;
 	QVector<std::shared_ptr<PackingThread>> threadVector;
-	QMap<uint, QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>> solutionsCompilation;
+	QMap<uint, QVector<QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo>>> solutionsCompilation;
 	QMap<uint, QList<ExecutionSolutionInfo>> solutionInfoHistory;
 };
 

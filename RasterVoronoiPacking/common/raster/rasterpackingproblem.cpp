@@ -53,8 +53,9 @@ int *getMatrixFromQImage(QImage image) {
 bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
 	// 1. Load container information
 	std::shared_ptr<RASTERPACKING::Container> problemContainer = *problem.cbegin();
-	container = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(-1, -1, 0, problemContainer->getPolygon()));
+	container = std::shared_ptr<RasterPackingItem>(new RasterPackingItem(-1, -1, 1, problemContainer->getPolygon()));
 	container->setPieceName(problemContainer->getName());
+	container->addAngleValue(0);
 	qreal cMinX, cMaxX, cMinY, cMaxY; problemContainer->getPolygon()->getBoundingBox(cMinX, cMaxX, cMinY, cMaxY); container->setBoundingBox(cMinX, cMaxX, cMinY, cMaxY);
 	totalArea = problem.getTotalItemsArea();
 

@@ -31,7 +31,7 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 			// Check if points are on grid
 			int newWidth, newHeight;
 			QPoint newReferencePoint;
-			if ((curIfp->width() - 1) % zoomFactorInt == 0 && (curIfp->height() - 1) % zoomFactorInt == 0 && curIfp->getOrigin().x() % zoomFactorInt == 0 && (curIfp->height() - 1) % zoomFactorInt == 0) {
+			if ((curIfp->width() - 1) % zoomFactorInt == 0 && (curIfp->height() - 1) % zoomFactorInt == 0 && curIfp->getOrigin().x() % zoomFactorInt == 0 && (curIfp->height() - 1) % zoomFactorInt == 0 && curIfp->getOrigin().y() % zoomFactorInt == 0) {
 				newWidth = 1 + (curIfp->width() - 1) / zoomFactorInt; newHeight = 1 + (curIfp->height() - 1) / zoomFactorInt;
 				newReferencePoint = QPoint(curIfp->getOrigin().x() / zoomFactorInt, curIfp->getOrigin().y() / zoomFactorInt);
 			}

@@ -109,7 +109,7 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 					data[j] = rasterCurPolygonVec[index++];
 			}
 			// compute dt
-			image<float> *out = dt(input);
+			image<double> *out = dt(input);
 			// take square roots
 			quint32 *distTransfotmedVec = new quint32[width*height];
 			index = 0;
@@ -121,17 +121,17 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 			}
 			rasterPolygonVecs[polygonId] = distTransfotmedVec;
 
-			if (params.outputImages) {
-				// convert to grayscale
-				image<uchar> *gray = imageFLOATtoUCHAR(out);
-				// save output
-				QImage result(width, height, QImage::Format_Indexed8);
-				setColormap(result);
-				for (int i = 0; i < height; i++)
-				for (int j = 0; j < width; j++)
-					result.setPixel(j, i, imRef(gray, j, i));
-				result.save(outputPath + "/" + curPolygon->getName() + ".png");
-			}
+			//if (params.outputImages) {
+			//	// convert to grayscale
+			//	image<uchar> *gray = imageFLOATtoUCHAR(out);
+			//	// save output
+			//	QImage result(width, height, QImage::Format_Indexed8);
+			//	setColormap(result);
+			//	for (int i = 0; i < height; i++)
+			//	for (int j = 0; j < width; j++)
+			//		result.setPixel(j, i, imRef(gray, j, i));
+			//	result.save(outputPath + "/" + curPolygon->getName() + ".png");
+			//}
 
 		}
 		std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNFP(new RASTERPACKING::RasterNoFitPolygon(problem.getNofitPolygon(polygonId), width, height));

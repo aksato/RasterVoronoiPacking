@@ -33,6 +33,7 @@ public:
 
 private slots:
 	void showRectangularMethods(int index);
+	void showContainerLength(int index);
 private:
     Ui::RunConfigurationsDialog *ui;
 };

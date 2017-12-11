@@ -314,31 +314,31 @@ void RasterPackingProblem::getIfpBoundingBox(int itemId, int orientation, int &b
 	topRightY = bottomLeftY + ifp->height() - 1;
 }
 
-qreal getItemsMaxX(QVector<std::shared_ptr<RasterPackingItem>> items, RasterPackingSolution &solution, qreal scale) {
+qreal RasterPackingProblem::getItemsMaxX(RasterPackingSolution &solution) {
 	QVector<qreal> solutionIndividualMaxXs;
 	std::transform(items.begin(), items.end(), std::back_inserter(solutionIndividualMaxXs),
-		[&solution, &scale](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).x() / scale + hs->getMaxX(solution.getOrientation(hs->getId())); });
+		[&solution, this](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).x() / scale + hs->getMaxX(solution.getOrientation(hs->getId())); });
 	return *std::max_element(solutionIndividualMaxXs.begin(), solutionIndividualMaxXs.end());
 }
 
-qreal getItemsMinX(QVector<std::shared_ptr<RasterPackingItem>> items, RasterPackingSolution &solution, qreal scale) {
+qreal RasterPackingProblem::getItemsMinX(RasterPackingSolution &solution) {
 	QVector<qreal> solutionIndividualMinXs;
 	std::transform(items.begin(), items.end(), std::back_inserter(solutionIndividualMinXs),
-		[&solution, &scale](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).x() / scale + hs->getMinX(solution.getOrientation(hs->getId())); });
+		[&solution, this](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).x() / scale + hs->getMinX(solution.getOrientation(hs->getId())); });
 	return *std::min_element(solutionIndividualMinXs.begin(), solutionIndividualMinXs.end());
 }
 
-qreal getItemsMaxY(QVector<std::shared_ptr<RasterPackingItem>> items, RasterPackingSolution &solution, qreal scale) {
+qreal RasterPackingProblem::getItemsMaxY(RasterPackingSolution &solution) {
 	QVector<qreal> solutionIndividualMaxYs;
 	std::transform(items.begin(), items.end(), std::back_inserter(solutionIndividualMaxYs),
-		[&solution, &scale](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).y() / scale + hs->getMaxY(solution.getOrientation(hs->getId())); });
+		[&solution, this](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).y() / scale + hs->getMaxY(solution.getOrientation(hs->getId())); });
 	return *std::max_element(solutionIndividualMaxYs.begin(), solutionIndividualMaxYs.end());
 }
 
-qreal getItemsMinY(QVector<std::shared_ptr<RasterPackingItem>> items, RasterPackingSolution &solution, qreal scale) {
+qreal RasterPackingProblem::getItemsMinY(RasterPackingSolution &solution) {
 	QVector<qreal> solutionIndividualMinYs;
 	std::transform(items.begin(), items.end(), std::back_inserter(solutionIndividualMinYs),
-		[&solution, &scale](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).y() / scale + hs->getMinY(solution.getOrientation(hs->getId())); });
+		[&solution, this](std::shared_ptr<RasterPackingItem> const &hs) -> qreal { return solution.getPosition(hs->getId()).y() / scale + hs->getMinY(solution.getOrientation(hs->getId())); });
 	return *std::min_element(solutionIndividualMinYs.begin(), solutionIndividualMinYs.end());
 }
 
@@ -350,21 +350,21 @@ qreal RasterPackingProblem::getOriginalHeight() {
 }
 
 qreal RasterPackingProblem::getCurrentWidth(RasterPackingSolution &solution) {
-	return getItemsMaxX(this->items, solution, this->scale) - getItemsMinX(this->items, solution, this->scale);
+	return getItemsMaxX(solution) - getItemsMinX(solution);
 }
 
 qreal RasterPackingProblem::getCurrentHeight(RasterPackingSolution &solution) {
-	return getItemsMaxY(this->items, solution, this->scale) - getItemsMinY(this->items, solution, this->scale);
+	return getItemsMaxY(solution) - getItemsMinY(solution);
 }
 
 qreal RasterPackingProblem::getDensity(RasterPackingSolution &solution) {
-	qreal curWidth = getItemsMaxX(this->items, solution, this->scale) - getItemsMinX(this->items, solution, this->scale);
+	qreal curWidth = getItemsMaxX(solution) - getItemsMinX(solution);
 	qreal originalHeight = container->getMaxY(0) - container->getMinY(0);
 	return this->totalArea / (curWidth * originalHeight);
 }
 
 qreal RasterPackingProblem::getRectangularDensity(RasterPackingSolution &solution) {
-	qreal curWidth = getItemsMaxX(this->items, solution, this->scale) - getItemsMinX(this->items, solution, this->scale);
-	qreal curHeight = getItemsMaxY(this->items, solution, this->scale) - getItemsMinY(this->items, solution, this->scale);
+	qreal curWidth = getItemsMaxX(solution) - getItemsMinX(solution);
+	qreal curHeight = getItemsMaxY(solution) - getItemsMinY(solution);
 	return this->totalArea / (curWidth * curHeight);
 }

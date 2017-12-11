@@ -129,6 +129,10 @@ namespace RASTERVORONOIPACKING {
 		qreal getCurrentHeight(RasterPackingSolution &solution);
 		qreal getOriginalWidth();
 		qreal getOriginalHeight();
+		qreal getItemsMaxX(RasterPackingSolution &solution);
+		qreal getItemsMinX(RasterPackingSolution &solution);
+		qreal getItemsMaxY(RasterPackingSolution &solution);
+		qreal getItemsMinY(RasterPackingSolution &solution);
     };
 
 	struct RasterPackingClusterItem {

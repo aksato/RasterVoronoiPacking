@@ -131,6 +131,7 @@ int main(int argc, char *argv[])
 		if (params.clusterFactor >= 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution
 		if (params.rectangular) arguments << "--rectpacking=" + params.rectMehod;
 		arguments << "--ratios=" + QString::number(params.rdec) + ";"  + QString::number(params.rinc);
+		arguments << "--parallel-group=" + QString::number(params.threadGroupSize);
 
 		if (pastExecutionCount >= params.executionCount) { qDebug() << "Skipping execution of fully processed case" << curCase.problemFileName; continue; }		
 		qDebug() << "Running Raster Packing Console with arguments" << arguments;

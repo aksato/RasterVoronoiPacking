@@ -17,6 +17,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
 	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);
 	const QCommandLineOption nameAppendResultFolder("result", "Subfolder for result files.", "name"); parser.addOption(nameAppendResultFolder);
+	const QCommandLineOption valueNumGroupSize("parallel-group", "Size of thread groups with shared data.", "value"); parser.addOption(valueNumGroupSize);
 	const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -86,5 +87,11 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	if (parser.isSet(nameAppendResultFolder)) {
 		params->appendResultPath = parser.value(nameAppendResultFolder);
 	}
+	if (parser.isSet(valueNumGroupSize)) {
+		const int groupSize = parser.value(valueNumGroupSize).toInt(&parseOk);
+		if (parseOk && groupSize > 0 && groupSize <= params->threadCount) params->threadGroupSize = groupSize;
+		else { *errorMessage = "Bad thread group size value."; return CommandLineError; }
+	}
+
     return CommandLineOk;
 }

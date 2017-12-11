@@ -23,8 +23,8 @@ namespace RASTERVORONOIPACKING {
         int getOriginY() {return this->origin.y();}
 
         void setMatrix(QImage image);
-		quint32 getPixel(int i, int j) { return matrix[j*w + i]; }
-		quint32 *getPixelRef(int i, int j) { return matrix + (j*w + i); }
+		quint32 getPixel(int i, int j) { return matrix[j + i*h]; }
+		quint32 *getPixelRef(int i, int j) { return matrix + (j + i*h); }
 		int width() {return w;}
 		int height() {return h;}
 		QRect boundingBox() { return QRect(-this->origin, QSize(w, h)); }

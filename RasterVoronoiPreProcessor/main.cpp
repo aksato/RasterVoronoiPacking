@@ -113,8 +113,8 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 			// take square roots
 			quint32 *distTransfotmedVec = new quint32[width*height];
 			index = 0;
-			for (int y = 0; y < out->height(); y++) {
-				for (int x = 0; x < out->width(); x++) {
+			for (int x = 0; x < out->width(); x++) {
+				for (int y = 0; y < out->height(); y++) {
 					distTransfotmedVec[index++] = qRound(10 * sqrt(imRef(out, x, y)));
 					imRef(out, x, y) = sqrt(imRef(out, x, y));
 				}

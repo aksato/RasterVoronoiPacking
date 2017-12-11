@@ -107,8 +107,13 @@ namespace RASTERVORONOIPACKING {
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution);
 		std::shared_ptr<TotalOverlapMap> getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution);
 		quint32 getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution);
+		// --> Get absolute minimum overlap position
 		QPoint getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val, bool &border);
+		// --> Bottom left functions (partial overlap evaluation)
+		QPoint getBottomLeftPartialSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 		std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
+		std::shared_ptr<TotalOverlapMap> getPartialRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, QList<int> &placedItems);
+		// --> Zoom factor
 		const int zoomFactorInt;
 	};
 }

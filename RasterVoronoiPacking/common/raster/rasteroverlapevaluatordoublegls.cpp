@@ -64,13 +64,6 @@ QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapPosition(int it
 	return minRelativePos;
 }
 
-QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getBottomLeftPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
-	std::shared_ptr<TotalOverlapMap> map = getPartialTotalOverlapSearchMap(itemId, orientation, solution, placedItems);
-	QPoint minRelativePos;
-	map->getBottomLeft(minRelativePos, false);
-	return (int)zoomFactorInt * minRelativePos;
-}
-
 // --> Get absolute minimum overlap position
 QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val, bool &border) {
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
@@ -171,6 +164,24 @@ quint32 RasterTotalOverlapMapEvaluatorDoubleGLS::getTotalOverlapMapSingleValue(i
 	return totalOverlap;
 }
 
+QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getBottomLeftPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
+	QPoint pos = getBottomLeftPartialSearchPosition(itemId, orientation, solution, placedItems);
+	int zoomSquareSize = ZOOMNEIGHBORHOOD*zoomFactorInt;
+	std::shared_ptr<TotalOverlapMap> map = getPartialRectTotalOverlapMap(itemId, orientation, pos, zoomSquareSize, zoomSquareSize, solution, placedItems);
+	QPoint minRelativePos;
+	map->getMinimum(minRelativePos);
+	return minRelativePos;
+}
+
+QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getBottomLeftPartialSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
+	std::shared_ptr<TotalOverlapMap> map = getPartialTotalOverlapSearchMap(itemId, orientation, solution, placedItems);
+	QPoint minRelativePos;
+	map->getBottomLeft(minRelativePos);
+
+	// Rescale position before returning
+	return (int)zoomFactorInt * minRelativePos;
+}
+
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getPartialTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) {
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
 	currrentPieceMap->reset();
@@ -182,4 +193,28 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getPar
 	}
 	currrentPieceMap->changeTotalItems(problem->count()); // FIXME: Better way to deal with cached maps
 	return currrentPieceMap;
+}
+
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getPartialRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, QList<int> &placedItems) {
+	// Determine zoomed area inside the innerfit polygon
+	std::shared_ptr<RasterNoFitPolygon> curIfp = this->problem->getIfps()->getRasterNoFitPolygon(0, 0, this->problem->getItemType(itemId), orientation);
+	QRect curIfpBoundingBox(QPoint(-curIfp->getOriginX(), -curIfp->getOriginY()), QSize(curIfp->width() - maps.getShrinkValX(), curIfp->height() - maps.getShrinkValY()));
+	QRect zoomSquareRect(QPoint(pos.x() - width / 2, pos.y() - height / 2), QPoint(pos.x() + width / 2, pos.y() + height / 2));
+	zoomSquareRect = zoomSquareRect.intersected(curIfpBoundingBox);
+
+	// Create zoomed overlap Map. FIXME: Use cache map?
+	std::shared_ptr<TotalOverlapMap> curZoomedMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(zoomSquareRect));
+#ifndef INDIVIDUAL_RECT
+	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
+	for (int i : placedItems) {
+		if (i == itemId) continue;
+		curZoomedMap->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i), glsWeights->getWeight(itemId, i));
+	}
+#else
+	for (int j = zoomSquareRect.top(); j <= zoomSquareRect.bottom(); j++)
+	for (int i = zoomSquareRect.left(); i <= zoomSquareRect.right(); i++)
+		curZoomedMap->setValue(QPoint(i, j), getTotalOverlapMapSingleValue(itemId, orientation, QPoint(i, j), solution));
+#endif
+
+	return curZoomedMap;
 }

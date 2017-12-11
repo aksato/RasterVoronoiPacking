@@ -64,7 +64,7 @@ namespace RASTERVORONOIPACKING {
 		#endif
 
     private:
-		quint32 *scanLine(int y);
+		quint32 *scanLine(int x);
 		quint32 getLocalValue(int i, int j) { return data[j*width + i]; }
 		void setLocalValue(int i, int j, quint32 value) { data[j*width + i] = value; }
         bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);

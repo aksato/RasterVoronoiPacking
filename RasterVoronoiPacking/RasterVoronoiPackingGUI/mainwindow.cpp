@@ -634,7 +634,7 @@ void MainWindow::exportSolutionToSvg() {
 
 void MainWindow::exportSolutionTikz() {
 	QString  fileName = QFileDialog::getSaveFileName(this, tr("Export solution"), "", tr("Portable Graphics Format (*.pgf)"));
-	solution.exportToPgf(fileName, this->rasterProblem, currentContainerWidth, currentContainerHeight, this->rasterProblem->getScale() < 1 ? this->rasterProblem->getScale() : 1);
+	solution.exportToPgf(fileName, this->rasterProblem, (qreal)currentContainerWidth / this->rasterProblem->getScale(), (qreal)currentContainerHeight / this->rasterProblem->getScale());
 }
 
 void MainWindow::printDensity() {

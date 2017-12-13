@@ -99,6 +99,7 @@ namespace RASTERVORONOIPACKING {
         int getItemType(int id) {return items[id]->getPieceType();}
         int getContainerWidth() {return containerWidth;}
 		int getContainerHeight() { return containerHeight; }
+		qreal getOriginalHeight();
 		int getMaxWidth() { return this->maxWidth; }
 		int getMaxHeight() { return this->maxHeight; }
         QString getContainerName() {return containerName;}
@@ -128,7 +129,6 @@ namespace RASTERVORONOIPACKING {
 		qreal getCurrentWidth(RasterPackingSolution &solution);
 		qreal getCurrentHeight(RasterPackingSolution &solution);
 		qreal getOriginalWidth();
-		qreal getOriginalHeight();
 		qreal getItemsMaxX(RasterPackingSolution &solution);
 		qreal getItemsMinX(RasterPackingSolution &solution);
 		qreal getItemsMaxY(RasterPackingSolution &solution);

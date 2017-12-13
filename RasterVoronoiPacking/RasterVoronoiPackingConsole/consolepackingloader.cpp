@@ -211,6 +211,8 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		//if (lhs.area == rhs.area) return lhs.iteration < rhs.iteration;
 		return lhs.second.density > rhs.second.density;
 	});
+
+	QString processedOutputPGFFile = QFileInfo(processedOutputXMLFile).path() + QDir::separator() + QFileInfo(processedOutputXMLFile).baseName() + ".pgf";
 	QFile file(processedOutputXMLFile);
 	if (!file.open(QIODevice::WriteOnly))
 		qCritical() << "Error: Cannot create output file" << processedOutputXMLFile << ": " << qPrintable(file.errorString());
@@ -225,10 +227,14 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		qreal realLength = (*bestResult).second.length / problem->getScale();
 		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> solutionProblem = algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count() ?
 			std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem() : this->problem;
-		if (!info.twodim) curSolution->save(stream, solutionProblem, realLength, true, seed);
+		if (!info.twodim) {
+			curSolution->save(stream, solutionProblem, realLength, true, seed);
+			curSolution->exportToPgf(processedOutputPGFFile, solutionProblem, realLength, solutionProblem->getOriginalHeight());
+		}
 		else {
 			qreal realHeight = (*bestResult).second.height / problem->getScale();
 			curSolution->save(stream, solutionProblem, realLength, realHeight, (*bestResult).second.iteration, true, seed);
+			curSolution->exportToPgf(processedOutputPGFFile, solutionProblem, realLength, realHeight);
 		}
 		//}
 		stream.writeEndElement(); // layouts

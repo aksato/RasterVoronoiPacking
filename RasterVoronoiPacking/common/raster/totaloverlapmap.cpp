@@ -130,19 +130,24 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 }
 
 void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {
+	// Get intersection between innerfit and nofit polygon bounding boxes
 	QPoint relativeOrigin = zoomFactorInt * this->reference + pos - nfp->getOrigin();
-	QRect intersection;
-	if (!getLimits(relativeOrigin, nfp->width(), nfp->height(), intersection, zoomFactorInt)) return;
+	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? 0 : (relativeOrigin.x() % zoomFactorInt == 0 ? relativeOrigin.x() / zoomFactorInt : relativeOrigin.x() / zoomFactorInt + 1);
+	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? 0 : (relativeOrigin.y() % zoomFactorInt == 0 ? relativeOrigin.y() / zoomFactorInt : relativeOrigin.y() / zoomFactorInt + 1);
+	int relativeWidth = (relativeOrigin.x() + nfp->width() - 1) / zoomFactorInt; if (relativeWidth >= width) relativeWidth = width - relativeBotttomLeftX; else relativeWidth = relativeWidth - relativeBotttomLeftX + 1;
+	int relativeHeight = (relativeOrigin.y() + nfp->height() - 1) / zoomFactorInt; if (relativeHeight >= height) relativeHeight = height - relativeBotttomLeftY; else relativeHeight = relativeHeight - relativeBotttomLeftY + 1;
 
-	int initialX = intersection.bottomLeft().x() % zoomFactorInt == 0 ? intersection.bottomLeft().x() : zoomFactorInt * ((intersection.bottomLeft().x() / zoomFactorInt) + 1);
-	quint32 *lineDataPt = scanLine(initialX / zoomFactorInt);
-	for (int i = initialX; i <= intersection.topRight().x(); i += zoomFactorInt, lineDataPt += height) {
-		int initialY = intersection.bottomLeft().y() % zoomFactorInt == 0 ? intersection.bottomLeft().y() : zoomFactorInt * ((intersection.bottomLeft().y() / zoomFactorInt) + 1);
-		quint32 *dataPt = lineDataPt + initialY / zoomFactorInt;
-		quint32 *nfpPt = nfp->getPixelRef(i - relativeOrigin.x(), initialY - relativeOrigin.y());
-		for (int j = initialY; j <= intersection.topRight().y(); j += zoomFactorInt, dataPt++, nfpPt += zoomFactorInt) {
-			*dataPt += weight * (*nfpPt);
-		}
+	// Create pointers to initial positions and calculate offsets for moving vertically
+	int offsetHeight = height - relativeHeight;
+	int nfpOffsetHeight = zoomFactorInt*nfp->height() - zoomFactorInt*relativeHeight;
+	quint32 *mapPointer = scanLine(relativeBotttomLeftX) + relativeBotttomLeftY;
+	quint32 *nfpPointer = nfp->getPixelRef(zoomFactorInt * relativeBotttomLeftX - relativeOrigin.x(), zoomFactorInt * relativeBotttomLeftY - relativeOrigin.y());
+
+	// Add nofit polygon values to overlap map
+	for (int i = 0; i < relativeWidth; i++) {
+		for (int j = 0; j < relativeHeight; j++, mapPointer++, nfpPointer += zoomFactorInt)
+			*mapPointer += weight * (*nfpPointer);
+		mapPointer += offsetHeight; nfpPointer += nfpOffsetHeight;
 	}
 }
 

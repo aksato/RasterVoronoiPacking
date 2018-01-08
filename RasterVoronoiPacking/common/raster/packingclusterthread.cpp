@@ -16,7 +16,7 @@ void PackingClusterThread::run() {
 	bool success = false;
 	int curLength = solver->getCurrentWidth();
 	int containerHeight = solver->getCurrentHeight();
-	ExecutionSolutionInfo minSuccessfullSol(curLength, 0, seed);
+	ExecutionSolutionInfo minSuccessfullSol(curLength, 0, seed, ExecutionSolutionInfo::ProblemType::StripPacking);
 	qreal curRealLength = (qreal)minSuccessfullSol.length;
 	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
 	quint32 minOverlap = std::numeric_limits<quint32>::max();
@@ -37,7 +37,7 @@ void PackingClusterThread::run() {
 		// Generate initial bottom left solution and determine the initial length
 		solver->generateBottomLeftSolution(threadSolution);
 		curLength = solver->getCurrentWidth();
-		minSuccessfullSol = ExecutionSolutionInfo(curLength, (qreal)curLength * (qreal)containerHeight, 0.0, 1, seed);
+		minSuccessfullSol = ExecutionSolutionInfo(curLength, (qreal)curLength * (qreal)containerHeight, 0.0, 1, seed, ExecutionSolutionInfo::ProblemType::StripPacking);
 		emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
 
 		// Execution the first container reduction
@@ -47,7 +47,7 @@ void PackingClusterThread::run() {
 	}
 	minOverlap = solver->getGlobalOverlap(threadSolution);
 	itNum++; totalItNum++;
-	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(minSuccessfullSol.length, 1, seed));
+	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(minSuccessfullSol.length, 1, seed, ExecutionSolutionInfo::ProblemType::StripPacking));
 
 	bool reverseCluster = false;
 	qreal nextUpdateTime = QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 - UPDATEINTERVAL;
@@ -81,7 +81,7 @@ void PackingClusterThread::run() {
 			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
 				nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
 				emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
-				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, totalItNum, seed));
+				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, totalItNum, seed, ExecutionSolutionInfo::ProblemType::StripPacking));
 				emit weightsChanged();
 			}
 			itNum++; totalItNum++;
@@ -90,7 +90,7 @@ void PackingClusterThread::run() {
 			// Reduce or expand container
 			if (success) {
 				numLoops = 1;
-				bestSolution = threadSolution; clusterSolver->declusterSolution(bestSolution); minSuccessfullSol = ExecutionSolutionInfo(curLength, (qreal)curLength * (qreal)containerHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
+				bestSolution = threadSolution; clusterSolver->declusterSolution(bestSolution); minSuccessfullSol = ExecutionSolutionInfo(curLength, (qreal)curLength * (qreal)containerHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed, ExecutionSolutionInfo::ProblemType::StripPacking);
 				curRealLength = (1.0 - rdec)*(qreal)solver->getCurrentWidth();
 				curLength = qRound(curRealLength);
 				emit minimumLenghtUpdated(bestSolution, minSuccessfullSol);

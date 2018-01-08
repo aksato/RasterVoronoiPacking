@@ -158,7 +158,7 @@ void Packing2DThread::runSquare() {
 	int worseSolutionsCount = 0;
 	bool success = false;
 	int curDim = solver->getCurrentWidth();
-	ExecutionSolutionInfo minSuccessfullSol(curDim, curDim, 0, seed);
+	ExecutionSolutionInfo minSuccessfullSol(curDim, curDim, 0, seed, ExecutionSolutionInfo::ProblemType::SquarePacking);
 	qreal curRealDim = (qreal)minSuccessfullSol.length;
 	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
 	qreal areaDec = sqrt(1 - rdec), areaInc = sqrt(1 + rinc);
@@ -179,7 +179,7 @@ void Packing2DThread::runSquare() {
 	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::BOTTOMLEFT)  {
 		solver->generateBottomLeftSolution(threadSolution, RASTERVORONOIPACKING::BL_SQUARE);
 		curDim = solver->getCurrentWidth();
-		minSuccessfullSol = ExecutionSolutionInfo(curDim, curDim, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed);
+		minSuccessfullSol = ExecutionSolutionInfo(curDim, curDim, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed, ExecutionSolutionInfo::ProblemType::SquarePacking);
 		emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
 		bestSolution = threadSolution;
 
@@ -190,7 +190,7 @@ void Packing2DThread::runSquare() {
 	}
 	minOverlap = solver->getGlobalOverlap(threadSolution);
 	itNum++; totalItNum++;
-	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curDim, curDim, 1, seed));
+	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curDim, curDim, 1, seed, ExecutionSolutionInfo::ProblemType::SquarePacking));
 
 	qreal nextUpdateTime = QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 - UPDATEINTERVAL;
 	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
@@ -211,7 +211,7 @@ void Packing2DThread::runSquare() {
 			if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
 				nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
 				emit statusUpdated(curDim, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit()*1000-QDateTime::currentDateTime().msecsTo(finalTime))/1000.0);
-				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curDim, curDim, totalItNum, seed));
+				emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curDim, curDim, totalItNum, seed, seed, ExecutionSolutionInfo::ProblemType::SquarePacking));
 				emit weightsChanged();
 			}
 			#endif
@@ -222,7 +222,7 @@ void Packing2DThread::runSquare() {
 			// Reduce or expand container
 			if (success) {
 				numLoops = 1;
-				bestSolution = threadSolution; minSuccessfullSol = ExecutionSolutionInfo(curDim, curDim, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
+				bestSolution = threadSolution; minSuccessfullSol = ExecutionSolutionInfo(curDim, curDim, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed, ExecutionSolutionInfo::ProblemType::SquarePacking);
 				curRealDim = areaDec*(qreal)solver->getCurrentWidth();
 				curDim = qRound(curRealDim);
 				emit minimumLenghtUpdated(bestSolution, minSuccessfullSol);
@@ -275,7 +275,7 @@ void Packing2DThread::runRectangle() {
 	bool success = false;
 	int curLength = solver->getCurrentWidth();
 	int curHeight = solver->getCurrentHeight();
-	ExecutionSolutionInfo minSuccessfullSol(curLength, curHeight, 0, seed);
+	ExecutionSolutionInfo minSuccessfullSol(curLength, curHeight, 0, seed, ExecutionSolutionInfo::ProblemType::RectangularPacking);
 	qreal curRealLength = (qreal)minSuccessfullSol.length;
 	qreal curRealHeight = (qreal)minSuccessfullSol.height;
 	qreal rdec = parameters.getRdec(); qreal rinc = parameters.getRinc();
@@ -298,7 +298,7 @@ void Packing2DThread::runRectangle() {
 		solver->generateBottomLeftSolution(threadSolution, RASTERVORONOIPACKING::BL_RECTANGULAR);
 		curRealLength = (qreal)solver->getCurrentWidth(); curRealHeight = (qreal)solver->getCurrentHeight();
 		curLength = solver->getCurrentWidth(); curHeight = solver->getCurrentHeight();
-		minSuccessfullSol = ExecutionSolutionInfo(curLength, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed);
+		minSuccessfullSol = ExecutionSolutionInfo(curLength, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), 1, seed, ExecutionSolutionInfo::ProblemType::RectangularPacking);
 		emit minimumLenghtUpdated(threadSolution, minSuccessfullSol);
 		bestSolution = threadSolution;
 
@@ -312,7 +312,7 @@ void Packing2DThread::runRectangle() {
 	}
 	minOverlap = solver->getGlobalOverlap(threadSolution);
 	itNum++; totalItNum++;
-	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, 1, seed));
+	emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, 1, seed, ExecutionSolutionInfo::ProblemType::RectangularPacking));
 
 	qreal nextUpdateTime = QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 - UPDATEINTERVAL;
 	while (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 > 0 && (parameters.getIterationsLimit() == 0 || totalItNum < parameters.getIterationsLimit()) && !m_abort) {
@@ -334,7 +334,7 @@ void Packing2DThread::runRectangle() {
 				if (QDateTime::currentDateTime().msecsTo(finalTime) / 1000.0 < nextUpdateTime) {
 					nextUpdateTime = nextUpdateTime - UPDATEINTERVAL;
 					emit statusUpdated(curLength, totalItNum, worseSolutionsCount, curOverlap, minOverlap, (parameters.getTimeLimit() * 1000 - QDateTime::currentDateTime().msecsTo(finalTime)) / 1000.0);
-					emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, totalItNum, seed));
+					emit solutionGenerated(threadSolution, ExecutionSolutionInfo(curLength, curHeight, totalItNum, seed, ExecutionSolutionInfo::ProblemType::RectangularPacking));
 					emit weightsChanged();
 				}
 				#endif
@@ -349,7 +349,7 @@ void Packing2DThread::runRectangle() {
 			if (success) {
 				numLoops = 1;
 				if (currentArea < minSuccessfullSol.area) {
-					bestSolution = threadSolution; minSuccessfullSol = ExecutionSolutionInfo(curLength, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed);
+					bestSolution = threadSolution; minSuccessfullSol = ExecutionSolutionInfo(curLength, curHeight, getTimeStamp(parameters.getTimeLimit(), finalTime), totalItNum, seed, ExecutionSolutionInfo::ProblemType::RectangularPacking);
 					emit minimumLenghtUpdated(bestSolution, minSuccessfullSol);
 				}
 				ratio = areaDec;

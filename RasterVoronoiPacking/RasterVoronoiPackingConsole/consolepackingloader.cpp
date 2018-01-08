@@ -148,12 +148,12 @@ void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPac
 
 void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
 	ExecutionSolutionInfo infoCopy = info;
-	if (!info.twodim) {
+	if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) {
 		//infoCopy.density = this->problem->getDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
 		std::cout << "New layout obtained: " << info.length / problem->getScale() << ". Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength(info.length, info.iteration, info.timestamp, info.seed);
 	}
-	else {
+	else { // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
 		//infoCopy.density = this->problem->getRectangularDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
 		std::cout << "New layout obtained: " << info.length / problem->getScale() << "x" << info.height / problem->getScale() << " ( area = " << (info.length * info.height) / (problem->getScale() * problem->getScale()) << "). Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength2D(info, info.iteration, info.timestamp, info.seed);
@@ -171,12 +171,12 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	if (algorithmParamsBackup.isFixedLength()) 
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << totalTime;
 	else {
-		if (!info.twodim) qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << info.length / problem->getScale() << ". Elapsed time:" << totalTime;
-		else qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum area =" << info.area / (problem->getScale() *problem->getScale()) << ". Elapsed time:" << totalTime;
+		if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << info.length / problem->getScale() << ". Elapsed time:" << totalTime;
+		else qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum area =" << info.area / (problem->getScale() *problem->getScale()) << ". Elapsed time:" << totalTime; // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
 	}
 	
-	if(!info.twodim) writeNewLength(info.length, totalIt, totalTime, info.seed);
-	else writeNewLength2D(info, totalIt, totalTime, info.seed);
+	if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) writeNewLength(info.length, totalIt, totalTime, info.seed);
+	else writeNewLength2D(info, totalIt, totalTime, info.seed); // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
 
 	// Determine output file names
 	uint seed = info.seed;
@@ -205,7 +205,17 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 
 	// Print solutions collection xml file
 	for (auto &entry : solutionsCompilation[seed])
-		entry.second.density = entry.second.twodim ? this->problem->getRectangularDensity(*entry.first) : this->problem->getDensity(*entry.first);
+		switch (entry.second.pType) {
+			case ExecutionSolutionInfo::ProblemType::StripPacking:
+				entry.second.density = this->problem->getDensity(*entry.first);
+				break;
+			case ExecutionSolutionInfo::ProblemType::SquarePacking:
+				entry.second.density = this->problem->getSquareDensity(*entry.first);
+				break;
+			case ExecutionSolutionInfo::ProblemType::RectangularPacking:
+				entry.second.density = this->problem->getRectangularDensity(*entry.first);
+				break;
+		}
 	auto bestResult = std::min_element(solutionsCompilation[seed].begin(), solutionsCompilation[seed].end(),
 		[](QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo> &lhs, QPair<std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution>, ExecutionSolutionInfo> & rhs) {
 		//if (lhs.area == rhs.area) return lhs.iteration < rhs.iteration;
@@ -227,11 +237,11 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		qreal realLength = (*bestResult).second.length / problem->getScale();
 		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> solutionProblem = algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count() ?
 			std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem() : this->problem;
-		if (!info.twodim) {
+		if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) {
 			curSolution->save(stream, solutionProblem, realLength, true, seed);
 			curSolution->exportToPgf(processedOutputPGFFile, solutionProblem, realLength, solutionProblem->getOriginalHeight());
 		}
-		else {
+		else { // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
 			qreal realHeight = (*bestResult).second.height / problem->getScale();
 			curSolution->save(stream, solutionProblem, realLength, realHeight, (*bestResult).second.iteration, true, seed);
 			curSolution->exportToPgf(processedOutputPGFFile, solutionProblem, realLength, realHeight);
@@ -249,7 +259,8 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	else {
 		QTextStream out(&fileComp);
 		out << problem->getScale() << "\t" << bestResult->second.density << "\t" << bestResult->second.length / problem->getScale() << "\t" <<
-			(bestResult->second.twodim ? QString::number(bestResult->second.height / problem->getScale()) : "-") << "\t" << bestResult->second.area / (problem->getScale()*problem->getScale()) << "\t" << bestResult->second.timestamp << "\t" << bestResult->second.iteration << "\t" <<
+			((bestResult->second.pType == ExecutionSolutionInfo::ProblemType::SquarePacking || bestResult->second.pType ==  ExecutionSolutionInfo::ProblemType::RectangularPacking) ? QString::number(bestResult->second.height / problem->getScale()) : "-") << 
+			"\t" << bestResult->second.area / (problem->getScale()*problem->getScale()) << "\t" << bestResult->second.timestamp << "\t" << bestResult->second.iteration << "\t" <<
 			totalTime << "\t" << totalIt << "\t" << seed << "\n";
 		fileComp.close();
 	}

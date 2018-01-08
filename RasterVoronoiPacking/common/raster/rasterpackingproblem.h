@@ -92,6 +92,7 @@ namespace RASTERVORONOIPACKING {
 		QVector<std::shared_ptr<RasterPackingItem>>::iterator iend() { return items.end(); }
 		qreal getDensity(RasterPackingSolution &solution);
 		qreal getRectangularDensity(RasterPackingSolution &solution);
+		qreal getSquareDensity(RasterPackingSolution &solution);
 
         std::shared_ptr<RasterNoFitPolygonSet> getIfps() {return innerFitPolygons;}
         std::shared_ptr<RasterNoFitPolygonSet> getNfps() {return noFitPolygons;}

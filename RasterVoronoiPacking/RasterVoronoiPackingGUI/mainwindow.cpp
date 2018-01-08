@@ -484,8 +484,8 @@ void MainWindow::zoomedlocalSearch() {
 }
 
 void MainWindow::showCurrentSolution(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
-	if(!info.twodim) ui->graphicsView->recreateContainerGraphics(info.length);
-	else  ui->graphicsView->recreateContainerGraphics(info.length, info.height);
+	if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) ui->graphicsView->recreateContainerGraphics(info.length);
+	else  ui->graphicsView->recreateContainerGraphics(info.length, info.height); // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
 	ui->graphicsView->setCurrentSolution(solution);
 }
 
@@ -502,14 +502,14 @@ void MainWindow::showExecutionFinishedStatus(const RASTERVORONOIPACKING::RasterP
 	int minLength = info.length;
 	showCurrentSolution(solution, info);
 	runConfig.setInitialLenght((qreal)minLength / ui->graphicsView->getScale(), 1.0 / ui->graphicsView->getScale());
-	if (!info.twodim) {
+	if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) {
 		statusBar()->showMessage("Finished. Total iterations: " + QString::number(totalItNum) +
 			". Minimum overlap: " + QString::number(minOverlap / zoomscale) +
 			". Elapsed time: " + QString::number(elapsed) +
 			" secs. Solution length : " + QString::number((qreal)info.length / rasterProblem->getScale()) + ".");
 		currentContainerWidth = minLength;
 	}
-	else {
+	else { // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
 		statusBar()->showMessage("Finished. Total iterations: " + QString::number(totalItNum) +
 			". Minimum overlap: " + QString::number(minOverlap / zoomscale) +
 			". Elapsed time: " + QString::number(elapsed) +
@@ -653,8 +653,8 @@ void MainWindow::printDensity() {
 }
 
 void MainWindow::showExecutionMinLengthObtained(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
-	if(!info.twodim) qDebug() << "New minimum length obtained: " << info.length / rasterProblem->getScale() << ". It = " << info.iteration << ". Elapsed time: " << info.timestamp << " secs";
-	else qDebug() << "New layout obtained: " << info.length / rasterProblem->getScale() << "x" << info.height / rasterProblem->getScale() << " ( area = " << (info.length * info.height) / (rasterProblem->getScale() * rasterProblem->getScale()) << "). It = " << info.iteration << ". Elapsed time: " << info.timestamp << " secs";
+	if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) qDebug() << "New minimum length obtained: " << info.length / rasterProblem->getScale() << ". It = " << info.iteration << ". Elapsed time: " << info.timestamp << " secs";
+	else qDebug() << "New layout obtained: " << info.length / rasterProblem->getScale() << "x" << info.height / rasterProblem->getScale() << " ( area = " << (info.length * info.height) / (rasterProblem->getScale() * rasterProblem->getScale()) << "). It = " << info.iteration << ". Elapsed time: " << info.timestamp << " secs"; // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
 }
 
 void MainWindow::showExecution2DDimensionChanged(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info, int totalItNum, qreal elapsed, uint seed) {

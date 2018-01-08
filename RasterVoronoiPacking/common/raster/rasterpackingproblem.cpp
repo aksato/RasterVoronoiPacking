@@ -363,6 +363,13 @@ qreal RasterPackingProblem::getDensity(RasterPackingSolution &solution) {
 	return this->totalArea / (curWidth * originalHeight);
 }
 
+qreal RasterPackingProblem::getSquareDensity(RasterPackingSolution &solution) {
+	qreal curWidth = getItemsMaxX(solution) - getItemsMinX(solution);
+	qreal curHeight = getItemsMaxY(solution) - getItemsMinY(solution);
+	qreal curDim = std::max(curWidth, curHeight);
+	return this->totalArea / (curDim * curDim);
+}
+
 qreal RasterPackingProblem::getRectangularDensity(RasterPackingSolution &solution) {
 	qreal curWidth = getItemsMaxX(solution) - getItemsMinX(solution);
 	qreal curHeight = getItemsMaxY(solution) - getItemsMinY(solution);

@@ -265,7 +265,8 @@ void PackingViewer::highlightPair(int id1, int id2) {
 
 void PackingViewer::highlightItem(int id) {
     PackingItem *curItem  = pieces[id];
-	curItem->setPen(QPen(QColor(255, 0, 255), 0));
+	//curItem->setPen(QPen(QColor(255, 0, 255), 0));
+	curItem->setBrush(QColor(255, 0, 255, 100));
     if(id == this->currentPieceId) originItem->setBrush(QColor(255,0,255));
 
     QTimer *timer = new QTimer(this);
@@ -273,9 +274,13 @@ void PackingViewer::highlightItem(int id) {
     connect(timer, &QTimer::timeout, [curItem, id, this](){
         if(id == this->currentPieceId) {
 			curItem->setPen(QPen(Qt::blue, 0));
+			curItem->setBrush(QColor(100, 100, 255, 100));
             originItem->setBrush(Qt::blue);
         }
-		else curItem->setPen(QPen(Qt::red, 0));
+		else {
+			curItem->setPen(QPen(Qt::red, 0));
+			curItem->setBrush(QColor(255, 100, 100, 100));
+		}
     });
     timer->start(2000);
 }

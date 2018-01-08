@@ -9,10 +9,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt5Widgets)
 find_package(Qt5Gui)
-find_package(CUDA QUIET REQUIRED)
-
-# Pass options to NVCC
-# set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3 -gencode arch=compute_22,code=sm_22)
 
 set(CMAKE_AUTOMOC ON)
 
@@ -21,6 +17,12 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_CXX_FLAGS "-std=c++11")
 endif()
 
+FIND_PACKAGE(OpenMP)
+IF(OPENMP_FOUND)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+ENDIF()
+  
 set(SRC 
 	main.cpp
 	../RasterVoronoiPacking/common/packingproblem.cpp
@@ -37,8 +39,6 @@ set(SRC
 	polybool/polybool.cpp
 	polybool/triacons.cpp
 	polybool/triamono.cpp
-	cluster/clusterizator.cpp
-	kernel.cu
 	)
 	
 set(HEADERS
@@ -54,6 +54,12 @@ set(HEADERS
 	annealing/cShapePlacement.h
 	annealing/cVector.h
 	annealing/problemInstance.h
+	dt/dt.h
+	dt/image.h
+	dt/imconv.h
+	dt/imutil.h
+	dt/misc.h
+	dt/pnmfile.h
 	polybool/ObjHeap.h
 	polybool/pbarea.h
 	polybool/pbdefs.h
@@ -63,9 +69,8 @@ set(HEADERS
 	polybool/pbtria.h
 	polybool/polybool.h
 	polybool/Sort.h
-	cluster/clusterizator.h
 	)
 	
-cuda_add_executable(RasterPackingPreProcessor ${SRC} ${HEADERS})
+add_executable(RasterPackingPreProcessor ${SRC} ${HEADERS})
 
-qt5_use_modules(RasterPackingPreProcessor Core Gui)
+target_link_libraries(RasterPackingPreProcessor Qt5::Core Qt5::Gui)

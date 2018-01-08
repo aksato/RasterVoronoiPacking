@@ -382,16 +382,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_21">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Display Search Overlap Map Single</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="pushButton_16">
             <property name="enabled">
              <bool>false</bool>

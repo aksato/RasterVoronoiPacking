@@ -5,59 +5,67 @@
 #include <QImage>
 #include <QPoint>
 #include <vector>
+#include <qDebug>
 
 namespace RASTERPACKING {class PackingProblem;}
 
 namespace RASTERVORONOIPACKING {
     class RasterNoFitPolygon {
     public:
-//        RasterNoFitPolygon(QImage _image, QPoint _origin, qreal _maxD) : origin(_origin), image(_image) , maxD(_maxD) {}
-        RasterNoFitPolygon(QImage _image, QPoint _origin, qreal _maxD) : origin(_origin), maxD(_maxD) {setMatrix(_image);}
-		~RasterNoFitPolygon() { delete[] matrix; }
+		RasterNoFitPolygon(QImage _image, QPoint _origin) : origin(_origin) { setMatrix(_image); }
+		RasterNoFitPolygon(quint32 *_matrix, int _width, int _height, QPoint _origin) : origin(_origin), matrix(_matrix), w(_width), h(_height) {}
+		RasterNoFitPolygon(int _width, int _height, QPoint _origin) : origin(_origin), w(_width), h(_height) { matrix = new quint32[w * h](); }
+		~RasterNoFitPolygon() { if (!matrix) { delete[] matrix; matrix = nullptr; } } // FIXME: delete or not? depends on the constructor, which is bad
 
         void setOrigin(QPoint origin) {this->origin = origin;}
-//        void setImage(QImage image) {this->image = image;}
         QPoint getOrigin() {return this->origin;}
         int getOriginX() {return this->origin.x();}
         int getOriginY() {return this->origin.y();}
-//        QImage getImage() {return this->image;}
-        qreal getMaxD() {return this->maxD;}
 
         void setMatrix(QImage image);
-		quint8 getPixel(int i, int j) { return matrix[j*w + i]; }
-        //quint8 getPixel(int i, int j) {return matrix[j][i];}
-        //int width() {return (int)matrix[0].size();}
-        //int height() {return (int)matrix.size();}
+		quint32 getPixel(int i, int j) { return matrix[j + i*h]; }
+		quint32 *getPixelRef(int i, int j) { return matrix + (j + i*h); }
 		int width() {return w;}
 		int height() {return h;}
 		QRect boundingBox() { return QRect(-this->origin, QSize(w, h)); }
 
-		int *getMatrix() { return matrix; }
-		void setMatrix(int *_matrix) { matrix = _matrix; }
+		quint32 *getMatrix() { return matrix; }
+		void setMatrix(quint32 *_matrix) { matrix = _matrix; }
 
     private:
         QPoint origin;
-//        QImage image;
-        qreal maxD;
-        //std::vector< std::vector<quint8> > matrix;
-		int *matrix;
+		quint32 *matrix;
 		int w, h;
     };
+
+	class ItemRasterNoFitPolygonSet {
+	public:
+		ItemRasterNoFitPolygonSet(int numberOfOrientations, int numItems);
+		std::shared_ptr<RasterNoFitPolygon> getRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId);
+		std::shared_ptr<RasterNoFitPolygon> &operator[](int i) { return itemNfpSet[i]; }
+
+	private:
+		QVector<std::shared_ptr<RasterNoFitPolygon>> itemNfpSet;
+		const int numAngles;
+	};
 
     class RasterNoFitPolygonSet
     {
     public:
-        RasterNoFitPolygonSet();
-        RasterNoFitPolygonSet(int numberOfOrientations);
+		RasterNoFitPolygonSet(int numItems);
+		RasterNoFitPolygonSet(int numberOfOrientations, int numItems);
 
         bool load(RASTERPACKING::PackingProblem &problem);
         void addRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId, std::shared_ptr<RasterNoFitPolygon> nfp);
         std::shared_ptr<RasterNoFitPolygon> getRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
-        void eraseRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
-        void clear();
+		std::shared_ptr<ItemRasterNoFitPolygonSet> getItemRasterNoFitPolygonSet(int orbitingPieceTypeId, int orbitingAngleId);
+        //void eraseRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
+        //void clear();
 
     private:
-        QHash<QPair<int,int>, std::shared_ptr<RasterNoFitPolygon>> Nfps;
+        //QHash<QPair<int,int>, std::shared_ptr<RasterNoFitPolygon>> Nfps;
+		void initializeSet(int numItems);
+		QVector<std::shared_ptr<ItemRasterNoFitPolygonSet>> nfpSet;
         int numAngles;
     };
 }

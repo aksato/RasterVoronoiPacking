@@ -46,7 +46,6 @@ private slots:
     void glsWeightedlocalSearch();
 
 	void generateCurrentTotalSearchOverlapMap();
-	void generateCurrentTotalSearchOverlapMap2();
 	void setExplicityZoomValue();
     void showZoomedMap();
     void translateCurrentToMinimumZoomedPosition();
@@ -70,6 +69,7 @@ private slots:
 	void printDensity();
 
 private:
+	std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> overlapEvaluator, overlapEvaluatorGls, overlapEvaluatorDoubleGls;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createBasicSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createGLSSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createDoubleGLSSolver();
@@ -87,7 +87,7 @@ private:
     RunConfigurationsDialog runConfig;
 
 	int accContainerShrink;
-	qreal searchScale;
+	int zoomFactor;
 	qreal totalArea;
 	RASTERPACKING::PackingProblem originalProblem;
 	int currentContainerWidth, currentContainerHeight;

@@ -14,10 +14,10 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueNumExecutions("executions", "Number of total executions of the algorithm per case.", "value"); parser.addOption(valueNumExecutions);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value"); parser.addOption(valueCluster);
 	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem. Choices: square, random, cost, bagpipe.", "value"); parser.addOption(valueRectangular);
-	const QCommandLineOption valueZoom("zoom", "Explicity zoom value. Does not override zoom input file parameter.", "value"); parser.addOption(valueZoom);
 	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
 	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);
 	const QCommandLineOption nameAppendResultFolder("result", "Subfolder for result files.", "name"); parser.addOption(nameAppendResultFolder);
+	const QCommandLineOption valueNumGroupSize("parallel-group", "Size of thread groups with shared data.", "value"); parser.addOption(valueNumGroupSize);
 	const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -84,13 +84,14 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 		}
 		params->rectMehod = methodType;
 	}
-	if (parser.isSet(valueZoom)) {
-		const qreal zoom = parser.value(valueZoom).toDouble(&parseOk);
-		if (parseOk && zoom > 0) params->zoomValue = zoom;
-		else { *errorMessage = "Bad zoom value."; return CommandLineError; }
-	}
 	if (parser.isSet(nameAppendResultFolder)) {
 		params->appendResultPath = parser.value(nameAppendResultFolder);
 	}
+	if (parser.isSet(valueNumGroupSize)) {
+		const int groupSize = parser.value(valueNumGroupSize).toInt(&parseOk);
+		if (parseOk && groupSize > 0 && groupSize <= params->threadCount) params->threadGroupSize = groupSize;
+		else { *errorMessage = "Bad thread group size value."; return CommandLineError; }
+	}
+
     return CommandLineOk;
 }

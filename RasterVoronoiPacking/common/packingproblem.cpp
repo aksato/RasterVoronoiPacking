@@ -20,6 +20,75 @@ bool IsAtLeft(QPointF &v1, QPointF &v2)
     return true;
 }
 
+qreal cross(const QPointF &O, const QPointF &A, const QPointF &B) {
+	return (A.x() - O.x()) * (B.y() - O.y()) - (A.y() - O.y()) * (B.x() - O.x());
+}
+
+std::shared_ptr<Polygon> Polygon::getConvexHull(Polygon& polygon) {
+	std::shared_ptr<Polygon> P(new Polygon());
+	for (auto vertex : polygon) *P << vertex;
+
+	int n = P->size(), k = 0;
+	if (n == 1) return P;
+	std::shared_ptr<Polygon> H(new Polygon(QVector<QPointF>(2 * n)));
+
+	// Sort points lexicographically
+	std::sort(P->begin(), P->end(),
+		[](const QPointF & a, const QPointF & b) -> bool
+	{
+		return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
+	});
+
+	// Build lower hull
+	for (int i = 0; i < n; ++i) {
+		while (k >= 2 && cross((*H)[k - 2], (*H)[k - 1], (*P)[i]) <= 0) k--;
+		(*H)[k++] = (*P)[i];
+	}
+
+	// Build upper hull
+	for (int i = n - 2, t = k + 1; i >= 0; i--) {
+		while (k >= t && cross((*H)[k - 2], (*H)[k - 1], (*P)[i]) <= 0) k--;
+		(*H)[k++] = (*P)[i];
+	}
+
+	H->resize(k - 1);
+	return H;
+
+}
+
+std::shared_ptr<Polygon> Polygon::getConvexHull(Polygon& polygon1, Polygon& polygon2) {
+	std::shared_ptr<Polygon> P(new Polygon());
+	for (auto vertex : polygon1) *P << vertex;
+	for (auto vertex : polygon2) *P << vertex;
+
+	int n = P->size(), k = 0;
+	if (n == 1) return P;
+	std::shared_ptr<Polygon> H(new Polygon(QVector<QPointF>(2 * n)));
+
+	// Sort points lexicographically
+	std::sort(P->begin(), P->end(), 
+		[](const QPointF & a, const QPointF & b) -> bool
+	{
+		return a.x() < b.x() || (a.x() == b.x() && a.y() < b.y());
+	});
+
+	// Build lower hull
+	for (int i = 0; i < n; ++i) {
+		while (k >= 2 && cross((*H)[k - 2], (*H)[k - 1], (*P)[i]) <= 0) k--;
+		(*H)[k++] = (*P)[i];
+	}
+
+	// Build upper hull
+	for (int i = n - 2, t = k + 1; i >= 0; i--) {
+		while (k >= t && cross((*H)[k - 2], (*H)[k - 1], (*P)[i]) <= 0) k--;
+		(*H)[k++] = (*P)[i];
+	}
+
+	H->resize(k - 1);
+	return H;
+
+}
+
 std::shared_ptr<Polygon> Polygon::getNofitPolygon(std::shared_ptr<Polygon> staticPolygon, std::shared_ptr<Polygon> orbitingPolygon) {
     QPointF v1, nv1, v2, nv2, dv1, dv2;
 
@@ -278,7 +347,8 @@ QStringList RasterNoFitPolygon::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("scale"); commands.push_back(QString::number(this->scale));
     commands.push_back("writeAttribute"); commands.push_back("x0"); commands.push_back(QString::number(this->referencePoint.x()));
     commands.push_back("writeAttribute"); commands.push_back("y0"); commands.push_back(QString::number(this->referencePoint.y()));
-	commands.push_back("writeAttribute"); commands.push_back("maxD"); commands.push_back(QString::number(this->maxD));
+	commands.push_back("writeAttribute"); commands.push_back("width"); commands.push_back(QString::number(this->width));
+	commands.push_back("writeAttribute"); commands.push_back("height"); commands.push_back(QString::number(this->height));
     commands.push_back("writeEndElement"); // resultingPolygon
     commands.push_back("writeEndElement"); // rnfp
 
@@ -304,6 +374,8 @@ QStringList RasterInnerFitPolygon::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("scale"); commands.push_back(QString::number(this->scale));
     commands.push_back("writeAttribute"); commands.push_back("x0"); commands.push_back(QString::number(this->referencePoint.x()));
     commands.push_back("writeAttribute"); commands.push_back("y0"); commands.push_back(QString::number(this->referencePoint.y()));
+	commands.push_back("writeAttribute"); commands.push_back("width"); commands.push_back(QString::number(this->width));
+	commands.push_back("writeAttribute"); commands.push_back("height"); commands.push_back(QString::number(this->height));
     commands.push_back("writeEndElement"); // resultingPolygon
     commands.push_back("writeEndElement"); // rnfp
 
@@ -428,30 +500,15 @@ bool PackingProblem::load(QString fileName) {
              QPointF vertex;
              vertex.setX(xml.attributes().value("x0").toDouble());
              vertex.setY(xml.attributes().value("y0").toDouble());
-			 //// Update bounding box
-			 //if (curPolygon->isEmpty()) { itemBoundingBox.setBottomLeft(vertex); itemBoundingBox.setTopRight(vertex); }
-			 //else {
-				// if (vertex.x() < itemBoundingBox.left()) itemBoundingBox.setLeft(vertex.x());
-				// if (vertex.x() > itemBoundingBox.right()) itemBoundingBox.setRight(vertex.x());
-				// if (vertex.y() < itemBoundingBox.top()) itemBoundingBox.setTop(vertex.y());
-				// if (vertex.y() > itemBoundingBox.bottom()) itemBoundingBox.setBottom(vertex.y());
-			 //}
 			 // Insert vertex into polygon
              curPolygon->push_back(vertex);
          }
 
-		 //// Process finished polygon
-		 //if (xml.name() == "polygon" && xml.tokenType() == QXmlStreamReader::EndElement) {
-			// if(itemBoundingBox.width() > maxLength) maxLength = itemBoundingBox.width();
-			// if(itemBoundingBox.height() > maxWidth) maxWidth = itemBoundingBox.height();
-		 //}
-
 		 // Add Bounding Box Information
-		 if (xml.name() == "xMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinX(xml.readElementText().toInt());
-		 if (xml.name() == "xMax" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMaxX(xml.readElementText().toInt());
-		 if (xml.name() == "yMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinY(xml.readElementText().toInt());
-		 if (xml.name() == "yMax" && xml.tokenType() == QXmlStreamReader::StartElement) 
-			 curPolygon->setBoundingBoxMaxY(xml.readElementText().toInt());
+		 if (xml.name() == "xMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinX(xml.readElementText().toDouble());
+		 if (xml.name() == "xMax" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMaxX(xml.readElementText().toDouble());
+		 if (xml.name() == "yMin" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMinY(xml.readElementText().toDouble());
+		 if (xml.name() == "yMax" && xml.tokenType() == QXmlStreamReader::StartElement) curPolygon->setBoundingBoxMaxY(xml.readElementText().toDouble());
 
          // Process nofit polygon informations
          if(xml.name()=="nfp" && xml.tokenType() == QXmlStreamReader::StartElement) {
@@ -477,13 +534,16 @@ bool PackingProblem::load(QString fileName) {
              this->addInnerFitPolygon(std::static_pointer_cast<InnerFitPolygon>(curGeometricTool));
 
          // Process raster nofit polygon informations
+		 if (xml.name() == "raster" && xml.tokenType() == QXmlStreamReader::StartElement)
+			 this->nfpDataFileName = xml.attributes().value("data").toString();
          if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::StartElement)
              curGeometricTool = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon);
          if(xml.name()=="resultingImage" && xml.tokenType() == QXmlStreamReader::StartElement) {
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setFileName(xml.attributes().value("path").toString());
-             std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setScale(xml.attributes().value("scale").toFloat());
-             std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setMaxD(xml.attributes().value("maxD").toFloat());
+             std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setScale(xml.attributes().value("scale").toDouble());
              std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setReferencePoint(QPoint(xml.attributes().value("x0").toInt(),xml.attributes().value("y0").toInt()));
+			 std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setWidth(xml.attributes().value("width").toInt());
+			 std::static_pointer_cast<RasterGeometricTool>(curGeometricTool)->setHeight(xml.attributes().value("height").toInt());
          }
          if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::EndElement)
              this->addRasterNofitPolygon(std::static_pointer_cast<RasterNoFitPolygon>(curGeometricTool));
@@ -499,7 +559,7 @@ bool PackingProblem::load(QString fileName) {
          // do error handling
      }
 
-     for(QList<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
+	 for (QVector<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
          QMap<QString, std::shared_ptr<Polygon> >::iterator resultingPolygonIt = polygonsTempSet.find((*it)->getName());
          if( resultingPolygonIt != polygonsTempSet.end())
              (*it)->setPolygon(*resultingPolygonIt);
@@ -557,7 +617,7 @@ void processXMLCommands(QStringList &commands, QXmlStreamWriter &stream) {
     }
 }
 
-bool PackingProblem::save(QString fileName, QString clusterInfo) {
+bool PackingProblem::save(QString fileName, QString binFileName, QString clusterInfo) {
 	folder = QFileInfo(fileName).absolutePath();
     QFile file(fileName);
     if(!file.open(QIODevice::WriteOnly)) {
@@ -606,7 +666,7 @@ bool PackingProblem::save(QString fileName, QString clusterInfo) {
         QStringList piecePolCommand = (*it)->getPolygon()->getXML();
         processXMLCommands(piecePolCommand, stream);
     }
-    for(QList<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
+	for (QVector<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
         QStringList nfpPolCommand = (*it)->getPolygon()->getXML();
         processXMLCommands(nfpPolCommand, stream);
     }
@@ -618,7 +678,7 @@ bool PackingProblem::save(QString fileName, QString clusterInfo) {
 
     // --> Write nfps and ifps
     stream.writeStartElement("nfps");
-    for(QList<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
+	for (QVector<std::shared_ptr<NoFitPolygon>>::const_iterator it = this->cnfpbegin(); it != this->cnfpend(); it++) {
         QStringList nfpCommand = (*it)->getXML();
         processXMLCommands(nfpCommand, stream);
     }
@@ -633,7 +693,8 @@ bool PackingProblem::save(QString fileName, QString clusterInfo) {
     // --> Write raster results
     if(!this->rasterNofitPolygons.empty()) {
         stream.writeStartElement("raster");
-        for(QList<std::shared_ptr<RasterNoFitPolygon>>::const_iterator it = this->crnfpbegin(); it != this->crnfpend(); it++) {
+		if(!binFileName.isEmpty()) stream.writeAttribute("data", binFileName);
+		for (QVector<std::shared_ptr<RasterNoFitPolygon>>::const_iterator it = this->crnfpbegin(); it != this->crnfpend(); it++) {
             QStringList rnfpCommand = (*it)->getXML();
             processXMLCommands(rnfpCommand, stream);
         }
@@ -689,7 +750,7 @@ bool PackingProblem::loadClusterInfo(QString fileName) {
 
 		if (xml.name() == "piece" && xml.tokenType() == QXmlStreamReader::StartElement) {
 			currentCluster.push_back(CLUSTERING::ClusterPiece(xml.attributes().value("id").toString(), xml.attributes().value("angle").toInt(), 
-			QPointF(xml.attributes().value("xOffset").toFloat(), xml.attributes().value("yOffset").toFloat())));
+				QPointF(xml.attributes().value("xOffset").toDouble(), xml.attributes().value("yOffset").toDouble())));
 		}
 	}
 

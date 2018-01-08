@@ -20,8 +20,6 @@ int main(int argc, char *argv[])
 	QCoreApplication app(argc, argv);
 	QCoreApplication::setApplicationName("Raster Packing Console");
 	QCoreApplication::setApplicationVersion("0.1");
-	ConsolePackingLoader packingLoader;
-	QObject::connect(&packingLoader, SIGNAL(quitApp()), &app, SLOT(quit()));
 
 	// --> Parse command line arguments
 	QCommandLineParser parser;
@@ -79,14 +77,24 @@ int main(int argc, char *argv[])
 	case COST_EVALUATION: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::COST_EVALUATION); break;
 	case BAGPIPE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::BAGPIPE); break;
 	}
-	algorithmParams.setSearchScale(params.zoomValue);
+	algorithmParams.setZoomFactor(params.zoomValue);
 
-	packingLoader.setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
-
+	int finishedThreadNums = 0;
+	QVector<std::shared_ptr<ConsolePackingLoader>> packingLoadersList;
+	std::shared_ptr<ConsolePackingLoader> currentPackingLoader;
 	if (params.numThreads > 1) qDebug() << "Multithreaded version:" << params.numThreads << "parallel executions.";
 	for (int i = 0; i < params.numThreads; i++) {
-		packingLoader.run();
-		QThread::sleep(1);
+		if (i % params.threadGroupSize == 0) {
+			currentPackingLoader = std::shared_ptr<ConsolePackingLoader>(new ConsolePackingLoader);
+			QObject::connect(
+				&*currentPackingLoader, &ConsolePackingLoader::quitApp,
+				[&app, &finishedThreadNums, &params]() { finishedThreadNums += params.threadGroupSize; if (finishedThreadNums >= params.numThreads) app.quit(); }
+			);
+			currentPackingLoader->setParameters(params.inputFilePath, params.outputTXTFile, params.outputXMLFile, algorithmParams, params.appendSeedToOutputFiles);
+			packingLoadersList << currentPackingLoader;
+		}
+		currentPackingLoader->run();
+		QThread::sleep(2);
 	}
     return app.exec();
 }

@@ -6,7 +6,7 @@
 class Packing2DThread : public PackingThread {
 	Q_OBJECT
 public:
-	Packing2DThread(QObject *parent = 0) {};
+	Packing2DThread(QObject *parent = 0) : bagpipeDirection(1) {};
 	~Packing2DThread() {};
 	
 protected:
@@ -15,12 +15,10 @@ protected:
 private:
 	void runSquare();
 	void runRectangle();
-	void costShrinkContainerDimensions(int &curLenght, int &curHeight, RASTERVORONOIPACKING::RasterPackingSolution &currentSolution, const qreal ratio);
-	void randomChangeContainerDimensions(int &curLenght, int &curHeight, const qreal ratio);
-	void bagpipeChangeContainerDimensions(int &curLenght, int &curHeight);
-	void changeKeepAspectRatio(int &curLenght, int &curHeight, const qreal ratio);
-	bool getShrinkedDimension(int dim, int &newDim, bool length);
-	bool checkShrinkSizeConstraint(int &curLength, int &curHeight, int &reducedLength, int &reducedHeight, qreal ratio);
+	void randomChangeContainerDimensions(int &curLength, int &curHeight, qreal &curRealLength, qreal &curRealHeight, const qreal ratio);
+	void costChangeContainerDimensions(int &curLength, int &curHeight, qreal &curRealLength, qreal &curRealHeight, RASTERVORONOIPACKING::RasterPackingSolution &currentSolution, const qreal ratio);
+	void bagpipeChangeContainerDimensions(int &curLength, int &curHeight, qreal &curRealLength, qreal &curRealHeight, int bestArea, const qreal ratio);
+	int bagpipeDirection;
 };
 
 #endif // PACKING2DTHREAD_H

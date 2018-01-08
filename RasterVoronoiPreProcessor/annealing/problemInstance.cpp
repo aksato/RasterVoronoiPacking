@@ -13,7 +13,7 @@
 using namespace POLYBOOLEAN;
 double obsArea;
 
-std::shared_ptr<cRectangularContainer> readProblemInstance(QTextStream &f, std::vector<std::shared_ptr<cShape> > &shapes, float scale) {
+std::shared_ptr<cRectangularContainer> readProblemInstance(QTextStream &f, std::vector<std::shared_ptr<cShape> > &shapes, double scale) {
 	QString buff;
 	pbINT x, y;
 	int angle;
@@ -45,15 +45,15 @@ std::shared_ptr<cRectangularContainer> readProblemInstance(QTextStream &f, std::
 			if (!f.readLineInto(&buff)) break;
 			buffStream.setString(&buff); buffStream >> x >> dot >> y;
 			if (buffStream.status() == QTextStream::Ok) {
-				bottomLeft.x = (pbINT)((float)x*scale);
-				bottomLeft.y = (pbINT)((float)y*scale);
+				bottomLeft.x = (pbINT)((double)x*scale);
+				bottomLeft.y = (pbINT)((double)y*scale);
 			}
 
 			if (!f.readLineInto(&buff)) break;
 			buffStream.setString(&buff); buffStream >> x >> dot >> y;
 			if (buffStream.status() == QTextStream::Ok) {
-				topRight.x = (pbINT)((float)x*scale);
-				topRight.y = (pbINT)((float)y*scale);
+				topRight.x = (pbINT)((double)x*scale);
+				topRight.y = (pbINT)((double)y*scale);
 			}
 
 			container = std::shared_ptr<cRectangularContainer>(new cRectangularContainer(bottomLeft, topRight));
@@ -84,16 +84,16 @@ std::shared_ptr<cRectangularContainer> readProblemInstance(QTextStream &f, std::
 					}
 					point.x = x - basePoint.x;
 					point.y = y - basePoint.y;
-					point.x = (pbINT)((float)point.x*scale);
-					point.y = (pbINT)((float)point.y*scale);
+					point.x = (pbINT)((double)point.x*scale);
+					point.y = (pbINT)((double)point.y*scale);
 					PLINE2::Incl(&aux, point);
 					if(!f.readLineInto(&buff)) break;
 					buffStream.setString(&buff); buffStream >> x >> dot >> y;
 					while (buffStream.status() == QTextStream::Ok) {
 						point.x = x - basePoint.x;
 						point.y = y - basePoint.y;
-						point.x = (pbINT)((float)point.x*scale);
-						point.y = (pbINT)((float)point.y*scale);
+						point.x = (pbINT)((double)point.x*scale);
+						point.y = (pbINT)((double)point.y*scale);
 						PLINE2::Incl(&aux, point);
 						if (!f.readLineInto(&buff)) break;
 						buffStream.setString(&buff); buffStream >> x >> dot >> y;
@@ -171,7 +171,7 @@ std::shared_ptr<cRectangularContainer> readProblemInstance(QTextStream &f, std::
 	//	return new cAnnealingPackingSolution(container, &shapes.front(), (unsigned int)shapes.size(), params);
 }
 
-std::shared_ptr<cRectangularContainer> readProblemInstance(FILE *f, std::vector<std::shared_ptr<cShape> > &shapes, float scale)
+std::shared_ptr<cRectangularContainer> readProblemInstance(FILE *f, std::vector<std::shared_ptr<cShape> > &shapes, double scale)
 {
 	char buff[256];
 	//int x, y, angle;
@@ -202,13 +202,13 @@ std::shared_ptr<cRectangularContainer> readProblemInstance(FILE *f, std::vector<
         if(strncmp(buff, "REC_CONTAINER", 13)==0) {
 
 			if(fgets(buff, 256, f) && sscanf(buff, "%d, %d", &x, &y)==2) {
-                bottomLeft.x = (pbINT)((float)x*scale);
-                bottomLeft.y = (pbINT)((float)y*scale);
+                bottomLeft.x = (pbINT)((double)x*scale);
+                bottomLeft.y = (pbINT)((double)y*scale);
 			}
 
 			if(fgets(buff, 256, f) && sscanf(buff, "%d, %d", &x, &y)==2) {
-                topRight.x = (pbINT)((float)x*scale);
-                topRight.y = (pbINT)((float)y*scale);
+                topRight.x = (pbINT)((double)x*scale);
+                topRight.y = (pbINT)((double)y*scale);
 			}
 
             // TODO
@@ -239,15 +239,15 @@ std::shared_ptr<cRectangularContainer> readProblemInstance(FILE *f, std::vector<
 					}
 					point.x = x - basePoint.x;
 					point.y = y - basePoint.y;
-                    point.x = (pbINT)((float)point.x*scale);
-                    point.y = (pbINT)((float)point.y*scale);
+                    point.x = (pbINT)((double)point.x*scale);
+                    point.y = (pbINT)((double)point.y*scale);
 					PLINE2::Incl(&aux, point);
 					if(!fgets(buff, 256, f)) break;
 					while(sscanf(buff, "%d, %d", &x, &y)==2) {
 						point.x = x - basePoint.x;
 						point.y = y - basePoint.y;
-                        point.x = (pbINT)((float)point.x*scale);
-                        point.y = (pbINT)((float)point.y*scale);
+                        point.x = (pbINT)((double)point.x*scale);
+                        point.y = (pbINT)((double)point.y*scale);
 						PLINE2::Incl(&aux, point);
 						if(!fgets(buff, 256, f)) break;
 					} 

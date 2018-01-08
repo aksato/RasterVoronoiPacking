@@ -26,6 +26,7 @@ set(SRC
 	zoomedmapviewdialog.cpp
 	main.cpp
 	../common/raster/totaloverlapmap.cpp
+	../common/raster/totaloverlapmapcache.cpp
 	../common/raster/rasterstrippackingsolver.cpp
 	../common/raster/rasterstrippackingsolver2d.cpp
 	../common/raster/rasteroverlapevaluator.cpp
@@ -54,6 +55,7 @@ set(HEADERS
 	runconfigurationsdialog.h
 	zoomedmapviewdialog.h
 	../common/raster/totaloverlapmap.h
+	../common/raster/totaloverlapmapcache.h
 	../common/raster/rasterstrippackingsolver.h
 	../common/raster/rasteroverlapevaluator.h
 	../common/raster/rasterpackingsolution.h

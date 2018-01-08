@@ -7,8 +7,9 @@ RunConfigurationsDialog::RunConfigurationsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->spinBox->setValue(200);
-	ui->label_7->setVisible(false); ui->doubleSpinBox_3->setVisible(false);
+	ui->label_7->setVisible(false); ui->spinBox_3->setVisible(false);
 	ui->label_9->setVisible(false); ui->comboBox_4->setVisible(false);
+	connect(ui->comboBox_2, SIGNAL(currentIndexChanged(int)), this, SLOT(showContainerLength(int)));
 	connect(ui->comboBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT(showRectangularMethods(int)));
 }
 
@@ -25,8 +26,8 @@ int RunConfigurationsDialog::getMetaheuristic() {
     return ui->comboBox->currentIndex();
 }
 
-qreal RunConfigurationsDialog::getSearchScale() {
-	return ui->doubleSpinBox_3->value();
+int RunConfigurationsDialog::getZoomRatio() {
+	return ui->spinBox_3->value();
 }
 
 int RunConfigurationsDialog::getMaxWorse() {
@@ -48,9 +49,8 @@ void RunConfigurationsDialog::setInitialLenght(qreal lenght, qreal step) {
     ui->doubleSpinBox->setSingleStep(step);
 }
 
-void RunConfigurationsDialog::setInitialSearchScale(qreal scale) {
-	ui->doubleSpinBox_3->setValue(scale);
-	ui->doubleSpinBox_3->setMinimum(0.0);
+void RunConfigurationsDialog::setInitialZoomFactor(int zoom) {
+	ui->spinBox_3->setValue(zoom);
 }
 
 qreal RunConfigurationsDialog::getClusterFactor() {
@@ -79,6 +79,11 @@ bool RunConfigurationsDialog::isZoomedApproach() {
 void RunConfigurationsDialog::showRectangularMethods(int index) {
 	ui->comboBox_4->setVisible(index == 2);
 	ui->label_9->setVisible(index == 2);
+}
+
+void RunConfigurationsDialog::showContainerLength(int index) {
+	ui->doubleSpinBox->setEnabled(index == 1);
+	ui->label_5->setEnabled(index == 1);
 }
 
 int RunConfigurationsDialog::getRectangularMethod() {

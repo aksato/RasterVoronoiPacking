@@ -5,12 +5,14 @@
 #include <QFile>
 #include <QRegExp>
 #include <QDir>
+#include <QDateTime>
 #include "packingParametersParser.h"
 
 struct CaseExecutionParam {
 	QString problemFileName;
 	int timeLimit;
 	QString outputFolder;
+	int zoomFactor;
 };
 
 QStringList readCasesFile(QString fileName, QList<int> &numParameters) {
@@ -46,11 +48,18 @@ QList<CaseExecutionParam> parseCasesFile(QString fileName, QString *errorMessage
 
 	QList<CaseExecutionParam> caseList;
 	int paramNum = 0;
+	bool ok;
 	for (int caseNum = 0; caseNum < lineParameters.length(); caseNum++) {
 		int numParametersPerEntry = lineParameters[caseNum];
 		CaseExecutionParam curCase;
 		curCase.problemFileName = caseFileStringList[paramNum++];
-		bool ok; curCase.timeLimit = caseFileStringList[paramNum++].toInt(&ok);
+		if (numParametersPerEntry == 4) {
+			curCase.zoomFactor = caseFileStringList[paramNum++].toInt(&ok);
+			if (!ok) { *errorMessage = "Could not parse zoom factor for case " + QString::number(caseNum + 1) + "."; return QList<CaseExecutionParam>(); }
+
+		}
+		else curCase.zoomFactor = 1;
+		curCase.timeLimit = caseFileStringList[paramNum++].toInt(&ok);
 		if (!ok) {
 			*errorMessage = "Could not parse time limit for case " + QString::number(caseNum+1) + ".";
 			return QList<CaseExecutionParam>();
@@ -117,18 +126,19 @@ int main(int argc, char *argv[])
 		QStringList arguments;
 		arguments << curCase.problemFileName;
 		arguments << "--method=gls";
-		if (params.zoomValue > 0) arguments << "--zoom=" + QString::number(params.zoomValue);
+		if (curCase.zoomFactor > 1) arguments << "--zoom=" + QString::number(curCase.zoomFactor);
 		arguments << "--initial=bottomleft" << "--duration=" + QString::number(curCase.timeLimit) << "--strippacking" << "--appendseed" << "--layout=" + xmlOutput << "--result=" + txtOutput;// << "--parallel=" + QString::number(params.threadCount);
-		if (params.clusterFactor > 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution
+		if (params.clusterFactor >= 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution
 		if (params.rectangular) arguments << "--rectpacking=" + params.rectMehod;
 		arguments << "--ratios=" + QString::number(params.rdec) + ";"  + QString::number(params.rinc);
+		arguments << "--parallel-group=" + QString::number(params.threadGroupSize);
 
 		if (pastExecutionCount >= params.executionCount) { qDebug() << "Skipping execution of fully processed case" << curCase.problemFileName; continue; }		
 		qDebug() << "Running Raster Packing Console with arguments" << arguments;
 		for (int i = pastExecutionCount; i < params.executionCount; i += params.threadCount) {
 			// Check the number of necessary threads to reach desired execution count
 			int executionsCount = i + params.threadCount > params.executionCount ? params.executionCount - i : params.threadCount;
-			qDebug() << "Executions" << i + 1 << "-" << i + executionsCount << "of" << (params.zoomValue < 0 ? "case" : "zoom case") << curCase.problemFileName;
+			qDebug() << "[" << QDateTime::currentDateTime().toString(Qt::ISODate).toLatin1().data() << "]" << "Executions" << i + 1 << "-" << i + executionsCount << "of" << (curCase.zoomFactor == 1 ? "case" : "zoom case") << curCase.problemFileName << "output to" << outputDir.absolutePath();
 			QStringList curArguments = QStringList() << arguments << "--parallel=" + QString::number(executionsCount);
 
 			// Start process

@@ -13,12 +13,12 @@ namespace RASTERVORONOIPACKING {
 	{
 	public:
 		RasterStripPackingParameters() :
-			Nmo(200), maxSeconds(600), heuristicType(GLS), searchScale(-1), clusterFactor(-1.0),
+			Nmo(200), maxSeconds(600), heuristicType(GLS), zoomFactor(1), clusterFactor(-1.0),
 			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
 		{} // Default parameters
 
-		RasterStripPackingParameters(Heuristic _heuristicType, qreal _searchScale) :
-			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), searchScale(_searchScale), clusterFactor(-1.0),
+		RasterStripPackingParameters(Heuristic _heuristicType, int _zoomFactor) :
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), zoomFactor(_zoomFactor), clusterFactor(-1.0),
 			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
 		{} // Default parameters with specific solver parameters
 
@@ -52,8 +52,8 @@ namespace RASTERVORONOIPACKING {
 		void setRectangularPackingMethod(EnclosedMethod method) { this->rectangularPackingMethod = method; }
 		EnclosedMethod getRectangularPackingMethod() { return this->rectangularPackingMethod; }
 
-		void setSearchScale(qreal _searchScale) { this->searchScale = _searchScale; }
-		qreal getSearchScale() { return this->searchScale; }
+		void setZoomFactor(int _zoomFactor) { this->zoomFactor = _zoomFactor; }
+		int getZoomFactor() { return this->zoomFactor; }
 
 		void setResizeChangeRatios(qreal _ratioDecrease, qreal _ratioIncrease) { this->rdec = _ratioDecrease; this->rinc = _ratioIncrease; }
 		qreal getRdec() { return this->rdec; }
@@ -70,7 +70,7 @@ namespace RASTERVORONOIPACKING {
 			setClusterFactor(source.getClusterFactor());
 			setRectangularPacking(source.isRectangularPacking());
 			setRectangularPackingMethod(source.getRectangularPackingMethod());
-			setSearchScale(source.getSearchScale());
+			setZoomFactor(source.getZoomFactor());
 			setResizeChangeRatios(source.getRdec(), source.getRinc());
 		}
 
@@ -81,7 +81,7 @@ namespace RASTERVORONOIPACKING {
 		qreal initialLenght; // Only used with RANDOMFIXED initial solution
 		bool fixedLength, rectangularPacking;
 		EnclosedMethod rectangularPackingMethod;
-		qreal searchScale;
+		int zoomFactor;
 		qreal clusterFactor;
 		qreal rdec, rinc;
 	};

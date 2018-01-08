@@ -10,8 +10,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
 
     parser.addPositionalArgument("source","Input problem file path.");
-    const QCommandLineOption nameZoomedInput(QStringList() << "zoom", "Zoomed problem input: file name or explicity zoom value.", "name");
-    parser.addOption(nameZoomedInput);
+    const QCommandLineOption valueZoom(QStringList() << "zoom", "Zoom value for double resolution search method.", "value");
+	parser.addOption(valueZoom);
     const QCommandLineOption nameOutputTXT(QStringList() << "result", "The output result statistics file name.", "name");
     parser.addOption(nameOutputTXT);
     const QCommandLineOption nameOutputXML(QStringList() << "layout", "The output layout XML file name.", "name");
@@ -37,6 +37,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(boolStripPacking);
 	const QCommandLineOption valueNumThreads("parallel", "Number of parallel executions of the algorithm.", "value");
 	parser.addOption(valueNumThreads);
+	const QCommandLineOption valueNumGroupSize("parallel-group", "Size of thread groups with shared data.", "value");
+	parser.addOption(valueNumGroupSize);
 	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value");
 	parser.addOption(valueCluster);
 	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, cost, bagpipe", "value");
@@ -67,17 +69,17 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
     }
     params->inputFilePath = positionalArguments.at(0);
 
-    if (parser.isSet(nameZoomedInput)) {
-        const QString inputName = parser.value(nameZoomedInput);
+	if (parser.isSet(valueZoom)) {
+		const QString valueZoomStr = parser.value(valueZoom);
 		bool ok;
-		const qreal zoomValue = inputName.toDouble(&ok);
-		if (!ok || zoomValue < 0) {
+		const int zoomValue = valueZoomStr.toInt(&ok);
+		if (!ok || zoomValue < 1) {
 			*errorMessage = "Bad zoom value.";
 			return CommandLineError;
 		}
 		params->zoomValue = zoomValue;
     }
-	else params->zoomValue = -1.0;
+	else params->zoomValue = 1;
 
     if (parser.isSet(nameOutputTXT)) {
         const QString outputName = parser.value(nameOutputTXT);
@@ -207,6 +209,14 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		params->numThreads = 1;
 	}
 
+	if (parser.isSet(valueNumGroupSize)) {
+		const QString groupSizeString = parser.value(valueNumGroupSize); bool ok;
+		const int groupSize = groupSizeString.toInt(&ok);
+		if (ok && groupSize > 0 && groupSize <= params->numThreads) params->threadGroupSize = groupSize;
+		else { *errorMessage = "Bad thread group size value."; return CommandLineError; }
+	}
+	else params->threadGroupSize = 1;
+	
 	if (parser.isSet(valueCluster)) {
 		const QString clusterString = parser.value(valueCluster);
 		bool ok;

@@ -32,6 +32,7 @@ struct ConsolePackingArgs {
 	bool appendSeedToOutputFiles;
 
 	int numThreads;
+	int threadGroupSize;
 };
 
 enum CommandLineParseResult

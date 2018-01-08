@@ -55,16 +55,6 @@
      </item>
     </widget>
    </item>
-   <item row="10" column="2">
-    <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="singleStep">
-      <double>0.010000000000000</double>
-     </property>
-    </widget>
-   </item>
    <item row="8" column="2">
     <widget class="QDoubleSpinBox" name="doubleSpinBox">
      <property name="enabled">
@@ -120,7 +110,7 @@
       <bool>true</bool>
      </property>
      <property name="text">
-      <string>Zoom Search Scale</string>
+      <string>Zoom Search Ratio</string>
      </property>
     </widget>
    </item>
@@ -254,6 +244,16 @@
      </property>
     </widget>
    </item>
+   <item row="10" column="2">
+    <widget class="QSpinBox" name="spinBox_3">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>1000</number>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
@@ -309,16 +309,16 @@
   <connection>
    <sender>checkBox</sender>
    <signal>clicked(bool)</signal>
-   <receiver>doubleSpinBox_3</receiver>
+   <receiver>spinBox_3</receiver>
    <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>208</x>
-     <y>501</y>
+     <x>198</x>
+     <y>488</y>
     </hint>
     <hint type="destinationlabel">
-     <x>588</x>
-     <y>453</y>
+     <x>390</x>
+     <y>445</y>
     </hint>
    </hints>
   </connection>

@@ -39,9 +39,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(valueNumThreads);
 	const QCommandLineOption valueNumGroupSize("parallel-group", "Size of thread groups with shared data.", "value");
 	parser.addOption(valueNumGroupSize);
-	const QCommandLineOption valueCluster("clusterfactor", "Time fraction for cluster executuion.", "value");
-	parser.addOption(valueCluster);
-	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, cost, bagpipe", "value");
+	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, bagpipe", "value");
 	parser.addOption(valueRectangularPacking);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
@@ -190,7 +188,6 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		}
 		if (methodType == "square") params->rectMehod = SQUARE;
 		if (methodType == "random") params->rectMehod = RANDOM_ENCLOSED;
-		if (methodType == "cost") params->rectMehod = COST_EVALUATION;
 		if (methodType == "bagpipe") params->rectMehod = BAGPIPE;
 	}
 	else params->rectangularPacking = false;
@@ -216,20 +213,6 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 		else { *errorMessage = "Bad thread group size value."; return CommandLineError; }
 	}
 	else params->threadGroupSize = 1;
-	
-	if (parser.isSet(valueCluster)) {
-		const QString clusterString = parser.value(valueCluster);
-		bool ok;
-		const float clusterFactor = clusterString.toFloat(&ok);
-		if (ok && clusterFactor >= 0 && clusterFactor <=1.0) {
-			params->clusterFactor = clusterFactor;
-		}
-		else {
-			*errorMessage = "Bad cluster factor value.";
-			return CommandLineError;
-		}
-	}
-	else params->clusterFactor = -1.0;
 
 	if (parser.isSet(valueRatios)) {
 		const QString ratiosStr = parser.value(valueRatios);

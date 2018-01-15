@@ -227,11 +227,6 @@
      </item>
      <item>
       <property name="text">
-       <string>Cost Guided</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
        <string>Bagpipe</string>
       </property>
      </item>

@@ -4,18 +4,8 @@
 #include <QObject>
 #include <QString>
 #include "raster/packingthread.h"
-#include "raster/packing2dthread.h"
 
 namespace RASTERVORONOIPACKING { class RasterStripPackingParameters; }
-
-struct GpuMemoryRequirements {
-	GpuMemoryRequirements() {};
-
-	size_t totalIfpMemory;
-	size_t totalNfpMemory;
-	size_t maxSingleIfpMemory;
-};
-
 class ConsolePackingLoader : public QObject
 {
 	Q_OBJECT

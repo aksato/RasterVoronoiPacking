@@ -4,26 +4,26 @@
 #include <memory>
 #include "rasterpackingsolution.h"
 #include "rasterstrippackingsolver.h"
+#include "rasterstrippackingcompactor.h"
 
 #include <QThread>
 #include <QMutex>
 #include <QWaitCondition>
 
 struct ExecutionSolutionInfo {
-	enum ProblemType {StripPacking, SquarePacking, RectangularPacking};
-	ExecutionSolutionInfo() : pType(StripPacking) { }
-	ExecutionSolutionInfo(int _length, int _iteration, uint _seed, ProblemType _pType) : length(_length), iteration(_iteration), timestamp(0.0), seed(_seed), pType(_pType) { }
-	ExecutionSolutionInfo(int _length, int _height, int _iteration, uint _seed, ProblemType _pType) : length(_length), height(_height), iteration(_iteration), timestamp(0.0), seed(_seed), pType(_pType) { }
-	ExecutionSolutionInfo(int _length, qreal _timestamp, int _iteration, uint _seed, ProblemType _pType) : length(_length), timestamp(_timestamp), iteration(_iteration), seed(_seed), pType(_pType) { }
-	ExecutionSolutionInfo(int _length, qreal _area, qreal _timestamp, int _iteration, uint _seed, ProblemType _pType) : length(_length), area(_area), timestamp(_timestamp), iteration(_iteration), seed(_seed), pType(_pType) { }
-	ExecutionSolutionInfo(int _length, int _height, qreal _timestamp, int _iteration, uint _seed, ProblemType _pType) : length(_length), height(_height), timestamp(_timestamp), iteration(_iteration), seed(_seed), pType(_pType) { area = _length * _height; }
+	ExecutionSolutionInfo() : pType(RASTERVORONOIPACKING::StripPacking) { }
+	//ExecutionSolutionInfo(int _length, int _iteration, uint _seed, RASTERVORONOIPACKING::ProblemType _pType) : length(_length), iteration(_iteration), timestamp(0.0), seed(_seed), pType(_pType) { }
+	ExecutionSolutionInfo(int _length, int _height, int _iteration, uint _seed, RASTERVORONOIPACKING::ProblemType _pType) : length(_length), height(_height), iteration(_iteration), timestamp(0.0), seed(_seed), pType(_pType) { }
+	//ExecutionSolutionInfo(int _length, qreal _timestamp, int _iteration, uint _seed, RASTERVORONOIPACKING::ProblemType _pType) : length(_length), timestamp(_timestamp), iteration(_iteration), seed(_seed), pType(_pType) { }
+	//ExecutionSolutionInfo(int _length, qreal _area, qreal _timestamp, int _iteration, uint _seed, RASTERVORONOIPACKING::ProblemType _pType) : length(_length), area(_area), timestamp(_timestamp), iteration(_iteration), seed(_seed), pType(_pType) { }
+	ExecutionSolutionInfo(int _length, int _height, qreal _timestamp, int _iteration, uint _seed, RASTERVORONOIPACKING::ProblemType _pType) : length(_length), height(_height), timestamp(_timestamp), iteration(_iteration), seed(_seed), pType(_pType) { area = _length * _height; }
 	int length, height;
 	qreal area;
 	qreal timestamp;
 	int iteration;
 	uint seed;
 	qreal density;
-	ProblemType pType;
+	RASTERVORONOIPACKING::ProblemType pType;
 };
 
 class PackingThread : public QThread
@@ -38,6 +38,7 @@ public:
 		solver =_solver;
 		threadSolution = RASTERVORONOIPACKING::RasterPackingSolution(solver->getNumItems());
 	}
+	void setCompactor(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> _compactor) { compactor = _compactor; }
 	void setParameters(RASTERVORONOIPACKING::RasterStripPackingParameters &_parameters) { parameters.Copy(_parameters); }
 	uint getSeed() { return seed; }
 
@@ -63,6 +64,7 @@ protected:
 	RASTERVORONOIPACKING::RasterStripPackingParameters parameters;
 	RASTERVORONOIPACKING::RasterPackingSolution threadSolution;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> compactor;
 };
 
 #endif // PACKINGTHREAD_H

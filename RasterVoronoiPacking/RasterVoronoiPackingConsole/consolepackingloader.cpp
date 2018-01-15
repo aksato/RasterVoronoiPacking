@@ -1,8 +1,8 @@
 #include "consolepackingloader.h"
 #include "raster/rasterpackingproblem.h"
 #include "raster/rasterpackingsolution.h"
-#include "raster/packing2dthread.h"
-#include "raster/packingclusterthread.h"
+#include "raster/rastersquarepackingcompactor.h"
+#include "raster/rasterrectpackingcompactor.h"
 #include "packingproblem.h"
 #include <QDir>
 #include <QXmlStreamWriter>
@@ -19,17 +19,7 @@ bool ConsolePackingLoader::loadInputFile(QString inputFilePath, std::shared_ptr<
 		qCritical("Could not open file '%s'!", qPrintable(inputFilePath));
 		return false;
 	}
-	if (preProblem.loadClusterInfo(inputFilePath)) {
-		*problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingClusterProblem>(new RASTERVORONOIPACKING::RasterPackingClusterProblem);
-		qDebug() << "Cluster problem detected.";
-	}
-	else {
-		*problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
-		if (algorithmParamsBackup.getClusterFactor() >= 0) {
-			algorithmParamsBackup.setClusterFactor(-1.0);
-			qWarning() << "Cluster problem not detected, ignoring cluster factor value.";
-		}
-	}
+	*problem = std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem>(new RASTERVORONOIPACKING::RasterPackingProblem);
 	(*problem)->load(preProblem);
 	return true;
 }
@@ -42,7 +32,6 @@ void ConsolePackingLoader::setParameters(QString inputFilePath, QString outputTX
 	RASTERVORONOIPACKING::RasterPackingSolution solution;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver;
 	RASTERPACKING::PackingProblem preProblem;
-	GpuMemoryRequirements gpuMemReq;
 	qDebug() << "Program execution started.";
 
 	// Load input file
@@ -59,17 +48,28 @@ void ConsolePackingLoader::run() {
 	std::shared_ptr<PackingThread> threadedPacker;
 
 	// Create solver object
-	int initialWidth = algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED ? qRound(algorithmParamsBackup.getInitialLenght()*problem->getScale()) : -1;
-	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver(problem, algorithmParamsBackup, initialWidth);
-	bool clusterExecution = algorithmParamsBackup.getClusterFactor() > 0;
-	if (!clusterExecution) {
-		if (algorithmParamsBackup.isRectangularPacking()) threadedPacker = std::shared_ptr<Packing2DThread>(new Packing2DThread);
-		else threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
-	}
-	else {
-		threadedPacker = std::shared_ptr<PackingClusterThread>(new PackingClusterThread);
-		std::shared_ptr<PackingClusterThread> threadedClusterPacker = std::dynamic_pointer_cast<PackingClusterThread>(threadedPacker);
-		connect(&*threadedClusterPacker, SIGNAL(unclustered(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)), this, SLOT(updateUnclusteredProblem(RASTERVORONOIPACKING::RasterPackingSolution, int, qreal)));
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver(problem, algorithmParamsBackup);
+	threadedPacker = std::shared_ptr<PackingThread>(new PackingThread);
+
+	// Create compactor
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> compactor;
+	switch (algorithmParamsBackup.getCompaction()) {
+	case RASTERVORONOIPACKING::STRIPPACKING:
+		compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(new RASTERVORONOIPACKING::RasterStripPackingCompactor(algorithmParamsBackup.getInitialLength(), 
+			problem, solver->getOverlapEvaluator(), algorithmParamsBackup.getRdec(), algorithmParamsBackup.getRinc())); 
+		break;
+	case RASTERVORONOIPACKING::SQUAREPACKING:
+		compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(new RASTERVORONOIPACKING::RasterSquarePackingCompactor(algorithmParamsBackup.getInitialLength(), 
+			problem, solver->getOverlapEvaluator(), algorithmParamsBackup.getRdec(), algorithmParamsBackup.getRinc())); 
+		break;
+	case RASTERVORONOIPACKING::RECTRNDPACKING:
+		compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(new RASTERVORONOIPACKING::RasterRectangularPackingRandomCompactor(algorithmParamsBackup.getInitialLength(), algorithmParamsBackup.getInitialHeight(), 
+			problem, solver->getOverlapEvaluator(), algorithmParamsBackup.getRdec(), algorithmParamsBackup.getRinc())); 
+		break;
+	case RASTERVORONOIPACKING::RECTBAGPIPEPACKING:
+		compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(new RASTERVORONOIPACKING::RasterRectangularPackingBagpipeCompactor(algorithmParamsBackup.getInitialLength(), algorithmParamsBackup.getInitialHeight(), 
+			problem, solver->getOverlapEvaluator(), algorithmParamsBackup.getRdec(), algorithmParamsBackup.getRinc())); 
+		break;
 	}
 
 	// Configure packer object
@@ -81,6 +81,7 @@ void ConsolePackingLoader::run() {
 	connect(&*threadedPacker, SIGNAL(finishedExecution(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)), SLOT(saveFinalResult(const RASTERVORONOIPACKING::RasterPackingSolution, const ExecutionSolutionInfo, int, qreal, qreal, qreal)));
 	connect(&*threadedPacker, SIGNAL(finished()), SLOT(threadFinished()));
 	threadedPacker->setSolver(solver);
+	threadedPacker->setCompactor(compactor);
 	threadedPacker->setParameters(algorithmParamsBackup);
 
 	// Print configurations
@@ -88,13 +89,12 @@ void ConsolePackingLoader::run() {
 	if (algorithmParamsBackup.getZoomFactor() > 1)
 		qDebug() << "Problem Scale:" << problem->getScale() << ". Auxiliary problem scale:" << problem->getScale() / algorithmParamsBackup.getZoomFactor();
 	else qDebug() << "Problem Scale:" << problem->getScale();
-	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) qDebug() << "Length:" << algorithmParamsBackup.getInitialLenght();
+	if (algorithmParamsBackup.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) qDebug() << "Length:" << algorithmParamsBackup.getInitialLength();
 	qDebug() << "Solver method:" << algorithmParamsBackup.getHeuristic();
 	qDebug() << "Inital solution:" << algorithmParamsBackup.getInitialSolMethod();
 	if (!algorithmParamsBackup.isFixedLength()) qDebug() << "Strip packing version";
 	qDebug() << "Solver parameters: Nmo =" << algorithmParamsBackup.getNmo() << "; Time Limit:" << algorithmParamsBackup.getTimeLimit();
-	if (algorithmParamsBackup.getClusterFactor() > 0) qDebug() << "Cluster factor:" << algorithmParamsBackup.getClusterFactor();
-	if (algorithmParamsBackup.isRectangularPacking()) qDebug() << "Rectangular Packing Method: " << algorithmParamsBackup.getRectangularPackingMethod();
+	qDebug() << "Packing Compaction Method: " << algorithmParamsBackup.getCompaction();
 	numProcesses++;
 	// Run!
 	threadedPacker->start();
@@ -148,12 +148,12 @@ void ConsolePackingLoader::saveXMLSolution(const RASTERVORONOIPACKING::RasterPac
 
 void ConsolePackingLoader::saveMinimumResult(const RASTERVORONOIPACKING::RasterPackingSolution &solution, const ExecutionSolutionInfo &info) {
 	ExecutionSolutionInfo infoCopy = info;
-	if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) {
+	if (info.pType == RASTERVORONOIPACKING::ProblemType::StripPacking) {
 		//infoCopy.density = this->problem->getDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
 		std::cout << "New layout obtained: " << info.length / problem->getScale() << ". Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength(info.length, info.iteration, info.timestamp, info.seed);
 	}
-	else { // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
+	else { // RASTERVORONOIPACKING::ProblemType::SquarePacking || RASTERVORONOIPACKING::ProblemType::RectangularPacking
 		//infoCopy.density = this->problem->getRectangularDensity((RASTERVORONOIPACKING::RasterPackingSolution&)solution);
 		std::cout << "New layout obtained: " << info.length / problem->getScale() << "x" << info.height / problem->getScale() << " ( area = " << (info.length * info.height) / (problem->getScale() * problem->getScale()) << "). Elapsed time: " << info.timestamp << " secs. Seed = " << info.seed << "\n";
 		writeNewLength2D(info, info.iteration, info.timestamp, info.seed);
@@ -171,12 +171,12 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	if (algorithmParamsBackup.isFixedLength()) 
 		qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum overlap =" << minOverlap << ". Elapsed time:" << totalTime;
 	else {
-		if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << info.length / problem->getScale() << ". Elapsed time:" << totalTime;
-		else qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum area =" << info.area / (problem->getScale() *problem->getScale()) << ". Elapsed time:" << totalTime; // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
+		if (info.pType == RASTERVORONOIPACKING::ProblemType::StripPacking) qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum length =" << info.length / problem->getScale() << ". Elapsed time:" << totalTime;
+		else qDebug() << "\nFinished. Total iterations:" << totalIt << ".Minimum area =" << info.area / (problem->getScale() *problem->getScale()) << ". Elapsed time:" << totalTime; // RASTERVORONOIPACKING::ProblemType::SquarePacking || RASTERVORONOIPACKING::ProblemType::RectangularPacking
 	}
 	
-	if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) writeNewLength(info.length, totalIt, totalTime, info.seed);
-	else writeNewLength2D(info, totalIt, totalTime, info.seed); // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
+	if (info.pType == RASTERVORONOIPACKING::ProblemType::StripPacking) writeNewLength(info.length, totalIt, totalTime, info.seed);
+	else writeNewLength2D(info, totalIt, totalTime, info.seed); // RASTERVORONOIPACKING::ProblemType::SquarePacking || RASTERVORONOIPACKING::ProblemType::RectangularPacking
 
 	// Determine output file names
 	uint seed = info.seed;
@@ -206,13 +206,13 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	// Print solutions collection xml file
 	for (auto &entry : solutionsCompilation[seed])
 		switch (entry.second.pType) {
-			case ExecutionSolutionInfo::ProblemType::StripPacking:
+			case RASTERVORONOIPACKING::ProblemType::StripPacking:
 				entry.second.density = this->problem->getDensity(*entry.first);
 				break;
-			case ExecutionSolutionInfo::ProblemType::SquarePacking:
+			case RASTERVORONOIPACKING::ProblemType::SquarePacking:
 				entry.second.density = this->problem->getSquareDensity(*entry.first);
 				break;
-			case ExecutionSolutionInfo::ProblemType::RectangularPacking:
+			case RASTERVORONOIPACKING::ProblemType::RectangularPacking:
 				entry.second.density = this->problem->getRectangularDensity(*entry.first);
 				break;
 		}
@@ -235,13 +235,12 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 		//for (auto it = solutionsCompilation.begin(); it != solutionsCompilation.end(); it++) {
 		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingSolution> curSolution = (*bestResult).first;
 		qreal realLength = (*bestResult).second.length / problem->getScale();
-		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> solutionProblem = algorithmParamsBackup.getClusterFactor() > 0 && curSolution->getNumItems() > problem->count() ?
-			std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterPackingClusterProblem>(problem)->getOriginalProblem() : this->problem;
-		if (info.pType == ExecutionSolutionInfo::ProblemType::StripPacking) {
+		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> solutionProblem = this->problem;
+		if (info.pType == RASTERVORONOIPACKING::ProblemType::StripPacking) {
 			curSolution->save(stream, solutionProblem, realLength, true, seed);
 			curSolution->exportToPgf(processedOutputPGFFile, solutionProblem, realLength, solutionProblem->getOriginalHeight());
 		}
-		else { // ExecutionSolutionInfo::ProblemType::SquarePacking || ExecutionSolutionInfo::ProblemType::RectangularPacking
+		else { // RASTERVORONOIPACKING::ProblemType::SquarePacking || RASTERVORONOIPACKING::ProblemType::RectangularPacking
 			qreal realHeight = (*bestResult).second.height / problem->getScale();
 			curSolution->save(stream, solutionProblem, realLength, realHeight, (*bestResult).second.iteration, true, seed);
 			curSolution->exportToPgf(processedOutputPGFFile, solutionProblem, realLength, realHeight);
@@ -259,7 +258,7 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	else {
 		QTextStream out(&fileComp);
 		out << problem->getScale() << "\t" << bestResult->second.density << "\t" << bestResult->second.length / problem->getScale() << "\t" <<
-			((bestResult->second.pType == ExecutionSolutionInfo::ProblemType::SquarePacking || bestResult->second.pType ==  ExecutionSolutionInfo::ProblemType::RectangularPacking) ? QString::number(bestResult->second.height / problem->getScale()) : "-") << 
+			((bestResult->second.pType == RASTERVORONOIPACKING::ProblemType::SquarePacking || bestResult->second.pType ==  RASTERVORONOIPACKING::ProblemType::RectangularPacking) ? QString::number(bestResult->second.height / problem->getScale()) : "-") << 
 			"\t" << bestResult->second.area / (problem->getScale()*problem->getScale()) << "\t" << bestResult->second.timestamp << "\t" << bestResult->second.iteration << "\t" <<
 			totalTime << "\t" << totalIt << "\t" << seed << "\n";
 		fileComp.close();

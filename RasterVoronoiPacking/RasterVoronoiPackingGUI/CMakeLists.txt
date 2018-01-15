@@ -27,8 +27,10 @@ set(SRC
 	main.cpp
 	../common/raster/totaloverlapmap.cpp
 	../common/raster/totaloverlapmapcache.cpp
+	../common/raster/rasterstrippackingcompactor.cpp
+	../common/raster/rastersquarepackingcompactor.cpp
+	../common/raster/rasterrectpackingcompactor.cpp
 	../common/raster/rasterstrippackingsolver.cpp
-	../common/raster/rasterstrippackingsolver2d.cpp
 	../common/raster/rasteroverlapevaluator.cpp
 	../common/raster/rasteroverlapevaluatorgls.cpp
 	../common/raster/rasteroverlapevaluatordoublegls.cpp
@@ -37,8 +39,6 @@ set(SRC
 	../common/raster/rasternofitpolygon.cpp
 	../common/raster/rasterinnerfitpolygon.cpp
 	../common/raster/packingthread.cpp
-	../common/raster/packing2dthread.cpp
-	../common/raster/packingclusterthread.cpp
 	../common/raster/glsweightset.cpp
 	viewer/graphicsindexedrectitem.cpp
 	viewer/packingitem.cpp
@@ -56,6 +56,9 @@ set(HEADERS
 	zoomedmapviewdialog.h
 	../common/raster/totaloverlapmap.h
 	../common/raster/totaloverlapmapcache.h
+	../common/raster/rasterstrippackingcompactor.h
+	../common/raster/rastersquarepackingcompactor.h
+	../common/raster/rasterrectpackingcompactor.h
 	../common/raster/rasterstrippackingsolver.h
 	../common/raster/rasteroverlapevaluator.h
 	../common/raster/rasterpackingsolution.h
@@ -64,8 +67,6 @@ set(HEADERS
 	../common/raster/rasternofitpolygon.h
 	../common/raster/rasterinnerfitpolygon.h
 	../common/raster/packingthread.h
-	../common/raster/packing2dthread.h
-	../common/raster/packingclusterthread.h
 	../common/raster/glsweightset.h
 	viewer/graphicsindexedrectitem.h
 	viewer/packingitem.h

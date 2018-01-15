@@ -6,7 +6,7 @@ class QString;
 
 enum RasterPackingMethods {Method_Default, Method_Gls};
 enum InitialSolutionGenerator {Solution_Random, Bottom_Left};
-enum RectangularMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
+enum RectangularMethod { SQUARE, RANDOM_ENCLOSED, BAGPIPE };
 
 struct ConsolePackingArgs {
 	ConsolePackingArgs() {}
@@ -23,7 +23,6 @@ struct ConsolePackingArgs {
     int timeLimitValue;
 	int iterationsLimitValue;
     qreal containerLenght;
-	qreal clusterFactor;
 	qreal rdec, rinc;
 
     bool originalContainerLenght;

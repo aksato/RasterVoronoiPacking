@@ -7,19 +7,19 @@
 namespace RASTERVORONOIPACKING {
 	enum ConstructivePlacement { KEEPSOLUTION, RANDOMFIXED, BOTTOMLEFT };
 	enum Heuristic { NONE, GLS };
-	enum EnclosedMethod { SQUARE, RANDOM_ENCLOSED, COST_EVALUATION, BAGPIPE };
+	enum CompactionMode { STRIPPACKING, SQUAREPACKING, RECTRNDPACKING, RECTBAGPIPEPACKING};
 
 	class RasterStripPackingParameters
 	{
 	public:
 		RasterStripPackingParameters() :
-			Nmo(200), maxSeconds(600), heuristicType(GLS), zoomFactor(1), clusterFactor(-1.0),
-			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
+			Nmo(200), maxSeconds(600), heuristicType(GLS), zoomFactor(1), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING),
+			fixedLength(false), maxIterations(0), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters
 
 		RasterStripPackingParameters(Heuristic _heuristicType, int _zoomFactor) :
-			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), zoomFactor(_zoomFactor), clusterFactor(-1.0),
-			fixedLength(false), maxIterations(0), rectangularPacking(false), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC), rectangularPackingMethod(RANDOM_ENCLOSED)
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), zoomFactor(_zoomFactor), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING),
+			fixedLength(false), maxIterations(0), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters with specific solver parameters
 
 		void setNmo(int _Nmo) { this->Nmo = _Nmo; }
@@ -40,24 +40,19 @@ namespace RASTERVORONOIPACKING {
 		void setInitialSolMethod(ConstructivePlacement _initialSolMethod) { this->initialSolMethod = _initialSolMethod; };
 		ConstructivePlacement getInitialSolMethod() { return this->initialSolMethod; }
 
-		void setInitialLenght(qreal _initialLenght) { this->initialLenght = _initialLenght; setInitialSolMethod(RANDOMFIXED); } // FIXME: Should the initial solution method be set automatically?
-		qreal getInitialLenght() { return this->initialLenght; }
-
-		void setClusterFactor(qreal _clusterFactor) { this->clusterFactor = _clusterFactor; }
-		qreal getClusterFactor() { return this->clusterFactor; }
-
-		void setRectangularPacking(bool val) { this->rectangularPacking = val; }
-		bool isRectangularPacking() { return this->rectangularPacking; }
-
-		void setRectangularPackingMethod(EnclosedMethod method) { this->rectangularPackingMethod = method; }
-		EnclosedMethod getRectangularPackingMethod() { return this->rectangularPackingMethod; }
-
 		void setZoomFactor(int _zoomFactor) { this->zoomFactor = _zoomFactor; }
 		int getZoomFactor() { return this->zoomFactor; }
 
 		void setResizeChangeRatios(qreal _ratioDecrease, qreal _ratioIncrease) { this->rdec = _ratioDecrease; this->rinc = _ratioIncrease; }
 		qreal getRdec() { return this->rdec; }
 		qreal getRinc() { return this->rinc; }
+
+		void setCompaction(CompactionMode _compaction) { this->compaction = _compaction; }
+		CompactionMode getCompaction() { return this->compaction; }
+
+		void setInitialDimensions(int _initialLength, int _initialHeight = -1) { initialLength = _initialLength; initialHeight = _initialHeight; }
+		int getInitialLength() { return this->initialLength; }
+		int getInitialHeight() { return this->initialHeight; }
 
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
@@ -66,23 +61,20 @@ namespace RASTERVORONOIPACKING {
 			setHeuristic(source.getHeuristic());
 			setFixedLength(source.isFixedLength());
 			setInitialSolMethod(source.getInitialSolMethod());
-			if (getInitialSolMethod() == RANDOMFIXED) setInitialLenght(source.getInitialLenght());
-			setClusterFactor(source.getClusterFactor());
-			setRectangularPacking(source.isRectangularPacking());
-			setRectangularPackingMethod(source.getRectangularPackingMethod());
 			setZoomFactor(source.getZoomFactor());
 			setResizeChangeRatios(source.getRdec(), source.getRinc());
+			setCompaction(source.getCompaction());
+			setInitialDimensions(source.getInitialLength(), source.getInitialHeight());
 		}
 
 	private:
 		int Nmo, maxSeconds, maxIterations;
 		Heuristic heuristicType;
 		ConstructivePlacement initialSolMethod;
-		qreal initialLenght; // Only used with RANDOMFIXED initial solution
-		bool fixedLength, rectangularPacking;
-		EnclosedMethod rectangularPackingMethod;
+		CompactionMode compaction;
+		int initialLength, initialHeight;
+		bool fixedLength;
 		int zoomFactor;
-		qreal clusterFactor;
 		qreal rdec, rinc;
 	};
 }

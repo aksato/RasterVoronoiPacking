@@ -64,18 +64,18 @@ int main(int argc, char *argv[])
 	algorithmParams.setIterationsLimit(params.iterationsLimitValue);
 	if (params.initialSolutionType == Solution_Random) {
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::RANDOMFIXED);
-		algorithmParams.setInitialLenght(params.containerLenght);
+		algorithmParams.setInitialDimensions(params.containerLenght);
 	}
 	else if (params.initialSolutionType == Bottom_Left){
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::BOTTOMLEFT);
 	}
-	algorithmParams.setClusterFactor(params.clusterFactor);
-	algorithmParams.setRectangularPacking(params.rectangularPacking);
-	switch (params.rectMehod) {
-	case SQUARE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::SQUARE); break;
-	case RANDOM_ENCLOSED: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::RANDOM_ENCLOSED); break;
-	case COST_EVALUATION: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::COST_EVALUATION); break;
-	case BAGPIPE: algorithmParams.setRectangularPackingMethod(RASTERVORONOIPACKING::BAGPIPE); break;
+	if (!params.rectangularPacking) algorithmParams.setCompaction(RASTERVORONOIPACKING::STRIPPACKING);
+	else {
+		switch (params.rectMehod) {
+		case SQUARE: algorithmParams.setCompaction(RASTERVORONOIPACKING::SQUAREPACKING); break;
+		case RANDOM_ENCLOSED: algorithmParams.setCompaction(RASTERVORONOIPACKING::RECTRNDPACKING); break;
+		case BAGPIPE: algorithmParams.setCompaction(RASTERVORONOIPACKING::RECTBAGPIPEPACKING); break;
+		}
 	}
 	algorithmParams.setZoomFactor(params.zoomValue);
 

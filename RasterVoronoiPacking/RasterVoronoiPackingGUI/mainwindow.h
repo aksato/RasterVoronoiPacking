@@ -4,9 +4,8 @@
 #include "raster/rasterpackingproblem.h"
 #include "raster/rasterpackingsolution.h"
 #include "raster/rasterstrippackingsolver.h"
+#include "raster/rasterrectpackingcompactor.h"
 #include "raster/packingthread.h"
-#include "raster/packing2dthread.h"
-#include "raster/packingclusterthread.h"
 #include "glsweightviewerdialog.h"
 #include "zoomedmapviewdialog.h"
 #include "runconfigurationsdialog.h"
@@ -73,6 +72,8 @@ private:
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createBasicSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createGLSSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createDoubleGLSSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> createCompactor(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver);
+	std::shared_ptr<RASTERVORONOIPACKING::RasterRectangularPackingCompactor> createRectangularCompactor(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver);
     void createOverlapMessageBox(qreal globalOverlap, QVector<qreal> &individualOverlaps, qreal scale);
 	int logposition(qreal value);
 

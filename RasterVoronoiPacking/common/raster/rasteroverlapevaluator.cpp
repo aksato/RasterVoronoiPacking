@@ -3,18 +3,6 @@
 
 using namespace RASTERVORONOIPACKING;
 
-// Default constructor
-RasterTotalOverlapMapEvaluator::RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem) : maps(_problem->count()) {
-	this->problem = _problem;
-	for (int itemId = 0; itemId < problem->count(); itemId++) {
-		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
-			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle)));
-			maps.addOverlapMap(itemId, angle, curMap);
-			// FIXME: Delete innerift polygons as they are used to release memomry
-		}
-	}
-}
-
 RasterTotalOverlapMapEvaluator::RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cacheMaps) : maps(_problem->count()) {
 	this->problem = _problem;
 	for (int itemId = 0; itemId < problem->count(); itemId++) {

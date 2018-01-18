@@ -132,6 +132,7 @@ int main(int argc, char *argv[])
 		if (params.rectangular) arguments << "--rectpacking=" + params.rectMehod;
 		arguments << "--ratios=" + QString::number(params.rdec) + ";"  + QString::number(params.rinc);
 		arguments << "--parallel-group=" + QString::number(params.threadGroupSize);
+		if (!params.cacheMaps) arguments << "--disable-cache";
 
 		if (pastExecutionCount >= params.executionCount) { qDebug() << "Skipping execution of fully processed case" << curCase.problemFileName; continue; }		
 		qDebug() << "Running Raster Packing Console with arguments" << arguments;

@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	algorithmParams.setZoomFactor(params.zoomValue);
+	algorithmParams.setCacheMaps(params.cacheMaps);
 
 	int finishedThreadNums = 0;
 	QVector<std::shared_ptr<ConsolePackingLoader>> packingLoadersList;

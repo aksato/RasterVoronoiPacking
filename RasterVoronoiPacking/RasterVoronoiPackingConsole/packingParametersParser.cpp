@@ -41,6 +41,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(valueNumGroupSize);
 	const QCommandLineOption valueRectangularPacking("rectpacking", "Rectangular packing version. Choices: square, random, bagpipe", "value");
 	parser.addOption(valueRectangularPacking);
+	const QCommandLineOption boolDisableCacheMaps("disable-cache", "Disable overlap map caching.");
+	parser.addOption(boolDisableCacheMaps);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -232,6 +234,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	else {
 		params->rdec = -1.0; params->rinc = -1.0;
 	}
+
+	params->cacheMaps = !parser.isSet(boolDisableCacheMaps);
 
     return CommandLineOk;
 }

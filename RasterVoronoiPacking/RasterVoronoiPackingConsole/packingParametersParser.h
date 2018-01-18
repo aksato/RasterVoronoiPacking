@@ -29,6 +29,7 @@ struct ConsolePackingArgs {
 	bool stripPacking;
 	bool rectangularPacking;
 	bool appendSeedToOutputFiles;
+	bool cacheMaps;
 
 	int numThreads;
 	int threadGroupSize;

@@ -95,6 +95,7 @@ void ConsolePackingLoader::run() {
 	if (!algorithmParamsBackup.isFixedLength()) qDebug() << "Strip packing version";
 	qDebug() << "Solver parameters: Nmo =" << algorithmParamsBackup.getNmo() << "; Time Limit:" << algorithmParamsBackup.getTimeLimit();
 	qDebug() << "Packing Compaction Method: " << algorithmParamsBackup.getCompaction();
+	if (algorithmParamsBackup.isCacheMaps()) qDebug() << "Caching maps";
 	numProcesses++;
 	// Run!
 	threadedPacker->start();

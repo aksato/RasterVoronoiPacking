@@ -14,8 +14,8 @@ std::shared_ptr<RasterStripPackingSolver> RasterStripPackingSolver::createRaster
 
 	// Determine overlap evaluator
 	if (parameters.getZoomFactor() > 1)
-		overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(problem, parameters.getZoomFactor(), weights, true));
-	else overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problem, weights, true)); 
+		overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(problem, parameters.getZoomFactor(), weights, parameters.isCacheMaps()));
+	else overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problem, weights, parameters.isCacheMaps()));
 	
 	// Create solver
 	solver = std::shared_ptr<RasterStripPackingSolver>(new RasterStripPackingSolver(problem, overlapEvaluator));
@@ -69,7 +69,9 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 	std::random_shuffle(sequence.begin(), sequence.end());
 	for (int i = 0; i < originalProblem->count(); i++) {
 		int shuffledId = sequence[i];
+		#ifndef NOSKIPFEASIBLE
 		if (!detectItemTotalOverlap(shuffledId, solution)) continue;
+		#endif
 		quint32 minValue; QPoint minPos; int minAngle = 0;
 		minPos = overlapEvaluator->getMinimumOverlapPosition(shuffledId, minAngle, solution, minValue);
 		if (minValue != 0) {

@@ -13,12 +13,12 @@ namespace RASTERVORONOIPACKING {
 	{
 	public:
 		RasterStripPackingParameters() :
-			Nmo(200), maxSeconds(600), heuristicType(GLS), zoomFactor(1), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING),
+			Nmo(200), maxSeconds(600), heuristicType(GLS), zoomFactor(1), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING), cacheMaps(true),
 			fixedLength(false), maxIterations(0), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters
 
 		RasterStripPackingParameters(Heuristic _heuristicType, int _zoomFactor) :
-			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), zoomFactor(_zoomFactor), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING),
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), zoomFactor(_zoomFactor), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING), cacheMaps(true),
 			fixedLength(false), maxIterations(0), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters with specific solver parameters
 
@@ -54,6 +54,9 @@ namespace RASTERVORONOIPACKING {
 		int getInitialLength() { return this->initialLength; }
 		int getInitialHeight() { return this->initialHeight; }
 
+		bool isCacheMaps() { return this->cacheMaps; }
+		void setCacheMaps(bool _cacheMaps) { this->cacheMaps = _cacheMaps; }
+
 		void Copy(RasterStripPackingParameters &source) {
 			setNmo(source.getNmo());
 			setTimeLimit(source.getTimeLimit());
@@ -65,6 +68,7 @@ namespace RASTERVORONOIPACKING {
 			setResizeChangeRatios(source.getRdec(), source.getRinc());
 			setCompaction(source.getCompaction());
 			setInitialDimensions(source.getInitialLength(), source.getInitialHeight());
+			setCacheMaps(source.isCacheMaps());
 		}
 
 	private:
@@ -76,6 +80,7 @@ namespace RASTERVORONOIPACKING {
 		bool fixedLength;
 		int zoomFactor;
 		qreal rdec, rinc;
+		bool cacheMaps;
 	};
 }
 

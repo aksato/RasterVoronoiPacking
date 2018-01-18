@@ -17,7 +17,6 @@ namespace RASTERVORONOIPACKING {
 		friend class ::MainWindow;
 	public:
 		// --> Default constructor
-		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem);
 		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cacheMaps);
 
 		// --> Determines the item total overlap map
@@ -51,11 +50,9 @@ namespace RASTERVORONOIPACKING {
 		friend class ::MainWindow;
 	public:
 		// --> Default constructors
-		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem) : RasterTotalOverlapMapEvaluator(_problem) { glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); }
 		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cacheMaps) : RasterTotalOverlapMapEvaluator(_problem, cacheMaps) { glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); }
 
 		// --> Constructors using a custom weights
-		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluator(_problem), glsWeights(_glsWeights) {}
 		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cacheMaps) : RasterTotalOverlapMapEvaluator(_problem, cacheMaps), glsWeights(_glsWeights) {}
 		
 		// --> Update guided local search weights
@@ -87,11 +84,9 @@ namespace RASTERVORONOIPACKING {
 
 	public:
 		// --> Default constructors
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt) : RasterTotalOverlapMapEvaluatorGLS(_problem), zoomFactorInt(_zoomFactorInt) { createSearchMaps(); }
 		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, bool cacheMaps) : RasterTotalOverlapMapEvaluatorGLS(_problem, cacheMaps), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cacheMaps); }
 
 		// --> Constructors using a custom weights
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights), zoomFactorInt(_zoomFactorInt) { createSearchMaps(); }
 		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, std::shared_ptr<GlsWeightSet> _glsWeights, bool cacheMaps) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights, cacheMaps), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cacheMaps); }
 
 		// --> Determines the item total overlap map

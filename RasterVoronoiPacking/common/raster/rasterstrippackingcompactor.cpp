@@ -17,7 +17,9 @@ bool RasterStripPackingCompactor::shrinkContainer(RasterPackingSolution &solutio
 	bestWidth = qRound(curRealLength);
 
 	// Set new width
-	curRealLength = setContainerWidth(qRound((1.0 - rdec)*curRealLength));
+	int newLength = qRound((1.0 - rdec)*curRealLength);
+	if (newLength == qRound(curRealLength)) newLength--;
+	curRealLength = setContainerWidth(newLength);
 
 	// Detect extruding items and move them horizontally back inside the container
 	for (int itemId = 0; itemId < problem->count(); itemId++) {

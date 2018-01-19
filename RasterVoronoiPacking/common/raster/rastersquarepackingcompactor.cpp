@@ -16,8 +16,10 @@ bool RasterSquarePackingCompactor::shrinkContainer(RasterPackingSolution &soluti
 	// Update best size
 	bestSize = qRound(curRealSize);
 
-	// Set new width
-	curRealSize = setContainerSize(qRound(sqrt(1.0 - rdec)*curRealSize));
+	// Set new size
+	int newSize = qRound(sqrt(1.0 - rdec)*curRealSize);
+	if (newSize == qRound(curRealSize)) newSize--;
+	curRealSize = setContainerSize(newSize);
 
 	// Detect extruding items and move them horizontally back inside the container
 	for (int itemId = 0; itemId < problem->count(); itemId++) {

@@ -13,6 +13,9 @@ int RasterStripPackingCompactor::setContainerWidth(int newWitdh) {
 }
 
 bool RasterStripPackingCompactor::shrinkContainer(RasterPackingSolution &solution) {
+	// Minimum length obtained
+	if (this->problem->getMaxWidth() == bestWidth) return false;
+
 	//Update best length
 	bestWidth = qRound(curRealLength);
 

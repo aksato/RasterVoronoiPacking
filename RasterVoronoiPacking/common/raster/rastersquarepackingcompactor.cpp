@@ -13,6 +13,9 @@ int RasterSquarePackingCompactor::setContainerSize(int newSize) {
 }
 
 bool RasterSquarePackingCompactor::shrinkContainer(RasterPackingSolution &solution) {
+	// Minimum length obtained
+	if (this->problem->getMaxWidth() == bestSize || this->problem->getMaxHeight() == bestSize) return false;
+
 	// Update best size
 	bestSize = qRound(curRealSize);
 

@@ -102,11 +102,8 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
 	innerFitPolygons = std::shared_ptr<RasterNoFitPolygonSet>(new RasterNoFitPolygonSet(items.length()));
     for(QList<std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon>>::const_iterator it = problem.crifpbegin(); it != problem.crifpend(); it++) {
         std::shared_ptr<RASTERPACKING::RasterInnerFitPolygon> curRasterIfp = *it;
-        // Create image. FIXME: Use data file instead?
-        QImage curImage(curRasterIfp->getFileName());
 		std::shared_ptr<RasterNoFitPolygon> curMap;
-		if (nfpData == nullptr) curMap = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curImage, curRasterIfp->getReferencePoint()));
-		else curMap = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curRasterIfp->getWidth(), curRasterIfp->getHeight(), curRasterIfp->getReferencePoint()));
+		curMap = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curRasterIfp->getWidth(), curRasterIfp->getHeight(), curRasterIfp->getReferencePoint()));
 
         // Determine ids
         QPair<int,int> staticIds, orbitingIds;
@@ -122,14 +119,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
 	int i = 0;
 	for(QVector<std::shared_ptr<RASTERPACKING::RasterNoFitPolygon>>::const_iterator it = problem.crnfpbegin(); it != problem.crnfpend(); it++, i++) {
         std::shared_ptr<RASTERPACKING::RasterNoFitPolygon> curRasterNfp = *it;
-        // Create image. FIXME: Use data file instead?
-        QImage curImage(curRasterNfp->getFileName());
 		std::shared_ptr<RasterNoFitPolygon> curMountain;
-		if (nfpData == nullptr) curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curImage, curRasterNfp->getReferencePoint()));
-		else {
-			curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curNfpData, sizes[i].first, sizes[i].second, rps[i]));
-			curNfpData += sizes[i].first * sizes[i].second;
-		}
 
         // Determine ids
         QPair<int,int> staticIds, orbitingIds;
@@ -138,7 +128,24 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
         if(staticIds.first == -1 || staticIds.second == -1 || orbitingIds.first == -1 || orbitingIds.second == -1) return false;
 
         // Create nofit polygon
-        noFitPolygons->addRasterNoFitPolygon(staticIds.first, staticIds.second, orbitingIds.first, orbitingIds.second, curMountain);
+		curMountain = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon(curNfpData, sizes[i].first, sizes[i].second, rps[i]));
+
+		if (problem.getDataSymmetry() == RASTERPACKING::Symmetry::NONE) {
+			noFitPolygons->addRasterNoFitPolygon(staticIds.first, staticIds.second, orbitingIds.first, orbitingIds.second, curMountain);
+			curNfpData += sizes[i].first * sizes[i].second;
+		}
+		else if (problem.getDataSymmetry() == RASTERPACKING::Symmetry::PAIR) {
+			if (staticIds.first <= orbitingIds.first) {
+				// Add original nfp
+				noFitPolygons->addRasterNoFitPolygon(staticIds.first, staticIds.second, orbitingIds.first, orbitingIds.second, curMountain);
+				// Add symmetry
+				if (staticIds.first != orbitingIds.first) {
+					std::shared_ptr<RasterNoFitPolygon> curMountainFlipped = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygonFlipped(curNfpData, sizes[i].first, sizes[i].second, rps[i]));
+					noFitPolygons->addRasterNoFitPolygon(orbitingIds.first, orbitingIds.second, staticIds.first, staticIds.second, curMountainFlipped);
+				}
+			}
+			curNfpData += sizes[i].first * sizes[i].second;
+		}
     }
 
     // 7. Read problem scale
@@ -299,7 +306,7 @@ bool RasterPackingProblem::areOverlapping(int itemId1, QPoint pos1, int orientat
 
 quint32 RasterPackingProblem::getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2) {
 	std::shared_ptr<RasterNoFitPolygon> curNfp = noFitPolygons->getRasterNoFitPolygon(getItemType(itemId1), orientation1, getItemType(itemId2), orientation2);
-	QPoint relPos = pos2 - pos1 + curNfp->getOrigin();
+	QPoint relPos = curNfp->getFlipMultiplier()*(pos2 - pos1) + curNfp->getOrigin();
 
 	if (relPos.x() < 0 || relPos.x() > curNfp->width() - 1 || relPos.y() < 0 || relPos.y() > curNfp->height() - 1) return 0;
 	return curNfp->getPixel(relPos.x(), relPos.y());

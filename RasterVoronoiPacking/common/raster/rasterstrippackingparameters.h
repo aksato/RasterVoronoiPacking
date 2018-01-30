@@ -13,12 +13,12 @@ namespace RASTERVORONOIPACKING {
 	{
 	public:
 		RasterStripPackingParameters() :
-			Nmo(200), maxSeconds(600), heuristicType(GLS), zoomFactor(1), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING), cacheMaps(true),
+			Nmo(200), maxSeconds(600), heuristicType(GLS), zoomFactor(1), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING), cacheMaps(false),
 			fixedLength(false), maxIterations(0), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters
 
 		RasterStripPackingParameters(Heuristic _heuristicType, int _zoomFactor) :
-			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), zoomFactor(_zoomFactor), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING), cacheMaps(true),
+			Nmo(200), maxSeconds(600), heuristicType(_heuristicType), zoomFactor(_zoomFactor), initialLength(-1), initialHeight(-1), compaction(STRIPPACKING), cacheMaps(false),
 			fixedLength(false), maxIterations(0), rdec(DEFAULT_RDEC), rinc(DEFAULT_RINC)
 		{} // Default parameters with specific solver parameters
 

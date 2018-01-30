@@ -534,8 +534,10 @@ bool PackingProblem::load(QString fileName) {
              this->addInnerFitPolygon(std::static_pointer_cast<InnerFitPolygon>(curGeometricTool));
 
          // Process raster nofit polygon informations
-		 if (xml.name() == "raster" && xml.tokenType() == QXmlStreamReader::StartElement)
+		 if (xml.name() == "raster" && xml.tokenType() == QXmlStreamReader::StartElement) {
 			 this->nfpDataFileName = xml.attributes().value("data").toString();
+			 if (!xml.attributes().value("symmetry").isEmpty()) this->nfpDataSymmetry = PAIR;
+		 }
          if(xml.name()=="rnfp" && xml.tokenType() == QXmlStreamReader::StartElement)
              curGeometricTool = std::shared_ptr<RasterNoFitPolygon>(new RasterNoFitPolygon);
          if(xml.name()=="resultingImage" && xml.tokenType() == QXmlStreamReader::StartElement) {
@@ -694,6 +696,7 @@ bool PackingProblem::save(QString fileName, QString binFileName, QString cluster
     if(!this->rasterNofitPolygons.empty()) {
         stream.writeStartElement("raster");
 		if(!binFileName.isEmpty()) stream.writeAttribute("data", binFileName);
+		stream.writeAttribute("symmetry", "pair");
 		for (QVector<std::shared_ptr<RasterNoFitPolygon>>::const_iterator it = this->crnfpbegin(); it != this->crnfpend(); it++) {
             QStringList rnfpCommand = (*it)->getXML();
             processXMLCommands(rnfpCommand, stream);

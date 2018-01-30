@@ -7,7 +7,8 @@
 #include "annealing/cShapeInlines.h"
 #include "annealing/problemInstance.h"
 
-#define RASTER_EPS 0.0000001
+//#define RASTER_EPS 0.0000001
+#define RASTER_EPS 0.001
 using namespace RASTERPACKING;
 
 int ceilEpsilon(qreal v1, qreal eps) {
@@ -346,6 +347,7 @@ bool PackingProblem::loadCFREFP(QTextStream &stream, qreal scale, qreal auxScale
 			for (std::vector<std::shared_ptr<cShape>>::const_iterator oit = shapes.cbegin(); oit != shapes.cend(); oit++) {
 				int orbitingAnglesCount = (*oit)->getAnglesCount();
 				int orbitingId = (*oit)->getId();
+				if (staticId > orbitingId) continue;
 				bool noOrbitingAngles = false;
 				if (orbitingAnglesCount == 0) { orbitingAnglesCount = 1; noOrbitingAngles = true; }
 				for (int j = 0; j < orbitingAnglesCount; j++){

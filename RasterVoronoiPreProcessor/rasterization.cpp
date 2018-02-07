@@ -347,7 +347,9 @@ bool PackingProblem::loadCFREFP(QTextStream &stream, qreal scale, qreal auxScale
 			for (std::vector<std::shared_ptr<cShape>>::const_iterator oit = shapes.cbegin(); oit != shapes.cend(); oit++) {
 				int orbitingAnglesCount = (*oit)->getAnglesCount();
 				int orbitingId = (*oit)->getId();
+				#ifndef NOSYMMETRY
 				if (staticId > orbitingId) continue;
+				#endif
 				bool noOrbitingAngles = false;
 				if (orbitingAnglesCount == 0) { orbitingAnglesCount = 1; noOrbitingAngles = true; }
 				for (int j = 0; j < orbitingAnglesCount; j++){

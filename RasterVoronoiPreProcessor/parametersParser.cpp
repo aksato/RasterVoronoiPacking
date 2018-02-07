@@ -26,6 +26,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 	parser.addOption(boolSkipDt);
     const QCommandLineOption nameOptionsFile("options-file", "Read options from a text file.", "fileName");
     parser.addOption(nameOptionsFile);
+	const QCommandLineOption boolSkipOutput("benchmark", "Benchmark mode, skip file output.");
+	parser.addOption(boolSkipOutput);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -94,6 +96,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
 
 	params->outputImages = parser.isSet(boolSaveImage);
 	params->skipDt = parser.isSet(boolSkipDt);
+	params->skipOutput = parser.isSet(boolSkipOutput);
 
     if (parser.isSet(nameHeaderFile)) {
         const QString headerFile = parser.value(nameHeaderFile);

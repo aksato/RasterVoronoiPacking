@@ -14,7 +14,7 @@ struct PreProcessorParameters {
     qreal rasterScaleFactor; // Rasterization precision
 	qreal scaleFixFactor; // Correction scale factor for CFREFP problems
     bool outputImages;
-	bool skipDt;
+	bool skipDt, skipOutput;
     QString outputXMLName;
     QString headerFile;
     QString optionsFile;

@@ -696,7 +696,9 @@ bool PackingProblem::save(QString fileName, QString binFileName, QString cluster
     if(!this->rasterNofitPolygons.empty()) {
         stream.writeStartElement("raster");
 		if(!binFileName.isEmpty()) stream.writeAttribute("data", binFileName);
+		#ifndef NOSYMMETRY
 		stream.writeAttribute("symmetry", "pair");
+		#endif NOSYMMETRY
 		for (QVector<std::shared_ptr<RasterNoFitPolygon>>::const_iterator it = this->crnfpbegin(); it != this->crnfpend(); it++) {
             QStringList rnfpCommand = (*it)->getXML();
             processXMLCommands(rnfpCommand, stream);

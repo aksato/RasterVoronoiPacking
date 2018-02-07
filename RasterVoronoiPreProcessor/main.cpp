@@ -15,6 +15,8 @@
 #include "dt\imconv.h"
 #include <omp.h>
 
+QTime totalTimer;
+
 QImage getImageFromVec(int *S, int width, int height) {
     QImage result(width, height, QImage::Format_Mono);
     result.setColor(1, qRgb(255, 255, 255));
@@ -26,7 +28,7 @@ QImage getImageFromVec(int *S, int width, int height) {
     return result;
 }
 
-bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParameters &params, QString outputPath, QString clusterInfo) {
+void preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParameters &params, QString outputPath, QString clusterInfo) {
 	QTime myTimer;
 	qDebug() << "Innerfit polygons rasterization started.";
 	myTimer.start();
@@ -160,6 +162,9 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 	std::for_each(imageSizes.begin(), imageSizes.end(), [&totalArea](QPair<int, int> &size){totalArea += (qreal)(size.first*size.second); });
 	qDebug() << "Nofit polygons rasterization finished." << problem.getNofitPolygonsCount() << "polygons processed in" << myTimer.elapsed() / 1000.0 << "seconds. Total area:" << totalArea;
 
+	qDebug() << "Preprocessing finished in" << totalTimer.elapsed() / 1000.0 << "seconds.";
+	if(params.skipOutput) return;
+
 	qDebug() << "Saving output files.";
 	myTimer.start();
 	// Save binary file
@@ -181,8 +186,6 @@ bool preProcessProblem(RASTERPACKING::PackingProblem &problem, PreProcessorParam
 	file.close();
 	problem.save(outputPath + QDir::separator() + params.outputXMLName, binFileName, clusterInfo);
 	qDebug() << "Output files saved in" << myTimer.elapsed() / 1000.0 << "seconds";
-
-	return true;
 }
 
 int main(int argc, char *argv[])
@@ -256,7 +259,7 @@ int main(int argc, char *argv[])
     }
 
     qDebug() << "Program execution started.";
-    QTime myTimer, totalTimer;
+    QTime myTimer;
 
     qDebug() << "Loading problem file...";
     RASTERPACKING::PackingProblem problem;

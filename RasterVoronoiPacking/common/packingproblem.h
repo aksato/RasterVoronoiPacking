@@ -90,17 +90,20 @@ namespace RASTERPACKING {
         void addOrientation(unsigned int angle) {this->orientations.push_back(angle);}
         int getOrientationsCount() {return this->orientations.size();}
         QStringList getXML();
+		void decomposeConvex();
 
         // Iterators
         QVector<unsigned int>::iterator orbegin() {return this->orientations.begin();}
         QVector<unsigned int>::iterator orend() {return this->orientations.end();}
         QVector<unsigned int>::const_iterator corbegin() {return this->orientations.cbegin();}
         QVector<unsigned int>::const_iterator corend() {return this->orientations.cend();}
+		QVector<std::shared_ptr<Polygon>>::iterator cConvexbegin() { return this->convexPartitions.begin(); }
+		QVector<std::shared_ptr<Polygon>>::iterator cConvexend() { return this->convexPartitions.end(); }
 
     private:
         unsigned int multiplicity;
         QVector<unsigned int> orientations;
-
+		QVector<std::shared_ptr<Polygon>> convexPartitions;
     };
 
     class GeometricTool : public PackingComponent {
@@ -214,8 +217,10 @@ namespace RASTERPACKING {
         bool load(QString fileName);
 		bool load(QString fileName, QString fileType, qreal scale = 1.0, qreal auxScale = 1.0);
 		bool loadCFREFP(QTextStream &stream, qreal scale, qreal auxScale = 1.0);
+		bool loadTerashima(QTextStream &stream, int numContainers = 1);
 		bool loadClusterInfo(QString fileName);
         bool save(QString fileName, QString binFileName = "", QString clusterInfo = "");
+		bool savePuzzle(QString fileName);
 		qreal getTotalItemsArea();
 		QString getFolder() { return this->folder; }
 
@@ -291,7 +296,7 @@ namespace RASTERPACKING {
 		qreal getMaxLength() { return this->maxLength; }
 		qreal getMaxWidth() { return this->maxWidth; }
     private:
-		bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
+		//bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
 		bool saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfo);
 
         QString name, author, date, description, folder;

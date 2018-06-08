@@ -3,6 +3,7 @@
 void setColormap(QImage &image, bool zeroIsPink) {
 //   image.setColor(0,qRgb(0,0,131));
 //   image.setColor(0,qRgb(255,255,255));
+	#ifndef GRAYSCALE
    if(zeroIsPink) image.setColor(0,qRgb(255,0,255));
    else image.setColor(0,qRgb(0,0,131));
    image.setColor(1,qRgb(0,0,135));
@@ -260,4 +261,7 @@ void setColormap(QImage &image, bool zeroIsPink) {
    image.setColor(253,qRgb(135,0,0));
    image.setColor(254,qRgb(131,0,0));
    image.setColor(255,qRgb(128,0,0));
+	#else
+	for (int i = 0; i < 256; i++) image.setColor(i, qRgb(255 - i, 255 - i, 255 - i));
+	#endif
 }

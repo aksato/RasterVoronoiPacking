@@ -16,6 +16,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption valueRectangular("rectpacking", "Rectangular packing problem. Choices: square, random, cost, bagpipe.", "value"); parser.addOption(valueRectangular);
 	const QCommandLineOption valueRinc("rinc", "Container expansion ratio value.", "value"); parser.addOption(valueRinc);
 	const QCommandLineOption valueRdec("rdec", "Container reduction ratio value.", "value"); parser.addOption(valueRdec);
+	const QCommandLineOption valueFixedLength("length", "Length for fixed dimensions container.", "value"); parser.addOption(valueFixedLength);
 	const QCommandLineOption nameAppendResultFolder("result", "Subfolder for result files.", "name"); parser.addOption(nameAppendResultFolder);
 	const QCommandLineOption valueNumGroupSize("parallel-group", "Size of thread groups with shared data.", "value"); parser.addOption(valueNumGroupSize);
 	const QCommandLineOption booleanDisableCacheMaps("disable-cache", "Disabel overlap map caching."); parser.addOption(booleanDisableCacheMaps);
@@ -84,6 +85,11 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 			return CommandLineError;
 		}
 		params->rectMehod = methodType;
+	}
+	if (parser.isSet(valueFixedLength)) {
+		const float fixedLengthValue = parser.value(valueFixedLength).toFloat(&parseOk);
+		if (parseOk && fixedLengthValue > 0) params->fixedLength = fixedLengthValue;
+		else { *errorMessage = "Bad fixed length value."; return CommandLineError; }
 	}
 	if (parser.isSet(nameAppendResultFolder)) {
 		params->appendResultPath = parser.value(nameAppendResultFolder);

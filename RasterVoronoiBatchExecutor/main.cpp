@@ -127,7 +127,9 @@ int main(int argc, char *argv[])
 		arguments << curCase.problemFileName;
 		arguments << "--method=gls";
 		if (curCase.zoomFactor > 1) arguments << "--zoom=" + QString::number(curCase.zoomFactor);
-		arguments << "--initial=bottomleft" << "--duration=" + QString::number(curCase.timeLimit) << "--strippacking" << "--appendseed" << "--layout=" + xmlOutput << "--result=" + txtOutput;// << "--parallel=" + QString::number(params.threadCount);
+		if (params.fixedLength < 0) arguments << "--initial=bottomleft" << "--strippacking";
+		else arguments << "--initial=random";
+		arguments << "--duration=" + QString::number(curCase.timeLimit) <<  "--appendseed" << "--layout=" + xmlOutput << "--result=" + txtOutput;// << "--parallel=" + QString::number(params.threadCount);
 		if (params.clusterFactor >= 0) arguments << "--clusterfactor=" + QString::number(params.clusterFactor); // FIXME: customize cluster factor for each execution
 		if (params.rectangular) arguments << "--rectpacking=" + params.rectMehod;
 		arguments << "--ratios=" + QString::number(params.rdec) + ";"  + QString::number(params.rinc);

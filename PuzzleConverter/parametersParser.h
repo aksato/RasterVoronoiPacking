@@ -9,6 +9,8 @@ struct PreProcessorParameters {
 
     QString inputFilePath;
     QString outputFilePath;
+	int subProblem;
+	bool terashima;
 };
 
 enum CommandLineParseResult

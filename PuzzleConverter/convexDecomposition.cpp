@@ -3,16 +3,14 @@
 
 using namespace RASTERPACKING;
 
-void Piece::decomposeConvex() {
+int Piece::decomposeConvex() {
 	this->convexPartitions.clear();
 	std::shared_ptr<RASTERPACKING::Polygon> curPol = getPolygon();
 
 	// Create polygon structure to decompose
-	qDebug() << getName() << ":";
 	POLYDECOMP::Polygon incPoly;
 	for (auto it = curPol->begin(); it != curPol->end(); it++) {
 		QPointF curPt = *it;
-		qDebug() << curPt.x() << curPt.y();
 		incPoly.push(POLYDECOMP::Point(curPt.x(), curPt.y()));
 	}
 
@@ -20,8 +18,6 @@ void Piece::decomposeConvex() {
 	incPoly.makeCCW();
 	POLYDECOMP::EdgeList diags = incPoly.decomp();
 	std::vector<POLYDECOMP::Polygon> polys = incPoly.slice(incPoly, diags);
-	if (polys.size() > 1) qDebug() << "Concave!" << polys.size() << "concave partitions.";
-	else qDebug() << "Convex!";
 
 	// Convert to RASTERPACKING structure and add to the piece
 	for (auto it = polys.begin(); it != polys.end(); it++) {
@@ -30,13 +26,24 @@ void Piece::decomposeConvex() {
 		for (auto it2 = curPol.begin(); it2 != curPol.end(); it2++) *partitionPol << (QPointF((*it2).x, (*it2).y));
 		this->convexPartitions << partitionPol;
 	}
+
+	return polys.size() > 1;
 }
 
-bool PackingProblem::loadTerashima(QTextStream &stream, int numContainers) {
+bool PackingProblem::loadTerashima(QTextStream &stream, int specificContainer) {
 	unsigned int polygonid = 0;
-	int count;
-	stream >> count;
-
+	int countCont;
+	stream >> countCont;
+	int count = 0;
+	int includePieceMin, includePieceMax;
+	includePieceMin = 0;
+	for (int i = 0; i < countCont; i++) {
+		int num;
+		stream >> num;
+		if (i == specificContainer) { includePieceMin = count; includePieceMax = count + num; }
+		count += num;
+	}
+	if(specificContainer == -1) includePieceMax = count;
 
 	// Add container
 	int width, height;
@@ -66,7 +73,7 @@ bool PackingProblem::loadTerashima(QTextStream &stream, int numContainers) {
 				*curPolygon << QPointF(curX, curY);
 			}
 			curPiece->setPolygon(curPolygon);
-			this->pieces.push_back(curPiece);
+			if(polygonid-1 >= includePieceMin && polygonid - 1 < includePieceMax) this->pieces.push_back(curPiece);
 		}
 	}
 

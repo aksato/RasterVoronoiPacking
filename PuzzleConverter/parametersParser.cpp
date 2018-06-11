@@ -8,6 +8,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
     parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
     parser.addPositionalArgument("source","Input ESICUP problem file path.");
     parser.addPositionalArgument("destination","Destination puzzle file.");
+	const QCommandLineOption boolTerashima("terashima", "Terashima puzzle input problem."); parser.addOption(boolTerashima);
+	const QCommandLineOption valueSubproblem("subproblem", "Generate puzzle for a subset of the items (for Terashima problems only).", "index"); parser.addOption(valueSubproblem);
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -33,6 +35,8 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PreProcessor
     }
     params->inputFilePath = positionalArguments.at(0);
     params->outputFilePath = positionalArguments.at(1);
+	if (parser.isSet(valueSubproblem)) params->subProblem = parser.value(valueSubproblem).toInt(); else params->subProblem = -1;
+	params->terashima = parser.isSet(boolTerashima);
 
     return CommandLineOk;
 }

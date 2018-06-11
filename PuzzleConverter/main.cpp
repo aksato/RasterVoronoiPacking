@@ -14,27 +14,13 @@
 
 QTime totalTimer;
 
-void decomposeConcave(RASTERPACKING::PackingProblem &problem) {
+int decomposeConcave(RASTERPACKING::PackingProblem &problem) {
+	int concaveCount = 0;
 	for (auto it = problem.pbegin(); it != problem.pend(); it++) {
 		std::shared_ptr<RASTERPACKING::Piece> curPiece = *it;
-		curPiece->decomposeConvex();
-		//std::shared_ptr<RASTERPACKING::Polygon> curPol = curPiece->getPolygon();
-
-		//qDebug() << curPiece->getName() << ":";
-		//POLYDECOMP::Polygon incPoly;
-		//for (auto it2 = curPol->begin(); it2 != curPol->end(); it2++) {
-		//	QPointF curPt = *it2;
-		//	qDebug() << curPt.x() << curPt.y();
-		//	incPoly.push(POLYDECOMP::Point(curPt.x(), curPt.y()));
-		//}
-		//incPoly.makeCCW();
-		//POLYDECOMP::EdgeList diags = incPoly.decomp();
-		//std::vector<POLYDECOMP::Polygon> polys = incPoly.slice(incPoly, diags);
-		//if (polys.size() > 1) qDebug() << "Concave!" << polys.size() << "concave partitions.";
-		//else qDebug() << "Convex!";
-
-		//qDebug() << "";
+		concaveCount += curPiece->decomposeConvex();
 	}
+	return concaveCount;
 }
 
 int main(int argc, char *argv[])
@@ -77,7 +63,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 	if (QFile(params.outputFilePath).exists()) {
-		qWarning() << "Output file already exists!";
+		qWarning() << "Warning: output file already exists!";
 	}
 
     qDebug() << "Program execution started.";
@@ -86,14 +72,22 @@ int main(int argc, char *argv[])
     qDebug() << "Loading problem file...";
     RASTERPACKING::PackingProblem problem;
     myTimer.start(); totalTimer.start();
-	//problem.load(params.inputFilePath);
-	problem.load(params.inputFilePath, "terashima");
-    qDebug() << "Problem file read." << problem.getNofitPolygonsCount() << "nofit polygons read in" << myTimer.elapsed()/1000.0 << "seconds";
+
+	if(!params.terashima)
+		problem.load(params.inputFilePath);
+	else {
+		// Read text file
+		QFile file(params.inputFilePath);
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) { qCritical() << "Input file not found"; return 0; }
+		QTextStream f(&file);
+		problem.loadTerashima(f,params.subProblem);
+	}
+    qDebug() << "Problem file read.";
 	
-	decomposeConcave(problem);
+	int concaveCount = decomposeConcave(problem);
 
 	problem.savePuzzle(params.outputFilePath);
 
-    qDebug() << "Program execution finished. Total time:" << totalTimer.elapsed()/1000.0 << "seconds.";
+    qDebug() << "Program execution finished. Decomposed" << concaveCount << "concave polygons. Total time:" << totalTimer.elapsed()/1000.0 << "seconds.";
     return 0;
 }

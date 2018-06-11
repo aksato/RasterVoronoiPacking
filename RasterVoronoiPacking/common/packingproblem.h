@@ -90,7 +90,7 @@ namespace RASTERPACKING {
         void addOrientation(unsigned int angle) {this->orientations.push_back(angle);}
         int getOrientationsCount() {return this->orientations.size();}
         QStringList getXML();
-		void decomposeConvex();
+		int decomposeConvex();
 
         // Iterators
         QVector<unsigned int>::iterator orbegin() {return this->orientations.begin();}
@@ -217,7 +217,7 @@ namespace RASTERPACKING {
         bool load(QString fileName);
 		bool load(QString fileName, QString fileType, qreal scale = 1.0, qreal auxScale = 1.0);
 		bool loadCFREFP(QTextStream &stream, qreal scale, qreal auxScale = 1.0);
-		bool loadTerashima(QTextStream &stream, int numContainers = 1);
+		bool loadTerashima(QTextStream &stream, int specificContainer = -1);
 		bool loadClusterInfo(QString fileName);
         bool save(QString fileName, QString binFileName = "", QString clusterInfo = "");
 		bool savePuzzle(QString fileName);
@@ -296,7 +296,7 @@ namespace RASTERPACKING {
 		qreal getMaxLength() { return this->maxLength; }
 		qreal getMaxWidth() { return this->maxWidth; }
     private:
-		//bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
+		bool loadCFREFP(QString &fileName, qreal scale, qreal auxScale = 1.0);
 		bool saveClusterInfo(QXmlStreamWriter &stream, QString clusterInfo);
 
         QString name, author, date, description, folder;

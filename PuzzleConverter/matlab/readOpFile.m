@@ -14,19 +14,19 @@ height = contents(count); count = count+1;
 %positions = zeros(sum(piecesCount),2);
 pieces = cell(sum(piecesCount),1);
 pieceCount = 1;
-deltax = 0;
+deltax = zeros(containersCount,1);
 for i=1:containersCount
+    deltax(i) = (i-1)*width;
     for j=1:piecesCount(i)
         numNodes = contents(count); count = count+1;
         pieces{pieceCount} = zeros(numNodes,2);
         for k=1:numNodes
-            pieces{pieceCount}(k,1) = deltax + contents(count); count = count+1;
+            pieces{pieceCount}(k,1) = deltax(i) + contents(count); count = count+1;
             pieces{pieceCount}(k,2) = contents(count); count = count+1;
         end
         pieces{pieceCount} = scale * pieces{pieceCount};
         pieceCount = pieceCount + 1;
     end
-    deltax = deltax + width;
 end
 fclose(fileID);
 
@@ -40,6 +40,9 @@ for i=1:size(pieces,1)
         fprintf(fileID,' (%f,%f) --',curPiece(j,1),curPiece(j,2));
     end
     fprintf(fileID,' cycle;\n');
+end
+for i=2:containersCount
+    fprintf(fileID,'\\draw[thick,red] (%f,0) -- (%f,%f);\n',scale*deltax(i),scale*deltax(i),scale*height);
 end
 fprintf(fileID,'\\end{tikzpicture}');
 fclose(fileID);

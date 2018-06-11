@@ -258,7 +258,7 @@ void ConsolePackingLoader::saveFinalResult(const RASTERVORONOIPACKING::RasterPac
 	if (!fileComp.open(QIODevice::Append)) qCritical() << "Error: Cannot create output file" << processedOutputTXTFile << ": " << qPrintable(file.errorString());
 	else {
 		QTextStream out(&fileComp);
-		out << problem->getScale() << "\t" << bestResult->second.density << "\t" << bestResult->second.length / problem->getScale() << "\t" <<
+		out << problem->getScale() << "\t" << bestResult->second.density << "\t" << bestResult->second.length / problem->getScale() << "\t" << minOverlap << "\t" <<
 			((bestResult->second.pType == RASTERVORONOIPACKING::ProblemType::SquarePacking || bestResult->second.pType ==  RASTERVORONOIPACKING::ProblemType::RectangularPacking) ? QString::number(bestResult->second.height / problem->getScale()) : "-") << 
 			"\t" << bestResult->second.area / (problem->getScale()*problem->getScale()) << "\t" << bestResult->second.timestamp << "\t" << bestResult->second.iteration << "\t" <<
 			totalTime << "\t" << totalIt << "\t" << seed << "\n";

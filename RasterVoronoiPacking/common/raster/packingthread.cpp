@@ -27,6 +27,9 @@ void PackingThread::run()
 {
 	m_abort = false;
 	seed = QDateTime::currentDateTime().toTime_t();
+	#ifndef CONSOLE
+	seed = 4939495;
+	#endif
 	qsrand(seed);
     int itNum = 0;
     int totalItNum = 0;
@@ -46,7 +49,7 @@ void PackingThread::run()
 	finalTime = finalTime.addSecs(parameters.getTimeLimit());
 
 	// Generate initial solution
-	//if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) solver->generateRandomSolution(threadSolution);
+	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::RANDOMFIXED) compactor->generateRandomSolution(threadSolution); //solver->generateRandomSolution(threadSolution);
 	if (parameters.getInitialSolMethod() == RASTERVORONOIPACKING::BOTTOMLEFT)  {
 		// Generate initial bottom left solution and determine the initial length
 		compactor->generateBottomLeftSolution(threadSolution);
@@ -108,7 +111,7 @@ void PackingThread::run()
 			minOverlap = solver->getGlobalOverlap(threadSolution);
 		}
 		else {
-			if (success) break;
+			if (success) { break; }
 			else {
 				if (numLoops > MAXLOOPSPERLENGTH) { compactor->generateRandomSolution(threadSolution); numLoops = 1; }
 				else numLoops++;
@@ -116,6 +119,7 @@ void PackingThread::run()
 		}
 		itNum = 0; worseSolutionsCount = 0; solver->resetWeights();
 	}
+	if (parameters.isFixedLength()) emit minimumLenghtUpdated(bestSolution, minSuccessfullSol);
 	if (m_abort) {qDebug() << "Aborted!"; quit();}
 	else { emit finishedExecution(bestSolution, minSuccessfullSol, totalItNum, curOverlap, minOverlap, getTimeStamp(parameters.getTimeLimit(), finalTime)); quit(); }
 }

@@ -20,6 +20,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 	const QCommandLineOption nameAppendResultFolder("result", "Subfolder for result files.", "name"); parser.addOption(nameAppendResultFolder);
 	const QCommandLineOption valueNumGroupSize("parallel-group", "Size of thread groups with shared data.", "value"); parser.addOption(valueNumGroupSize);
 	const QCommandLineOption booleanDisableCacheMaps("disable-cache", "Disabel overlap map caching."); parser.addOption(booleanDisableCacheMaps);
+	const QCommandLineOption booleanCuttingStock("cuttingstock", "Execute cutting stock version."); parser.addOption(booleanCuttingStock);
 	const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
 
@@ -100,6 +101,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, PackingBatch
 		else { *errorMessage = "Bad thread group size value."; return CommandLineError; }
 	}
 	params->cacheMaps = !parser.isSet(booleanDisableCacheMaps);
+	params->cuttingstock = parser.isSet(booleanCuttingStock);
 
     return CommandLineOk;
 }

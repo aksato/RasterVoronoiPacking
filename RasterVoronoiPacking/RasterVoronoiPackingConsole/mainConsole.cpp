@@ -69,7 +69,10 @@ int main(int argc, char *argv[])
 	else if (params.initialSolutionType == Bottom_Left){
 		algorithmParams.setInitialSolMethod(RASTERVORONOIPACKING::BOTTOMLEFT);
 	}
-	if (!params.rectangularPacking) algorithmParams.setCompaction(RASTERVORONOIPACKING::STRIPPACKING);
+	if (!params.rectangularPacking) {
+		if(params.cuttingStock) algorithmParams.setCompaction(RASTERVORONOIPACKING::CUTTINGSTOCK);
+		else algorithmParams.setCompaction(RASTERVORONOIPACKING::STRIPPACKING);
+	}
 	else {
 		switch (params.rectMehod) {
 		case SQUARE: algorithmParams.setCompaction(RASTERVORONOIPACKING::SQUAREPACKING); break;

@@ -30,18 +30,21 @@ std::shared_ptr<TotalOverlapMap> TotalOverlapMapSet::getOverlapMap(int orbitingP
     return mapSet[orbitingKey];
 }
 
-TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp) : originalWidth(ifp->width()), originalHeight(ifp->height()) {
+TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _cuttingStockLength) : originalWidth(ifp->width()), originalHeight(ifp->height()), cuttingStockLength(_cuttingStockLength) {
+	initialWidth = -1;
+	reference = ifp->getOrigin();
     init(ifp->width(), ifp->height());
-    reference = ifp->getOrigin();
 }
 
-TotalOverlapMap::TotalOverlapMap(int width, int height, QPoint _reference) : originalWidth(width), originalHeight(height), reference(_reference) {
+TotalOverlapMap::TotalOverlapMap(int width, int height, QPoint _reference, int _cuttingStockLength) : originalWidth(width), originalHeight(height), reference(_reference), cuttingStockLength(_cuttingStockLength) {
+	initialWidth = -1;
 	init(width, height);
 }
 
-TotalOverlapMap::TotalOverlapMap(QRect &boundingBox) : originalWidth(boundingBox.width()), originalHeight(boundingBox.height()) {
-	init(boundingBox.width(), boundingBox.height());
+TotalOverlapMap::TotalOverlapMap(QRect &boundingBox, int _cuttingStockLength) : originalWidth(boundingBox.width()), originalHeight(boundingBox.height()), cuttingStockLength(_cuttingStockLength) {
+	initialWidth = -1;
 	reference = -boundingBox.topLeft();
+	init(boundingBox.width(), boundingBox.height());
 }
 
 void TotalOverlapMap::init(uint _width, uint _height) {
@@ -49,14 +52,22 @@ void TotalOverlapMap::init(uint _width, uint _height) {
     this->height = _height;
 	data = new quint32[width*height];
     Q_CHECK_PTR(data);
-    std::fill(data, data+width*height, 0);
-    #ifdef QT_DEBUG
-        initialWidth = width;
-    #endif
+	//#ifdef QT_DEBUG
+    if(initialWidth == -1) initialWidth = width;
+    //#endif
+	reset(); //std::fill(data, data+width*height, 0);
 }
 
 void TotalOverlapMap::reset() {
-     std::fill(data, data+width*height, 0);
+	std::fill(data, data+width*height, 0);
+	//int containers = (width - initialWidth);
+	//containers /= 1000;
+	//for (int i = 0; i < containers+1; i++) {
+	//if (i * 1000 + initialWidth == width) continue;
+	//quint32 *initBlock = i * 1000 * height + data + initialWidth * height + 1;
+	//quint32 lastLine = std::min(width, (i+1) * 1000);
+	//std::fill(initBlock, data + lastLine * height, std::numeric_limits<quint32>::max() / 2);
+	//}
 }
 
 quint32 *TotalOverlapMap::scanLine(int x) {
@@ -154,21 +165,45 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 }
 
 quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
-	quint32 *curPt = data;
-	quint32 minVal = *curPt;
+	
+	//quint32 minVal = *curPt;
+	quint32 minVal = std::numeric_limits<quint32>::max();
 	int minid = 0;
-	minPt = QPoint(0, 0);
-	int numVals = height*width;
-	for (int id = 0; id < numVals; id++, curPt++) {
-		quint32 curVal = *curPt;
-		if (curVal < minVal || minVal == 0) {
-			minVal = curVal;
-			minid = id;
-			if (minVal == 0) break;
-		}
+	//minPt = QPoint(0, 0);
+	//int numVals = height*width;
+	//for (int id = 0; id < numVals; id++, curPt++) {
+	//	quint32 curVal = *curPt;
+	//	if (curVal < minVal || minVal == 0) {
+	//		minVal = curVal;
+	//		minid = id;
+	//		if (minVal == 0) break;
+	//	}
+	//}
+	int id = 0;
+	while (id < height*width) {
+		findMinimum(minVal, minid, id, height * initialWidth);
+		if (cuttingStockLength < 0) break;
+		//findMinimum(minVal, minid, id, curPt, height * width);
+		if (minVal == 0) break;
+		id += (cuttingStockLength - initialWidth) * height;
 	}
 	minPt = QPoint(minid / height, minid % height) - this->reference;
 	return minVal;
+}
+
+void TotalOverlapMap::findMinimum(quint32 &minVal, int &minid, int &curid, int blockSize) {
+	//int lastVal = std::min(height * initialWidth, height*width);
+	int lastVal = std::min(curid + blockSize, height*width);
+	quint32 *curPt = &data[curid];
+	for (; curid < lastVal; curid++, curPt++) {
+		quint32 curVal = *curPt;
+		//if (curVal < minVal || minVal == 0) {
+		if (curVal < minVal) {
+			minVal = curVal;
+			minid = curid;
+			if (minVal == 0) break;
+		}
+	}
 }
 
 quint32 TotalOverlapMap::getBottomLeft(QPoint &minPt, bool borderOk) {

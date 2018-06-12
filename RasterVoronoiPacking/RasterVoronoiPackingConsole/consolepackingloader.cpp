@@ -55,6 +55,7 @@ void ConsolePackingLoader::run() {
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> compactor;
 	switch (algorithmParamsBackup.getCompaction()) {
 	case RASTERVORONOIPACKING::STRIPPACKING:
+	case RASTERVORONOIPACKING::CUTTINGSTOCK: // FIXME: Implement cutting stock compactor
 		compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(new RASTERVORONOIPACKING::RasterStripPackingCompactor(algorithmParamsBackup.getInitialLength(), 
 			problem, solver->getOverlapEvaluator(), algorithmParamsBackup.getRdec(), algorithmParamsBackup.getRinc())); 
 		break;

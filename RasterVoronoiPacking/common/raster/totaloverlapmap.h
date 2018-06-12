@@ -9,9 +9,9 @@ namespace RASTERVORONOIPACKING {
     class TotalOverlapMap
     {
     public:
-        TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp);
-		TotalOverlapMap(int width, int height, QPoint _reference);
-		TotalOverlapMap(QRect &boundingBox);
+        TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _cuttingStockLength = -1);
+		TotalOverlapMap(int width, int height, QPoint _reference, int _cuttingStockLength = -1);
+		TotalOverlapMap(QRect &boundingBox, int _cuttingStockLength = -1);
 		virtual ~TotalOverlapMap() { delete[] data; }
 
         void init(uint _width, uint _height);
@@ -59,9 +59,10 @@ namespace RASTERVORONOIPACKING {
         int width;
         int height;
 		const int originalWidth, originalHeight;
-		#ifdef QT_DEBUG
+		//#ifdef QT_DEBUG
 		int initialWidth;
-		#endif
+		int cuttingStockLength;
+		//#endif
 
     private:
 		quint32 *scanLine(int x);
@@ -69,6 +70,7 @@ namespace RASTERVORONOIPACKING {
 		void setLocalValue(int i, int j, quint32 value) { data[j*width + i] = value; }
         bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection);
 		bool getLimits(QPoint relativeOrigin, int vmWidth, int vmHeight, QRect &intersection, int zoomFactorInt);
+		void findMinimum(quint32 &minVal, int &minid, int &curid, int blockSize);
         QPoint reference;
     };
 

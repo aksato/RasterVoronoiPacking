@@ -43,6 +43,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	parser.addOption(valueRectangularPacking);
 	const QCommandLineOption boolDisableCacheMaps("disable-cache", "Disable overlap map caching.");
 	parser.addOption(boolDisableCacheMaps);
+	const QCommandLineOption boolCuttingStock("cuttingstock", "Cutting stock version."); parser.addOption(boolCuttingStock);
 
     const QCommandLineOption helpOption = parser.addHelpOption();
     const QCommandLineOption versionOption = parser.addVersionOption();
@@ -236,6 +237,7 @@ CommandLineParseResult parseCommandLine(QCommandLineParser &parser, ConsolePacki
 	}
 
 	params->cacheMaps = !parser.isSet(boolDisableCacheMaps);
+	params->cuttingStock = parser.isSet(boolCuttingStock);
 
     return CommandLineOk;
 }

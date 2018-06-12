@@ -86,7 +86,7 @@ MainWindow::~MainWindow()
 }
 
 std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::createBasicSolver() {
-	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::NONE, 1);
+	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::NONE, 1); tempParameters.setCompaction(RASTERVORONOIPACKING::CUTTINGSTOCK);
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem },
 		tempParameters);
 	solver->overlapEvaluator = this->overlapEvaluator;
@@ -94,7 +94,7 @@ std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::crea
 }
 
 std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::createGLSSolver() {
-	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::GLS, 1);
+	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::GLS, 1); tempParameters.setCompaction(RASTERVORONOIPACKING::CUTTINGSTOCK);
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverGls = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterProblem },
 		tempParameters);
 	solverGls->overlapEvaluator = this->overlapEvaluatorGls;
@@ -164,8 +164,8 @@ void MainWindow::loadPuzzle() {
 		currentContainerWidth = rasterProblem->getContainerWidth(); currentContainerHeight = -1;
 		solution = RASTERVORONOIPACKING::RasterPackingSolution(rasterProblem->count());
 		weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(rasterProblem->count()));
-		this->overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(this->rasterProblem, std::shared_ptr<GlsNoWeightSet>(new GlsNoWeightSet), false));
-		this->overlapEvaluatorGls = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(this->rasterProblem, weights, false));
+		this->overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(this->rasterProblem, std::shared_ptr<GlsNoWeightSet>(new GlsNoWeightSet), false, true));
+		this->overlapEvaluatorGls = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(this->rasterProblem, weights, false, true));
 
         ui->graphicsView->setEnabled(true);
         ui->graphicsView->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
@@ -771,6 +771,10 @@ void MainWindow::executePacking() {
 		case KEEPSOLUTION: initialWidth = currentContainerWidth;
 	}
 
+
+	// Check cutting stock
+	if (runConfig.getPackingProblemIndex() == 4) params.setCompaction(RASTERVORONOIPACKING::CUTTINGSTOCK);
+
 	// Determine execution type
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver(rasterProblem, params);
 	std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS>(solver->overlapEvaluator)->setgetGlsWeights(weights);
@@ -780,7 +784,7 @@ void MainWindow::executePacking() {
 	// Create compactor
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> compactor;
 	switch (runConfig.getPackingProblemIndex()) {
-	case 0: compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(initialWidth > -1 ? new RASTERVORONOIPACKING::RasterStripPackingCompactor(initialWidth, rasterProblem, solver->getOverlapEvaluator(), params.getRdec(), params.getRinc()) : new RASTERVORONOIPACKING::RasterStripPackingCompactor(rasterProblem, solver->getOverlapEvaluator(), 0.04, 0.01)); break;
+	case 0: case 4: compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(initialWidth > -1 ? new RASTERVORONOIPACKING::RasterStripPackingCompactor(initialWidth, rasterProblem, solver->getOverlapEvaluator(), params.getRdec(), params.getRinc()) : new RASTERVORONOIPACKING::RasterStripPackingCompactor(rasterProblem, solver->getOverlapEvaluator(), 0.04, 0.01)); break;
 	case 1: compactor = std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor>(new RASTERVORONOIPACKING::RasterSquarePackingCompactor(rasterProblem, solver->getOverlapEvaluator(), params.getRdec(), params.getRinc())); break;
 	case 2:
 		switch (runConfig.getRectangularMethod()) {

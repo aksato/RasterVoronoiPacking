@@ -53,6 +53,11 @@
        <string>Single Knapsack Problem</string>
       </property>
      </item>
+     <item>
+      <property name="text">
+       <string>Cutting Stock Problem</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item row="8" column="2">

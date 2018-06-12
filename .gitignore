@@ -1,0 +1,14 @@
+# ignore vs folders
+PuzzleConverter/.vs/
+RasterVoronoiBatchExecutor/.vs/
+RasterVoronoiPreProcessor/.vs/
+RasterVoronoiPacking/.vs/
+RasterVoronoiPacking/RasterVoronoiPackingConsole/.vs/
+RasterVoronoiPacking/RasterVoronoiPackingGUI/.vs/
+# ignore all auxiliary vs files
+*.json
+# ignore execution inputs and outputs
+*.txt
+*.xml
+*.pgf
+*.dat

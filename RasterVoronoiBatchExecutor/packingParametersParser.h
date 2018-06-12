@@ -17,7 +17,7 @@ struct PackingBatchExecutorArgs {
 	QString rectMehod;
 	QString appendResultPath;
 	int threadGroupSize;
-	bool cacheMaps;
+	bool cacheMaps, cuttingstock;
 	qreal fixedLength;
 };
 

@@ -26,7 +26,7 @@ struct ConsolePackingArgs {
 	qreal rdec, rinc;
 
     bool originalContainerLenght;
-	bool stripPacking;
+	bool stripPacking, cuttingStock;
 	bool rectangularPacking;
 	bool appendSeedToOutputFiles;
 	bool cacheMaps;

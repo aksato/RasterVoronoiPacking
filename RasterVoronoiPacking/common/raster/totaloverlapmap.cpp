@@ -136,7 +136,8 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 
 void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {
 	// Get intersection between innerfit and nofit polygon bounding boxes
-	QPoint relativeOrigin = zoomFactorInt * this->reference + pos - nfp->getOrigin();
+	QPoint relativeOrigin = zoomFactorInt * this->reference + pos - nfp->getFlipMultiplier()*nfp->getOrigin() + QPoint(nfp->width() - 1, nfp->height() - 1)*(nfp->getFlipMultiplier() - 1) / 2;
+	//QPoint relativeOrigin = zoomFactorInt * this->reference + pos - nfp->getOrigin();
 	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? 0 : (relativeOrigin.x() % zoomFactorInt == 0 ? relativeOrigin.x() / zoomFactorInt : relativeOrigin.x() / zoomFactorInt + 1);
 	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? 0 : (relativeOrigin.y() % zoomFactorInt == 0 ? relativeOrigin.y() / zoomFactorInt : relativeOrigin.y() / zoomFactorInt + 1);
 	int relativeWidth = (relativeOrigin.x() + nfp->width() - 1) / zoomFactorInt; if (relativeWidth >= width) relativeWidth = width - relativeBotttomLeftX; else relativeWidth = relativeWidth - relativeBotttomLeftX + 1;

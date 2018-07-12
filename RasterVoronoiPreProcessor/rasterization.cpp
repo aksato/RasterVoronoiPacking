@@ -182,9 +182,22 @@ int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 void Polygon::getRasterBoundingBox(QPoint &RP, qreal scale, int &width, int &height) {
 	qreal xMin, xMax, yMin, yMax;
 
-	const_iterator it = cbegin();
-	xMin = (*it).x(); xMax = (*it).x();
-	yMin = (*it).y(); yMax = (*it).y();
+	if (size() > 0) {
+		auto it = cbegin();
+		xMin = (*it).x(); xMax = (*it).x();
+		yMin = (*it).y(); yMax = (*it).y();
+	}
+	else if (this->degLines.size() > 0) {
+		auto it = this->degLines.cbegin();
+		xMin = (*it).first.x(); xMax = (*it).first.x();
+		yMin = (*it).first.y(); yMax = (*it).first.y();
+	}
+	else if (this->degNodes.size() > 0) {
+		auto it = this->degNodes.cbegin();
+		xMin = (*it).x(); xMax = (*it).x();
+		yMin = (*it).y(); yMax = (*it).y();
+
+	}
 	for (int i = 0; i < size(); i++) {
 		qreal x = at(i).x();
 		qreal y = at(i).y();
@@ -193,6 +206,29 @@ void Polygon::getRasterBoundingBox(QPoint &RP, qreal scale, int &width, int &hei
 		if (x > xMax) xMax = x;
 		if (y < yMin) yMin = y;
 		if (y > yMax) yMax = y;
+	}
+	
+	for (QVector<QPair<QPointF, QPointF>>::const_iterator it = this->degLines.cbegin(); it != this->degLines.cend(); it++) {
+		QPointF p1, p2;
+		p1 = (*it).first; p2 = (*it).second;
+
+		if (p1.x() < xMin) xMin = p1.x();
+		if (p1.x() > xMax) xMax = p1.x();
+		if (p1.y() < yMin) yMin = p1.y();
+		if (p1.y() > yMax) yMax = p1.y();
+		if (p2.x() < xMin) xMin = p2.x();
+		if (p2.x() > xMax) xMax = p2.x();
+		if (p2.y() < yMin) yMin = p2.y();
+		if (p2.y() > yMax) yMax = p2.y();
+
+	}
+	for (QVector<QPointF>::const_iterator it = this->degNodes.cbegin(); it != this->degNodes.cend(); it++) {
+		QPointF p1 = scale * (*it); p1 -= QPointF(xMin, yMin);
+
+		if (p1.x() < xMin) xMin = p1.x();
+		if (p1.x() > xMax) xMax = p1.x();
+		if (p1.y() < yMin) yMin = p1.y();
+		if (p1.y() > yMax) yMax = p1.y();
 	}
 	xMin = scale*xMin; xMax = scale*xMax;
 	yMin = scale*yMin; yMax = scale*yMax;

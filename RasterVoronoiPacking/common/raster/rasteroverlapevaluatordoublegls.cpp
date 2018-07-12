@@ -23,7 +23,7 @@ void getScaledSolution(RasterPackingSolution &originalSolution, RasterPackingSol
 	}
 }
 
-void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps, bool cuttingStock) {
+void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cuttingStock) {
 	maps.clear();
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
@@ -46,9 +46,20 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps, b
 			}
 			// FIXME: Reenable cache 
 			//std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
-			std::shared_ptr<TotalOverlapMap> curMap = cacheMaps ?
-				std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, cuttingStock ? problem->getContainerWidth() : -1, this->problem->count())) :
-				std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
+			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, cuttingStock ? problem->getContainerWidth() : -1, this->problem->count()));
+			maps.addOverlapMap(itemId, angle, curMap);
+			// FIXME: Delete innerift polygons as they are used to release memomry
+		}
+	}
+}
+
+void RasterTotalOverlapMapEvaluatorDoubleGLS::disableMapCache() {
+	for (int itemId = 0; itemId < problem->count(); itemId++) {
+		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+			std::shared_ptr<TotalOverlapMap> oldMap = maps.getOverlapMap(itemId, angle);
+			// FIXME: Reenable cache 
+			//std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
+			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(oldMap->getWidth(), oldMap->getHeight(), oldMap->getReferencePoint()));
 			maps.addOverlapMap(itemId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}

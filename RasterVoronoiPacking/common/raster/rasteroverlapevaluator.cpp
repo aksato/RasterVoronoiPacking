@@ -3,12 +3,22 @@
 
 using namespace RASTERVORONOIPACKING;
 
-RasterTotalOverlapMapEvaluator::RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cacheMaps, bool cuttingStock) : maps(_problem->count()) {
+RasterTotalOverlapMapEvaluator::RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock) : maps(_problem->count()) {
 	this->problem = _problem;
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
-			std::shared_ptr<TotalOverlapMap> curMap = cacheMaps ? std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle), cuttingStock ? problem->getContainerWidth() : -1, this->problem->count()))
-				: std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle), cuttingStock ? problem->getContainerWidth() : -1));
+			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle), cuttingStock ? problem->getContainerWidth() : -1, this->problem->count()));
+			maps.addOverlapMap(itemId, angle, curMap);
+			// FIXME: Delete innerift polygons as they are used to release memomry
+		}
+	}
+}
+
+void RasterTotalOverlapMapEvaluator::disableMapCache() {
+	for (int itemId = 0; itemId < problem->count(); itemId++) {
+		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+			std::shared_ptr<TotalOverlapMap> oldMap = maps.getOverlapMap(itemId, angle);
+			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle), oldMap->getCuttingStockLength()));
 			maps.addOverlapMap(itemId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}

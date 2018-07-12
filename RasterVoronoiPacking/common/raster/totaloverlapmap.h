@@ -42,6 +42,7 @@ namespace RASTERVORONOIPACKING {
 		QRect getRect() { return QRect(-reference, QSize(width, height)); }
 		quint32 getValue(const QPoint &pt) { return getLocalValue(pt.x() + reference.x(), pt.y() + reference.y()); }
 		void setValue(const QPoint &pt, quint32 value) { setLocalValue(pt.x() + reference.x(), pt.y() + reference.y(), value); }
+		int getCuttingStockLength() { return this->cuttingStockLength; }
 
         virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);

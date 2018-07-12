@@ -239,7 +239,9 @@ void MainWindow::generateCurrentTotalOverlapMap() {
 	QTime myTimer; myTimer.start();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = createBasicSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = solver->overlapEvaluator->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution);
-	
+	//#ifdef GRAYSCALE
+	//curMap->print();
+	//#endif
 	int milliseconds = myTimer.elapsed();
 	ui->graphicsView->showTotalOverlapMap(curMap);
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
@@ -773,9 +775,13 @@ void MainWindow::executePacking() {
 
 
 	// Check cutting stock
-	if (runConfig.getPackingProblemIndex() == 4) params.setCompaction(RASTERVORONOIPACKING::CUTTINGSTOCK);
+	if (runConfig.getPackingProblemIndex() == 4) {
+		params.setCompaction(RASTERVORONOIPACKING::CUTTINGSTOCK);
+		params.setFixedLength(true);
+	}
 
 	// Determine execution type
+	params.setCacheMaps(false);
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver(rasterProblem, params);
 	std::dynamic_pointer_cast<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorGLS>(solver->overlapEvaluator)->setgetGlsWeights(weights);
 	solver->resetWeights();

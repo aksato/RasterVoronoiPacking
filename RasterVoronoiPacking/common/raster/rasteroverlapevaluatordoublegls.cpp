@@ -23,7 +23,7 @@ void getScaledSolution(RasterPackingSolution &originalSolution, RasterPackingSol
 	}
 }
 
-void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
+void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps, bool cuttingStock) {
 	maps.clear();
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
@@ -44,8 +44,10 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cacheMaps) {
 				newWidth = right + newReferencePoint.x() + 1;
 				newHeight = top + newReferencePoint.y() + 1;
 			}
+			// FIXME: Reenable cache 
+			//std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
 			std::shared_ptr<TotalOverlapMap> curMap = cacheMaps ?
-				std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, this->problem->count())) :
+				std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, cuttingStock ? problem->getContainerWidth() : -1, this->problem->count())) :
 				std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
 			maps.addOverlapMap(itemId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry

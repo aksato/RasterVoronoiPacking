@@ -84,10 +84,10 @@ namespace RASTERVORONOIPACKING {
 
 	public:
 		// --> Default constructors
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, bool cacheMaps) : RasterTotalOverlapMapEvaluatorGLS(_problem, cacheMaps, false), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cacheMaps); }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, bool cacheMaps, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, cacheMaps, cuttingStock), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cacheMaps, cuttingStock); }
 
 		// --> Constructors using a custom weights
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, std::shared_ptr<GlsWeightSet> _glsWeights, bool cacheMaps) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights, cacheMaps, false), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cacheMaps); }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, std::shared_ptr<GlsWeightSet> _glsWeights, bool cacheMaps, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights, cacheMaps, cuttingStock), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cacheMaps, cuttingStock); }
 
 		// --> Determines the item total overlap map
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);
@@ -98,7 +98,7 @@ namespace RASTERVORONOIPACKING {
 		void updateMapsDimensions(int pixelWidth, int pixelHeight);
 
 	private:
-		void createSearchMaps(bool cacheMaps = false);
+		void createSearchMaps(bool cacheMaps, bool cuttingStock);
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapSearchMap(int itemId, int orientation, RasterPackingSolution &solution);
 		std::shared_ptr<TotalOverlapMap> getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution);
 		quint32 getTotalOverlapMapSingleValue(int itemId, int orientation, QPoint pos, RasterPackingSolution &solution);

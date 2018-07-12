@@ -3,6 +3,9 @@
 
 #include "rasternofitpolygon.h"
 #include "rasterstrippackingparameters.h"
+#ifdef GRAYSCALE
+#include<iostream>
+#endif
 
 namespace RASTERVORONOIPACKING {
 
@@ -53,6 +56,9 @@ namespace RASTERVORONOIPACKING {
         #endif
 
 		void setData(quint32 *_data) { delete[] data; data = _data; }
+		#ifdef GRAYSCALE
+		void print() { for (int i = 0; i < width*height; i++) std::cout << data[i] << std::endl; }
+		#endif
 
     protected:
         quint32 *data;

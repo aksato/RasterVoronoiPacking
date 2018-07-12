@@ -9,8 +9,8 @@ namespace RASTERVORONOIPACKING {
 
 	class CachedTotalOverlapMap : public TotalOverlapMap {
 	public:
-		CachedTotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _totalNumItems) : TotalOverlapMap(ifp), totalNumItems(_totalNumItems), currentCount(0) { };
-		CachedTotalOverlapMap(int width, int height, QPoint _reference, int _totalNumItems) : TotalOverlapMap(width, height, _reference), totalNumItems(_totalNumItems), currentCount(0) { };
+		CachedTotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _cuttingStockLength, int _totalNumItems) : TotalOverlapMap(ifp, _cuttingStockLength), totalNumItems(_totalNumItems), currentCount(0) { };
+		CachedTotalOverlapMap(int width, int height, QPoint _reference, int _cuttingStockLength, int _totalNumItems) : TotalOverlapMap(width, height, _reference, _cuttingStockLength), totalNumItems(_totalNumItems), currentCount(0) { };
 		~CachedTotalOverlapMap() {}
 
 		void setDimensions(int _width, int _height);

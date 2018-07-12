@@ -60,14 +60,6 @@ void TotalOverlapMap::init(uint _width, uint _height) {
 
 void TotalOverlapMap::reset() {
 	std::fill(data, data+width*height, 0);
-	//int containers = (width - initialWidth);
-	//containers /= 1000;
-	//for (int i = 0; i < containers+1; i++) {
-	//if (i * 1000 + initialWidth == width) continue;
-	//quint32 *initBlock = i * 1000 * height + data + initialWidth * height + 1;
-	//quint32 lastLine = std::min(width, (i+1) * 1000);
-	//std::fill(initBlock, data + lastLine * height, std::numeric_limits<quint32>::max() / 2);
-	//}
 }
 
 quint32 *TotalOverlapMap::scanLine(int x) {
@@ -165,20 +157,8 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 }
 
 quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
-	
-	//quint32 minVal = *curPt;
 	quint32 minVal = std::numeric_limits<quint32>::max();
 	int minid = 0;
-	//minPt = QPoint(0, 0);
-	//int numVals = height*width;
-	//for (int id = 0; id < numVals; id++, curPt++) {
-	//	quint32 curVal = *curPt;
-	//	if (curVal < minVal || minVal == 0) {
-	//		minVal = curVal;
-	//		minid = id;
-	//		if (minVal == 0) break;
-	//	}
-	//}
 	int id = 0;
 	while (id < height*width) {
 		findMinimum(minVal, minid, id, height * initialWidth);

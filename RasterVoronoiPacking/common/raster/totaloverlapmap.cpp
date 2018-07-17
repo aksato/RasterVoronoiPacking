@@ -31,17 +31,20 @@ std::shared_ptr<TotalOverlapMap> TotalOverlapMapSet::getOverlapMap(int orbitingP
 }
 
 TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _cuttingStockLength) : originalWidth(ifp->width()), originalHeight(ifp->height()), cuttingStockLength(_cuttingStockLength) {
+	zoomFactor = 1;
 	initialWidth = -1;
 	reference = ifp->getOrigin();
     init(ifp->width(), ifp->height());
 }
 
 TotalOverlapMap::TotalOverlapMap(int width, int height, QPoint _reference, int _cuttingStockLength) : originalWidth(width), originalHeight(height), reference(_reference), cuttingStockLength(_cuttingStockLength) {
+	zoomFactor = 1;
 	initialWidth = -1;
 	init(width, height);
 }
 
 TotalOverlapMap::TotalOverlapMap(QRect &boundingBox, int _cuttingStockLength) : originalWidth(boundingBox.width()), originalHeight(boundingBox.height()), cuttingStockLength(_cuttingStockLength) {
+	zoomFactor = 1;
 	initialWidth = -1;
 	reference = -boundingBox.topLeft();
 	init(boundingBox.width(), boundingBox.height());
@@ -161,17 +164,50 @@ quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 	quint32 minVal = std::numeric_limits<quint32>::max();
 	int minid = 0;
 	int id = 0;
-	while (id < height*width) {
-		findMinimum(minVal, minid, id, height * initialWidth);
-		if (cuttingStockLength < 0) break;
-		//findMinimum(minVal, minid, id, curPt, height * width);
-		if (minVal == 0) break;
-		id += (cuttingStockLength - initialWidth) * height;
+	if (cuttingStockLength < 0) findMinimum(minVal, minid, id, height * width); 
+	else {
+		while (id < height*width) {
+			findMinimum(minVal, minid, id, height * initialWidth);
+
+			//findMinimum(minVal, minid, id, curPt, height * width);
+			if (minVal == 0) break;
+			id += (cuttingStockLength - initialWidth) * height;
+		}
 	}
 	minPt = QPoint(minid / height, minid % height) - this->reference;
 	return minVal;
 }
 
+quint32 TotalOverlapMap::getMinimum(QPoint &minPt, int &stockLocation) {
+	quint32 minVal = std::numeric_limits<quint32>::max();
+	int minid = 0;
+	int id = 0;
+	int currentStock = 0;
+	if (cuttingStockLength < 0) { findMinimum(minVal, minid, id, height * width); stockLocation = -1;}
+	else {
+		while (id < height*width) {
+			//findMinimum(minVal, minid, id, height * initialWidth);
+			int lastVal = std::min(id + height * initialWidth, height*width);
+			quint32 *curPt = &data[id];
+			for (; id < lastVal; id++, curPt++) {
+				quint32 curVal = *curPt;
+				//if (curVal < minVal || minVal == 0) {
+				if (curVal < minVal) {
+					minVal = curVal;
+					minid = id;
+					stockLocation = currentStock;
+					if (minVal == 0) break;
+				}
+			}
+
+			//findMinimum(minVal, minid, id, curPt, height * width);
+			if (minVal == 0) break;
+			id += (cuttingStockLength - initialWidth) * height; currentStock++;
+		}
+	}
+	minPt = QPoint(minid / height, minid % height) - this->reference;
+	return minVal;
+}
 void TotalOverlapMap::findMinimum(quint32 &minVal, int &minid, int &curid, int blockSize) {
 	//int lastVal = std::min(height * initialWidth, height*width);
 	int lastVal = std::min(curid + blockSize, height*width);
@@ -205,6 +241,12 @@ quint32 TotalOverlapMap::getBottomLeft(QPoint &minPt, bool borderOk) {
 	}
 	minPt = QPoint(minid / height, minid % height) - this->reference;
 	return minVal;
+}
+
+void TotalOverlapMap::setZoomFactor(int _zoomFactor) {
+	if (this->zoomFactor > 1) return; // Cannot set zoom factor more than once
+	this->zoomFactor = _zoomFactor;
+	this->cuttingStockLength /= this->zoomFactor;
 }
 
 #ifndef CONSOLE
@@ -269,5 +311,25 @@ quint32 TotalOverlapMap::getBottomLeft(QPoint &minPt, bool borderOk) {
 			}
 		}
 		return image;
+	}
+
+	void TotalOverlapMap::maskCuttingStock() {
+		int id = 0;
+		if (cuttingStockLength < 0) return;
+		quint32 maxVal = 0;
+		std::vector<int> maskVec(height*width, 0);
+		while (id < height*width) {
+			//findMinimum(minVal, minid, id, height * initialWidth);
+			int blockSize = height * initialWidth;
+			int lastVal = std::min(id + blockSize, height*width);
+			for (quint32 *curPt = &data[id]; id < lastVal; id++, curPt++) {
+				maskVec[id] = 1;
+				if (*curPt > maxVal) maxVal = *curPt;
+			}
+			//for (int i = 0; i < height * initialWidth; i++) maskVec[id + i] = 1; id += height * initialWidth;
+
+			id += (cuttingStockLength - initialWidth) * height;
+		}
+		for (int i = 0; i < height * width; i++) data[i] = maskVec[i] == 1 ? data[i] : maxVal;
 	}
 #endif

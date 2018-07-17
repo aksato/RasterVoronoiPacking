@@ -47,6 +47,7 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::createSearchMaps(bool cuttingStock
 			// FIXME: Reenable cache 
 			//std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
 			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new CachedTotalOverlapMap(newWidth, newHeight, newReferencePoint, cuttingStock ? problem->getContainerWidth() : -1, this->problem->count()));
+			curMap->setZoomFactor(this->zoomFactorInt);
 			maps.addOverlapMap(itemId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}
@@ -59,7 +60,7 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::disableMapCache() {
 			std::shared_ptr<TotalOverlapMap> oldMap = maps.getOverlapMap(itemId, angle);
 			// FIXME: Reenable cache 
 			//std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(newWidth, newHeight, newReferencePoint));
-			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(oldMap->getWidth(), oldMap->getHeight(), oldMap->getReferencePoint()));
+			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(oldMap->getWidth(), oldMap->getHeight(), oldMap->getReferencePoint(), oldMap->getCuttingStockLength()));
 			maps.addOverlapMap(itemId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}
@@ -67,21 +68,22 @@ void RasterTotalOverlapMapEvaluatorDoubleGLS::disableMapCache() {
 }
 
 QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value) {
-	bool border;
-	QPoint pos = getMinimumOverlapSearchPosition(itemId, orientation, solution, value, border);
+	bool border; int stockLocation;
+	QPoint pos = getMinimumOverlapSearchPosition(itemId, orientation, solution, value, border, stockLocation);
 	if (value == 0 && !border) return pos;
 	int zoomSquareSize = ZOOMNEIGHBORHOOD*zoomFactorInt;
-	std::shared_ptr<TotalOverlapMap> map = getRectTotalOverlapMap(itemId, orientation, pos, zoomSquareSize, zoomSquareSize, solution);
+	std::shared_ptr<TotalOverlapMap> map = getRectTotalOverlapMap(itemId, orientation, pos, zoomSquareSize, zoomSquareSize, solution, stockLocation);
 	QPoint minRelativePos;
 	value = map->getMinimum(minRelativePos);
 	return minRelativePos;
 }
 
 // --> Get absolute minimum overlap position
-QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val, bool &border) {
+QPoint RasterTotalOverlapMapEvaluatorDoubleGLS::getMinimumOverlapSearchPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &val, bool &border, int &stockLocation) {
 	std::shared_ptr<TotalOverlapMap> map = getTotalOverlapSearchMap(itemId, orientation, solution);
+	//cuttingStockSize = map->getCuttingStockLength();
 	QPoint minRelativePos;
-	val = map->getMinimum(minRelativePos);
+	val = map->getMinimum(minRelativePos, stockLocation);
 	border = false;
 	if (minRelativePos.x() == map->getWidth() - map->getReferencePoint().x() - 1 ||
 		minRelativePos.y() == map->getHeight() - map->getReferencePoint().y() - 1 || 
@@ -104,10 +106,14 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getTot
 	return currrentPieceMap;
 }
 
-std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution) {
+std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorDoubleGLS::getRectTotalOverlapMap(int itemId, int orientation, QPoint pos, int width, int height, RasterPackingSolution &solution, int stockLocation) {
 	// Determine zoomed area inside the innerfit polygon
 	std::shared_ptr<RasterNoFitPolygon> curIfp = this->problem->getIfps()->getRasterNoFitPolygon(0, 0, this->problem->getItemType(itemId), orientation);
-	QRect curIfpBoundingBox(QPoint(-curIfp->getOriginX(), -curIfp->getOriginY()), QSize(curIfp->width() - maps.getShrinkValX(), curIfp->height() - maps.getShrinkValY()));
+	QRect curIfpBoundingBox;
+	if(stockLocation < 0)  curIfpBoundingBox = QRect(QPoint(-curIfp->getOriginX(), -curIfp->getOriginY()), QSize(curIfp->width() - maps.getShrinkValX(), curIfp->height() - maps.getShrinkValY()));
+	else {
+		curIfpBoundingBox = QRect(QPoint(-curIfp->getOriginX() + stockLocation * problem->getContainerWidth(), -curIfp->getOriginY()), QSize(curIfp->width(), curIfp->height() - maps.getShrinkValY()));
+	}
 	QRect zoomSquareRect(QPoint(pos.x() - width / 2, pos.y() - height / 2), QPoint(pos.x() + width / 2, pos.y() + height / 2));
 	zoomSquareRect = zoomSquareRect.intersected(curIfpBoundingBox);
 

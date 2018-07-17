@@ -49,11 +49,14 @@ namespace RASTERVORONOIPACKING {
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
 		virtual void changeTotalItems(int _totalNumItems) {} // FIXME: Better way to evaluate partial cached overlap map
 		quint32 getMinimum(QPoint &minPt);
+		quint32 getMinimum(QPoint &minPt, int &stockLocation);
 		quint32 getBottomLeft(QPoint &minPt, bool borderOk = true);
+		void setZoomFactor(int _zoomFactor);
 
         #ifndef CONSOLE
             QImage getImage(); // For debug purposes
 			QImage getZoomImage(int _width, int _height, QPoint &displacement); // For debug purposes
+			void maskCuttingStock(); // For debug purposes
         #endif
 
 		void setData(quint32 *_data) { delete[] data; data = _data; }
@@ -69,6 +72,7 @@ namespace RASTERVORONOIPACKING {
 		//#ifdef QT_DEBUG
 		int initialWidth;
 		int cuttingStockLength;
+		int zoomFactor;
 		//#endif
 
     private:

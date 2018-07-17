@@ -65,6 +65,8 @@ private slots:
 	void switchToOriginalProblem();
 	void updateUnclusteredProblem(const RASTERVORONOIPACKING::RasterPackingSolution &solution, int length, qreal elapsed);
 
+	void createWalls();
+
 	void printDensity();
 
 private:
@@ -93,6 +95,7 @@ private:
 	RASTERPACKING::PackingProblem originalProblem;
 	int currentContainerWidth, currentContainerHeight;
 	std::shared_ptr<PackingThread> packer;
+	bool cuttingStock;
 };
 
 #endif // MAINWINDOW_H

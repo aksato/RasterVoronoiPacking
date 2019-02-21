@@ -246,7 +246,7 @@ quint32 TotalOverlapMap::getBottomLeft(QPoint &minPt, bool borderOk) {
 void TotalOverlapMap::setZoomFactor(int _zoomFactor) {
 	if (this->zoomFactor > 1) return; // Cannot set zoom factor more than once
 	this->zoomFactor = _zoomFactor;
-	this->cuttingStockLength /= this->zoomFactor;
+	if (cuttingStockLength > 0) this->cuttingStockLength /= this->zoomFactor;
 }
 
 #ifndef CONSOLE

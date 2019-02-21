@@ -71,6 +71,7 @@ set(HEADERS
 	polybool/Sort.h
 	)
 	
+#add_definitions(-DNOSYMMETRY)
 add_executable(RasterPackingPreProcessor ${SRC} ${HEADERS})
 
 target_link_libraries(RasterPackingPreProcessor Qt5::Core Qt5::Gui)

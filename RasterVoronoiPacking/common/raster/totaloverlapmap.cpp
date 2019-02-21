@@ -1,8 +1,5 @@
 #include "totaloverlapmap.h"
-
-#ifndef CONSOLE
-	#include "colormap.h"
-#endif
+#include "colormap.h"
 
 using namespace RASTERVORONOIPACKING;
 
@@ -249,87 +246,86 @@ void TotalOverlapMap::setZoomFactor(int _zoomFactor) {
 	if (cuttingStockLength > 0) this->cuttingStockLength /= this->zoomFactor;
 }
 
-#ifndef CONSOLE
-    QImage TotalOverlapMap::getImage() {
-		float maxD = 0;
-		for (int pixelX = 0; pixelX < width; pixelX++) {
-			quint32 *mapLine = scanLine(pixelX);
-			for (int pixelY = 0; pixelY < height; pixelY++) {
-                if(*mapLine > maxD) maxD = *mapLine;
-                mapLine++;
-            }
-        }
 
-        QImage image(width, height, QImage::Format_Indexed8);
-        setColormap(image);
-        for(int pixelY = 0; pixelY < height; pixelY++) {
-            uchar *resultLine = (uchar *)image.scanLine(pixelY);
-            for(int pixelX = 0; pixelX < width; pixelX++) {
-				quint32 *mapLine = data + pixelX*height + pixelY;
-                if(*mapLine==0)
-                    *resultLine=0;
-                else {
-                    int index = (int)(((float)*mapLine-1.0)*254.0/(maxD-1.0) + 1.0);
-                    *resultLine = index;
-                }
-                resultLine ++;
-            }
+QImage TotalOverlapMap::getImage() {
+	float maxD = 0;
+	for (int pixelX = 0; pixelX < width; pixelX++) {
+		quint32 *mapLine = scanLine(pixelX);
+		for (int pixelY = 0; pixelY < height; pixelY++) {
+            if(*mapLine > maxD) maxD = *mapLine;
+            mapLine++;
         }
-        return image;
     }
 
-	QImage TotalOverlapMap::getZoomImage(int _width, int _height, QPoint &displacement) {
-		float maxD = 0;
-		for (int pixelX = 0; pixelX < width; pixelX++) {
-			quint32 *mapLine = scanLine(pixelX);
-			for (int pixelY = 0; pixelY < height; pixelY++) {
-				if (*mapLine > maxD) maxD = *mapLine;
-				mapLine++;
-			}
-		}
+    QImage image(width, height, QImage::Format_Indexed8);
+    setColormap(image);
+    for(int pixelY = 0; pixelY < height; pixelY++) {
+        uchar *resultLine = (uchar *)image.scanLine(pixelY);
+        for(int pixelX = 0; pixelX < width; pixelX++) {
+			quint32 *mapLine = data + pixelX*height + pixelY;
+            if(*mapLine==0)
+                *resultLine=0;
+            else {
+                int index = (int)(((float)*mapLine-1.0)*254.0/(maxD-1.0) + 1.0);
+                *resultLine = index;
+            }
+            resultLine ++;
+        }
+    }
+    return image;
+}
 
-		QImage image(_width, _height, QImage::Format_Indexed8);
-		image.fill(255);
-		setColormap(image);
-		image.setColor(255, qRgba(0, 0, 0, 0));
-		for (int pixelY = 0; pixelY < _height; pixelY++) {
-			uchar *resultLine = (uchar *)image.scanLine(pixelY);
-			int mapPixelY = pixelY - displacement.y(); if (mapPixelY < 0 || mapPixelY >= height) continue;
-
-			int pixelX = 0;
-			int mapPixelX = pixelX - displacement.x();
-			while (mapPixelX < 0) resultLine++, mapPixelX++, pixelX++;
-			for (; pixelX < _width; pixelX++, resultLine++, mapPixelX++) {
-				quint32 *mapLine = data + mapPixelX*height + mapPixelY;
-				if (mapPixelX >= width) break;
-				if (*mapLine == 0)
-					*resultLine = 0;
-				else {
-					int index = (int)(((float)*mapLine - 1.0)*253.0 / (maxD - 1.0) + 1.0);
-					*resultLine = index;
-				}
-			}
+QImage TotalOverlapMap::getZoomImage(int _width, int _height, QPoint &displacement) {
+	float maxD = 0;
+	for (int pixelX = 0; pixelX < width; pixelX++) {
+		quint32 *mapLine = scanLine(pixelX);
+		for (int pixelY = 0; pixelY < height; pixelY++) {
+			if (*mapLine > maxD) maxD = *mapLine;
+			mapLine++;
 		}
-		return image;
 	}
 
-	void TotalOverlapMap::maskCuttingStock() {
-		int id = 0;
-		if (cuttingStockLength < 0) return;
-		quint32 maxVal = 0;
-		std::vector<int> maskVec(height*width, 0);
-		while (id < height*width) {
-			//findMinimum(minVal, minid, id, height * initialWidth);
-			int blockSize = height * initialWidth;
-			int lastVal = std::min(id + blockSize, height*width);
-			for (quint32 *curPt = &data[id]; id < lastVal; id++, curPt++) {
-				maskVec[id] = 1;
-				if (*curPt > maxVal) maxVal = *curPt;
-			}
-			//for (int i = 0; i < height * initialWidth; i++) maskVec[id + i] = 1; id += height * initialWidth;
+	QImage image(_width, _height, QImage::Format_Indexed8);
+	image.fill(255);
+	setColormap(image);
+	image.setColor(255, qRgba(0, 0, 0, 0));
+	for (int pixelY = 0; pixelY < _height; pixelY++) {
+		uchar *resultLine = (uchar *)image.scanLine(pixelY);
+		int mapPixelY = pixelY - displacement.y(); if (mapPixelY < 0 || mapPixelY >= height) continue;
 
-			id += (cuttingStockLength - initialWidth) * height;
+		int pixelX = 0;
+		int mapPixelX = pixelX - displacement.x();
+		while (mapPixelX < 0) resultLine++, mapPixelX++, pixelX++;
+		for (; pixelX < _width; pixelX++, resultLine++, mapPixelX++) {
+			quint32 *mapLine = data + mapPixelX*height + mapPixelY;
+			if (mapPixelX >= width) break;
+			if (*mapLine == 0)
+				*resultLine = 0;
+			else {
+				int index = (int)(((float)*mapLine - 1.0)*253.0 / (maxD - 1.0) + 1.0);
+				*resultLine = index;
+			}
 		}
-		for (int i = 0; i < height * width; i++) data[i] = maskVec[i] == 1 ? data[i] : maxVal;
 	}
-#endif
+	return image;
+}
+
+void TotalOverlapMap::maskCuttingStock() {
+	int id = 0;
+	if (cuttingStockLength < 0) return;
+	quint32 maxVal = 0;
+	std::vector<int> maskVec(height*width, 0);
+	while (id < height*width) {
+		//findMinimum(minVal, minid, id, height * initialWidth);
+		int blockSize = height * initialWidth;
+		int lastVal = std::min(id + blockSize, height*width);
+		for (quint32 *curPt = &data[id]; id < lastVal; id++, curPt++) {
+			maskVec[id] = 1;
+			if (*curPt > maxVal) maxVal = *curPt;
+		}
+		//for (int i = 0; i < height * initialWidth; i++) maskVec[id + i] = 1; id += height * initialWidth;
+
+		id += (cuttingStockLength - initialWidth) * height;
+	}
+	for (int i = 0; i < height * width; i++) data[i] = maskVec[i] == 1 ? data[i] : maxVal;
+}

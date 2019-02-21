@@ -52,12 +52,9 @@ namespace RASTERVORONOIPACKING {
 		quint32 getMinimum(QPoint &minPt, int &stockLocation);
 		quint32 getBottomLeft(QPoint &minPt, bool borderOk = true);
 		void setZoomFactor(int _zoomFactor);
-
-        #ifndef CONSOLE
-            QImage getImage(); // For debug purposes
-			QImage getZoomImage(int _width, int _height, QPoint &displacement); // For debug purposes
-			void maskCuttingStock(); // For debug purposes
-        #endif
+        QImage getImage(); // For debug purposes
+		QImage getZoomImage(int _width, int _height, QPoint &displacement); // For debug purposes
+		void maskCuttingStock(); // For debug purposes
 
 		void setData(quint32 *_data) { delete[] data; data = _data; }
 		#ifdef GRAYSCALE

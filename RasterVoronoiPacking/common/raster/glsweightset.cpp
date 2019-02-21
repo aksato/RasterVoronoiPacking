@@ -2,9 +2,7 @@
 #include "rasterpackingproblem.h"
 #include <QImage>
 #include <QDebug>
-#ifndef CONSOLE
-	#include "colormap.h"
-#endif
+#include "colormap.h"
 
 #define INITWEIGHTVAL 100
 using namespace RASTERVORONOIPACKING;
@@ -33,38 +31,36 @@ void GlsWeightSet::updateWeights(QVector<WeightIncrement> &increments) {
     });
 }
 
-#ifndef CONSOLE
-    QImage GlsWeightSet::getImage(int numItems) {
-        QImage image(numItems, numItems, QImage::Format_Indexed8);
-		image.fill(0);
-        setColormap(image, false);
+QImage GlsWeightSet::getImage(int numItems) {
+    QImage image(numItems, numItems, QImage::Format_Indexed8);
+	image.fill(0);
+    setColormap(image, false);
 
-		qreal minW = std::numeric_limits<quint32>::max();
-        qreal maxW = 1.0;
+	qreal minW = std::numeric_limits<quint32>::max();
+    qreal maxW = 1.0;
 
-        for(int itemId1 = 0; itemId1 < numItems; itemId1++)
-            for(int itemId2 = 0; itemId2 < numItems; itemId2++)
-                if(itemId1 != itemId2) {
-                    qreal curW = getWeight(itemId1, itemId2);
-                    if(curW < minW) minW = curW;
-                    if(curW > maxW) maxW = curW;
-                }
+    for(int itemId1 = 0; itemId1 < numItems; itemId1++)
+        for(int itemId2 = 0; itemId2 < numItems; itemId2++)
+            if(itemId1 != itemId2) {
+                qreal curW = getWeight(itemId1, itemId2);
+                if(curW < minW) minW = curW;
+                if(curW > maxW) maxW = curW;
+            }
 
-		for (int itemId2 = 0; itemId2 < numItems; itemId2++) {
-			uchar *imageLine = (uchar *)image.scanLine(itemId2);
-			for (int itemId1 = 0; itemId1 < numItems; itemId1++, imageLine++) {
-				if (itemId1 != itemId2) {
-					qreal curW = getWeight(itemId1, itemId2);
-					int index = qRound(255.0 * (curW - minW) / (maxW - minW));
-					//image.setPixel(itemId1, itemId2, index);
-					*imageLine = index;
-				}
+	for (int itemId2 = 0; itemId2 < numItems; itemId2++) {
+		uchar *imageLine = (uchar *)image.scanLine(itemId2);
+		for (int itemId1 = 0; itemId1 < numItems; itemId1++, imageLine++) {
+			if (itemId1 != itemId2) {
+				qreal curW = getWeight(itemId1, itemId2);
+				int index = qRound(255.0 * (curW - minW) / (maxW - minW));
+				//image.setPixel(itemId1, itemId2, index);
+				*imageLine = index;
 			}
 		}
-                //else image.setPixel(itemId1, itemId2, 0);
-        return image;
-    }
-#endif
+	}
+            //else image.setPixel(itemId1, itemId2, 0);
+    return image;
+}
 
 void GlsWeightSet::reset(int numItems) {
 	weights.fill(INITWEIGHTVAL);

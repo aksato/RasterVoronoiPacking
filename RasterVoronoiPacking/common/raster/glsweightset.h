@@ -33,10 +33,7 @@ namespace RASTERVORONOIPACKING {
         void updateWeights(QVector<WeightIncrement> &increments);
 		QVector<unsigned int>::iterator begin() { return weights.begin(); }
 		QVector<unsigned int>::iterator end() { return weights.end(); }
-
-        #ifndef CONSOLE
-            QImage getImage(int numItems);
-        #endif
+        QImage getImage(int numItems);
 
 	protected:
 		GlsWeightSet() {}

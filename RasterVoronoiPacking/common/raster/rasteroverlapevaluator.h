@@ -35,9 +35,9 @@ namespace RASTERVORONOIPACKING {
 
 		// --> Option functions
 		virtual void disableMapCache();
-
-	protected:
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+	protected:
+		
 		virtual std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 
 		// --> Pointer to problem

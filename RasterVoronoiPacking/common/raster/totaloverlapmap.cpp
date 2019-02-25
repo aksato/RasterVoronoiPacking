@@ -157,6 +157,33 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 	}
 }
 
+void TotalOverlapMap::addToMatrix(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix) {
+	// Get intersection between innerfit and nofit polygon bounding boxes
+	QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
+	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? -relativeOrigin.x() : 0;
+	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? -relativeOrigin.y() : 0;
+	int relativeTopRightX = width - relativeOrigin.x(); relativeTopRightX = relativeTopRightX <  nfp->width() ? relativeTopRightX - 1 : nfp->width() - 1;
+	int relativeTopRightY = height - relativeOrigin.y(); relativeTopRightY = relativeTopRightY < nfp->height() ? relativeTopRightY - 1 : nfp->height() - 1;
+
+	// Create pointers to initial positions and calculate offsets for moving vertically
+	int offsetHeight = height - (relativeTopRightY - relativeBotttomLeftY + 1);
+	int nfpOffsetHeight = nfp->height() - (relativeTopRightY - relativeBotttomLeftY + 1);
+	int matrixIdx = (relativeBotttomLeftX + relativeOrigin.x())*height + relativeBotttomLeftY + relativeOrigin.y();
+	quint32 *nfpPointer = nfp->getPixelRef(relativeBotttomLeftX, relativeBotttomLeftY);
+
+	// Add nofit polygon values to overlap map
+	for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++) {
+		for (int j = relativeBotttomLeftY; j <= relativeTopRightY; j++, matrixIdx++, nfpPointer += nfp->getFlipMultiplier())
+			overlapMatrix.coeffRef(matrixIdx, itemId) = *nfpPointer;
+		matrixIdx += offsetHeight; nfpPointer += nfp->getFlipMultiplier()*nfpOffsetHeight;
+	}
+}
+
+void TotalOverlapMap::setDataFromMatrix(Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &weightVec) {
+	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > overlapResult = overlapMatrix * weightVec;
+	std::memcpy(data, overlapResult.data(), height*width*sizeof(quint32));
+}
+
 quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {
 	quint32 minVal = std::numeric_limits<quint32>::max();
 	int minid = 0;

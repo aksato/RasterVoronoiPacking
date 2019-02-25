@@ -39,7 +39,6 @@ namespace RASTERVORONOIPACKING {
 		int getMinimumContainerHeight() { return originalProblem->getMaxHeight(); }
 		std::shared_ptr<RasterTotalOverlapMapEvaluator> getOverlapEvaluator() { return overlapEvaluator; }
 
-		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator;
 	protected:
 		// --> Overlap determination functions
 		// Detect if item is in overlapping position for a subset of fixed items
@@ -48,7 +47,7 @@ namespace RASTERVORONOIPACKING {
 
 		// --> Pointer to problem, size variables and total map evaluator
 		std::shared_ptr<RasterPackingProblem> originalProblem;
-		
+		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator;
 	};
 }
 

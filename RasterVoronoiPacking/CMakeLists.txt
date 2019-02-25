@@ -8,10 +8,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Svg REQUIRED)
+find_package(Eigen3 3.3.5 REQUIRED)  # We only need this version for CUDA
 find_package(CUDA 10 REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
-include_directories(${Qt5Widgets_INCLUDE_DIRS} common)
+include_directories(${Qt5Widgets_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} common)
 
 set(common_SRCS
 	common/colormap.cpp 
@@ -24,6 +25,7 @@ set(common_SRCS
 	common/raster/rasterstrippackingsolver.cpp
 	common/raster/rasteroverlapevaluator.cpp
 	common/raster/rasteroverlapevaluatorgls.cpp
+	common/raster/rasteroverlapevaluatormatrixgls.cpp
 	common/raster/rasteroverlapevaluatordoublegls.cpp
 	common/raster/rasterpackingsolution.cpp
 	common/raster/rasterpackingproblem.cpp
@@ -74,3 +76,5 @@ set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD_REQUIRED O
 
 cuda_add_executable(RasterVoronoiPackingCudaTester RasterVoronoiPackingConsole/mainCudaTest.cu  $<TARGET_OBJECTS:packing_core>)
 target_link_libraries(RasterVoronoiPackingCudaTester Qt5::Core Qt5::Gui Qt5::Svg)
+set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD 17)
+set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD_REQUIRED ON)

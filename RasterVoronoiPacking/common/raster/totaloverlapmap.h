@@ -3,6 +3,7 @@
 
 #include "rasternofitpolygon.h"
 #include "rasterstrippackingparameters.h"
+#include <Eigen/Core>
 #ifdef GRAYSCALE
 #include<iostream>
 #endif
@@ -48,6 +49,8 @@ namespace RASTERVORONOIPACKING {
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
 		virtual void changeTotalItems(int _totalNumItems) {} // FIXME: Better way to evaluate partial cached overlap map
+		void addToMatrix(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix);
+		void setDataFromMatrix(Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &weightVec);
 		quint32 getMinimum(QPoint &minPt);
 		quint32 getMinimum(QPoint &minPt, int &stockLocation);
 		quint32 getBottomLeft(QPoint &minPt, bool borderOk = true);

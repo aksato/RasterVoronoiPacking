@@ -10,6 +10,7 @@
 #include <QString>
 #include <QDir>
 #include <QFileInfo>
+#include <QTime>
 
 #define REPETITIONS 1000
 
@@ -34,13 +35,25 @@ int main(int argc, char *argv[])
 	RASTERPACKING::PackingProblem problem;
 	if (!problem.load(fileName)) { std::cerr << "Could not read puzzle file " << fileName.toStdString() << "." << std::endl; return 1; }
 	std::shared_ptr<RasterPackingProblem> rasterProblem = std::shared_ptr<RasterPackingProblem>(new RasterPackingProblem(problem));
-	RasterPackingSolution	solution = RasterPackingSolution(rasterProblem->count());
+	QVector<std::shared_ptr<RasterPackingSolution>> solutions;
 	QDir::setCurrent(originalPath);
 
-	qsrand(4939495);
-	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, std::shared_ptr<GlsWeightSet>(new GlsWeightSet(rasterProblem->count())))); overlapEvaluator->disableMapCache();
+	//qsrand(4939495);
+	qsrand(QTime::currentTime().msec());
+	std::shared_ptr<GlsWeightSet> weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(rasterProblem->count()));
+	for (int i = 0; i < rasterProblem->count(); i++) 
+		for (int j = 0; j < rasterProblem->count(); j++) {
+			if (i == j) continue;
+			weights->addWeight(i, j, rand() % 100+100);
+		}
+	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, weights)); overlapEvaluator->disableMapCache();
 	std::shared_ptr<RasterStripPackingCompactor> compactor = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapEvaluator, 0.04, 0.01));
-	compactor->generateRandomSolution(solution);
+	
+	for (int i = 0; i < REPETITIONS; i++) {
+		std::shared_ptr<RasterPackingSolution> cursolution = std::shared_ptr<RasterPackingSolution>(new RasterPackingSolution(rasterProblem->count()));
+		compactor->generateRandomSolution(*cursolution);
+		solutions.push_back(cursolution);
+	}
 	//solution.exportToPgf("sol.pgf", rasterProblem, (qreal)compactor->getCurrentLength() / rasterProblem->getScale(), (qreal)compactor->getCurrentHeight() / rasterProblem->getScale());
 
 	// Default creation
@@ -48,7 +61,7 @@ int main(int argc, char *argv[])
 	std::shared_ptr<TotalOverlapMap> curMap;
 	for (int i = 0; i < REPETITIONS; i++) {
 		for (int k = 0; k < rasterProblem->count(); k++) {
-			curMap = overlapEvaluator->getTotalOverlapMap(k, solution.getOrientation(k), solution);
+			curMap = overlapEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
 		}
 	}
 	auto end = std::chrono::system_clock::now();
@@ -56,12 +69,12 @@ int main(int argc, char *argv[])
 	//curMap->getImage().save("map.png");
 
 	// Matrix version
-	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorMatrixGLS>(new RasterTotalOverlapMapEvaluatorMatrixGLS(rasterProblem, std::shared_ptr<GlsWeightSet>(new GlsWeightSet(rasterProblem->count())))); overlapMatrixEvaluator->disableMapCache();
+	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorMatrixGLS>(new RasterTotalOverlapMapEvaluatorMatrixGLS(rasterProblem, weights)); overlapMatrixEvaluator->disableMapCache();
 	std::shared_ptr<RasterStripPackingCompactor> compactorMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapMatrixEvaluator, 0.04, 0.01));
 	start = std::chrono::system_clock::now();
 	for (int i = 0; i < REPETITIONS; i++) {
 		for (int k = 0; k < rasterProblem->count(); k++) {
-			curMap = overlapMatrixEvaluator->getTotalOverlapMap(k, solution.getOrientation(k), solution);
+			curMap = overlapMatrixEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
 		}
 	}
 	end = std::chrono::system_clock::now();

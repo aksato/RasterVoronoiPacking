@@ -34,12 +34,12 @@ namespace RASTERVORONOIPACKING {
 		QVector<unsigned int>::iterator begin() { return weights.begin(); }
 		QVector<unsigned int>::iterator end() { return weights.end(); }
         QImage getImage(int numItems);
+		void addWeight(int itemId1, int itemId2, int weight);
 
 	protected:
 		GlsWeightSet() {}
 
     private:
-        void addWeight(int itemId1, int itemId2, int weight);
 
 		int numItems;
         QVector<unsigned int> weights;

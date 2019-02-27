@@ -50,6 +50,7 @@ namespace RASTERVORONOIPACKING {
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
 		virtual void changeTotalItems(int _totalNumItems) {} // FIXME: Better way to evaluate partial cached overlap map
 		void addToMatrix(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix);
+		void addToMatrixCuda(int itemId, std::shared_ptr<quint32> d_nfp, QPoint nfporigin, int nfpwidth, int nfpheight, QPoint pos, std::shared_ptr<quint32> d_overlapMatrix, std::shared_ptr<quint32> d_overlapmap);
 		void setDataFromMatrix(Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &weightVec);
 		quint32 getMinimum(QPoint &minPt);
 		quint32 getMinimum(QPoint &minPt, int &stockLocation);
@@ -60,6 +61,7 @@ namespace RASTERVORONOIPACKING {
 		void maskCuttingStock(); // For debug purposes
 
 		void setData(quint32 *_data) { delete[] data; data = _data; }
+		quint32 *getData() { return data; }
 		#ifdef GRAYSCALE
 		void print() { for (int i = 0; i < width*height; i++) std::cout << data[i] << std::endl; }
 		#endif

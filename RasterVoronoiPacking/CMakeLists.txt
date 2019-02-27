@@ -74,7 +74,8 @@ set_target_properties(RasterVoronoiPackingConsole PROPERTIES COMPILE_DEFINITIONS
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD 17)
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD_REQUIRED ON)
 
-cuda_add_executable(RasterVoronoiPackingCudaTester RasterVoronoiPackingConsole/mainCudaTest.cu  $<TARGET_OBJECTS:packing_core>)
+cuda_add_executable(RasterVoronoiPackingCudaTester RasterVoronoiPackingConsole/mainCudaTest.cu  common/raster/rasteroverlapevaluatormatrixgls.cu common/raster/totaloverlapmap.cu $<TARGET_OBJECTS:packing_core>)
 target_link_libraries(RasterVoronoiPackingCudaTester Qt5::Core Qt5::Gui Qt5::Svg)
+target_compile_options(RasterVoronoiPackingCudaTester PRIVATE /arch:AVX2)
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD 17)
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD_REQUIRED ON)

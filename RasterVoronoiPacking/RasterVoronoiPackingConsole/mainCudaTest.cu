@@ -81,5 +81,17 @@ int main(int argc, char *argv[])
 	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of matrix method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us." << std::endl;
 	//curMap->getImage().save("map2.png");
 
+	// Cuda matrix version
+	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaMatrixGLS>(new RasterTotalOverlapMapEvaluatorCudaMatrixGLS(rasterProblem, weights)); overlapCudaMatrixEvaluator->disableMapCache();
+	std::shared_ptr<RasterStripPackingCompactor> compactorCudaMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapCudaMatrixEvaluator, 0.04, 0.01));
+	start = std::chrono::system_clock::now();
+	for (int i = 0; i < REPETITIONS; i++) {
+		for (int k = 0; k < rasterProblem->count(); k++) {
+			curMap = overlapCudaMatrixEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
+		}
+	}
+	end = std::chrono::system_clock::now();
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of cuda matrix method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us." << std::endl;
+
 	return 0;
 }

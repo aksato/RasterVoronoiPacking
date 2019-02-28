@@ -177,8 +177,6 @@ void TotalOverlapMap::addToMatrix(int itemId, std::shared_ptr<RasterNoFitPolygon
 	int nfpOffsetHeight = nfp->height() - (relativeTopRightY - relativeBotttomLeftY + 1);
 	quint32 *mapPointer = overlapMatrix.data() + itemId * overlapMatrix.rows() + (relativeBotttomLeftX + relativeOrigin.x())*height + relativeBotttomLeftY + relativeOrigin.y();
 	quint32 *nfpPointer = nfp->getPixelRef(relativeBotttomLeftX, relativeBotttomLeftY);
-	int mapInitIdx = itemId * width * height + (relativeBotttomLeftX + relativeOrigin.x())*height + relativeBotttomLeftY + relativeOrigin.y();
-	int nfpInitIdx = relativeBotttomLeftY + relativeBotttomLeftX * nfp->height();
 
 	// Add nofit polygon values to overlap map
 	for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++) {

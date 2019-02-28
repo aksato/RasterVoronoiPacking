@@ -16,7 +16,7 @@ RasterPackingProblem::RasterPackingProblem(RASTERPACKING::PackingProblem &proble
     this->load(problem);
 }
 
-void mapPieceNameAngle(RASTERPACKING::PackingProblem &problem, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int,int>, int> &pieceAngleMap) {
+void RasterPackingProblem::mapPieceNameAngle(RASTERPACKING::PackingProblem &problem, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int,int>, int> &pieceAngleMap) {
     int id = 0;
     for(QList<std::shared_ptr<RASTERPACKING::Piece>>::const_iterator it = problem.cpbegin(); it != problem.cpend(); it++) {
         pieceIndexMap.insert((*it)->getPolygon()->getName(), id);
@@ -30,7 +30,7 @@ void mapPieceNameAngle(RASTERPACKING::PackingProblem &problem, QHash<QString, in
     }
 }
 
-QPair<int,int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int,int>, int> &pieceAngleMap) {
+QPair<int,int> RasterPackingProblem::getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int,int>, int> &pieceAngleMap) {
     QPair<int,int> ids;
     ids.first = 0; ids.second = 0;
     if(pieceIndexMap.find(polygonName) != pieceIndexMap.end()) {

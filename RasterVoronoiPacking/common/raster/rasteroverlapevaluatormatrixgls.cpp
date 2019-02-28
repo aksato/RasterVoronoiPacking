@@ -3,8 +3,8 @@
 
 using namespace RASTERVORONOIPACKING;
 
-void RasterTotalOverlapMapEvaluatorMatrixGLS::createWeigthVector(int itemId, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &vec) {
-	for (int i = 0; i < problem->count(); i++) {
+void RasterTotalOverlapMapEvaluatorMatrixGLS::createWeigthVector(int itemId, int numItems, std::shared_ptr<GlsWeightSet> glsWeights, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &vec) {
+	for (int i = 0; i < numItems; i++) {
 		if (i == itemId) continue;
 		vec.coeffRef(i) = glsWeights->getWeight(itemId, i);
 	}
@@ -21,7 +21,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorMatrixGLS::getTot
 	}
 
 	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >  weightVec = Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >::Zero(solution.getNumItems());
-	createWeigthVector(itemId, weightVec);
+	RasterTotalOverlapMapEvaluatorMatrixGLS::createWeigthVector(itemId, problem->count(), glsWeights, weightVec);
 	currrentPieceMap->setDataFromMatrix(overlapMatrix, weightVec);
 	return currrentPieceMap;
 }

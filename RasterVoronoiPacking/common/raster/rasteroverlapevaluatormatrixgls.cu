@@ -2,39 +2,55 @@
 
 using namespace RASTERVORONOIPACKING;
 
+RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock) : RasterTotalOverlapMapEvaluatorGLS(_problem, cuttingStock), matrices(_problem->count()) {
+	for (int itemId = 0; itemId < problem->count(); itemId++) {
+		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
+			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMapCuda>(new TotalOverlapMapCuda(ifp->width() , ifp->height(), ifp->getOrigin(), _problem->count(), -1));
+			matrices.addOverlapMap(itemId, angle, curMap);
+			// FIXME: Delete innerift polygons as they are used to release memomry
+		}
+	}
+}
+
+RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights, cuttingStock), matrices(_problem->count()) {
+	for (int itemId = 0; itemId < problem->count(); itemId++) {
+		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
+			std::shared_ptr<TotalOverlapMap> curMap = std::shared_ptr<TotalOverlapMapCuda>(new TotalOverlapMapCuda(ifp->width() , ifp->height(), ifp->getOrigin(), _problem->count(), -1));
+			matrices.addOverlapMap(itemId, angle, curMap);
+			// FIXME: Delete innerift polygons as they are used to release memomry
+		}
+	}
+}
+
+void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::updateMapsLength(int pixelWidth) {
+	RasterTotalOverlapMapEvaluatorGLS::updateMapsLength(pixelWidth);
+	for (int itemId = 0; itemId < problem->count(); itemId++)
+		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
+			std::shared_ptr<TotalOverlapMap> curMap = maps.getOverlapMap(itemId, angle);
+			std::shared_ptr<TotalOverlapMap> curMatrix = matrices.getOverlapMap(itemId, angle);
+			curMatrix->setRelativeWidth(problem->getContainerWidth() - pixelWidth);
+		}
+}
+
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) {
-	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
-	Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > overlapMatrix = Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic >::Zero(currrentPieceMap->getHeight() * currrentPieceMap->getWidth(), problem->count());
-
-	// Alloc current overlap map on GPU
-	auto deleter = [&](quint32* ptr) { cudaFree(ptr); };
-	std::shared_ptr<quint32> d_currrentPieceMapData(new quint32[currrentPieceMap->getHeight()*currrentPieceMap->getWidth()], deleter);
-	cudaMalloc((void **)&d_currrentPieceMapData, currrentPieceMap->getHeight()*currrentPieceMap->getWidth() * sizeof(quint32));
-	cudaMemcpy(d_currrentPieceMapData.get(), currrentPieceMap->getData(), currrentPieceMap->getHeight()*currrentPieceMap->getWidth() * sizeof(quint32), cudaMemcpyHostToDevice);
-
-	// Alloc matrix on GPU
-	int overlapMatrixLength = currrentPieceMap->getHeight() * currrentPieceMap->getWidth() * problem->count();
-	std::shared_ptr<quint32> d_overlapMatrix(new quint32[overlapMatrixLength], deleter);
-	cudaMalloc((void **)&d_overlapMatrix, overlapMatrixLength * sizeof(quint32));
-	cudaMemset(d_overlapMatrix.get(), 0, overlapMatrixLength * sizeof(quint32));
+	std::shared_ptr<TotalOverlapMap> currrentPieceMat = matrices.getOverlapMap(itemId, orientation);
+	currrentPieceMat->reset();
 
 	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
 
-		// Alloc current nofit polygon on GPU
-		std::shared_ptr<RasterNoFitPolygon> currentRasterNoFitPolygon = curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i));
-		std::shared_ptr<quint32> d_currentRasterNoFitPolygon(new quint32[currentRasterNoFitPolygon->height() * currentRasterNoFitPolygon->width()], deleter);
-		cudaMalloc((void **)&d_currentRasterNoFitPolygon, currentRasterNoFitPolygon->height() * currentRasterNoFitPolygon->width() * sizeof(quint32));
-		cudaMemcpy(d_currentRasterNoFitPolygon.get(), currentRasterNoFitPolygon->getPixelRef(0,0), currentRasterNoFitPolygon->height() * currentRasterNoFitPolygon->width() * sizeof(quint32), cudaMemcpyHostToDevice);
-
 		// Add nfp to overlap map
-		currrentPieceMap->addToMatrixCuda(i, d_currentRasterNoFitPolygon, currentRasterNoFitPolygon->getOrigin(), currentRasterNoFitPolygon->width(), currentRasterNoFitPolygon->height(), solution.getPosition(i), d_overlapMatrix, d_currrentPieceMapData);
+		currrentPieceMat->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i)); 
 	}
-	cudaMemcpy(overlapMatrix.data(), d_overlapMatrix.get(), overlapMatrixLength * sizeof(quint32), cudaMemcpyDeviceToHost);
+	Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > overlapMatrix = Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic >::Zero(currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), problem->count());
+	cudaMemcpy(overlapMatrix.data(), currrentPieceMat->getData(), currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * problem->count() * sizeof(quint32), cudaMemcpyDeviceToHost);
 
 	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >  weightVec = Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >::Zero(solution.getNumItems());
-	createWeigthVector(itemId, weightVec);
+	RasterTotalOverlapMapEvaluatorMatrixGLS::createWeigthVector(itemId, problem->count(), glsWeights, weightVec);
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
 	currrentPieceMap->setDataFromMatrix(overlapMatrix, weightVec);
 	return currrentPieceMap;
 }

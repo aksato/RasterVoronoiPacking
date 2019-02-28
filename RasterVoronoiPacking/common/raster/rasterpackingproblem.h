@@ -112,6 +112,8 @@ namespace RASTERVORONOIPACKING {
 		void getIfpBoundingBox(int itemId, int orientation, int &bottomLeftX, int &bottomLeftY, int &topRightX, int &topRightY);
 
     protected:
+		void mapPieceNameAngle(RASTERPACKING::PackingProblem &problem, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int, int>, int> &pieceAngleMap);
+		QPair<int, int> getIdsFromRasterPreProblem(QString polygonName, int angleValue, QHash<QString, int> &pieceIndexMap, QHash<int, int> &pieceTotalAngleMap, QHash<QPair<int, int>, int> &pieceAngleMap);
         int containerWidth, containerHeight;
 		int maxWidth, maxHeight;
         QString containerName;
@@ -160,6 +162,19 @@ namespace RASTERVORONOIPACKING {
 	private:
 		QMap<int, RasterPackingCluster> clustersMap;
 		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> originalProblem;
+	};
+
+	class RasterPackingCudaProblem : public RasterPackingProblem
+	{
+	public:
+		RasterPackingCudaProblem();
+		RasterPackingCudaProblem(RASTERPACKING::PackingProblem &problem);
+		~RasterPackingCudaProblem() {}
+
+		bool load(RASTERPACKING::PackingProblem &problem);
+
+	private:
+		quint32 * loadBinaryNofitPolygonsOnDevice(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
 	};
 }
 #endif // RASTERPACKINGPROBLEM_H

@@ -1,6 +1,7 @@
 #include "args/args.hxx"
 #include "packingproblem.h"
 #include "raster/rasterpackingproblem.h"
+#include "cuda/rasterpackingcudaproblem.h"
 #include "raster/rasteroverlapevaluator.h"
 #include "raster/rasteroverlapevaluatormatrixgls.h"
 #include "raster/rasterstrippackingparameters.h"

@@ -163,18 +163,5 @@ namespace RASTERVORONOIPACKING {
 		QMap<int, RasterPackingCluster> clustersMap;
 		std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> originalProblem;
 	};
-
-	class RasterPackingCudaProblem : public RasterPackingProblem
-	{
-	public:
-		RasterPackingCudaProblem();
-		RasterPackingCudaProblem(RASTERPACKING::PackingProblem &problem);
-		~RasterPackingCudaProblem() {}
-
-		bool load(RASTERPACKING::PackingProblem &problem);
-
-	private:
-		quint32 * loadBinaryNofitPolygonsOnDevice(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
-	};
 }
 #endif // RASTERPACKINGPROBLEM_H

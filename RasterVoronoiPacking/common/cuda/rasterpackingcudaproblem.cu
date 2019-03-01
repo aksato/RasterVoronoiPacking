@@ -1,4 +1,4 @@
-#include "rasterpackingproblem.h"
+#include "rasterpackingcudaproblem.h"
 #include "../packingproblem.h"
 #include <cmath>
 #include <QDir>

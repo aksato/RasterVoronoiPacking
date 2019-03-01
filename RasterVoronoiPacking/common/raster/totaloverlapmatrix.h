@@ -1,9 +1,9 @@
 #ifndef TOTALOVERLAPMATRIX_H
 #define TOTALOVERLAPMATRIX_H
 
-#include "rasternofitpolygon.h"
-#include "rasterstrippackingparameters.h"
-#include "totaloverlapmap.h"
+#include "raster/rasternofitpolygon.h"
+#include "raster/rasterstrippackingparameters.h"
+#include "raster/totaloverlapmap.h"
 #include <Eigen/Core>
 
 namespace RASTERVORONOIPACKING {
@@ -14,7 +14,7 @@ namespace RASTERVORONOIPACKING {
 		TotalOverlapMatrix(std::shared_ptr<RasterNoFitPolygon> ifp, int _numItems, int _cuttingStockLength = -1);
 		TotalOverlapMatrix(int width, int height, QPoint _reference, int _numItems, int _cuttingStockLength = -1);
 		TotalOverlapMatrix(QRect &boundingBox, int _numItems, int _cuttingStockLength = -1);
-		~TotalOverlapMatrix() {}
+		~TotalOverlapMatrix() { data = nullptr; }
 
 		void initMatrix(uint _width, uint _height);
 

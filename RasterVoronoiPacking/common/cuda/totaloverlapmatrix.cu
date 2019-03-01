@@ -1,5 +1,5 @@
-#include "totaloverlapmap.h"
-#include "totaloverlapmatrix.h"
+#include "raster/totaloverlapmap.h"
+#include "raster/totaloverlapmatrix.h"
 #include <stdio.h>
 using namespace RASTERVORONOIPACKING;
 

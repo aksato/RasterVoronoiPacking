@@ -18,8 +18,8 @@ set(common_SRCS
 	common/colormap.cpp 
 	common/packingproblem.cpp
 	common/raster/totaloverlapmap.cpp
-	common/raster/totaloverlapmatrix.cpp
 	common/raster/totaloverlapmapcache.cpp
+	common/raster/totaloverlapmatrix.cpp
 	common/raster/rasterstrippackingcompactor.cpp
 	common/raster/rastersquarepackingcompactor.cpp
 	common/raster/rasterrectpackingcompactor.cpp
@@ -40,6 +40,12 @@ set(console_SRCS
 	common/raster/packingthread.cpp
 	)
 	
+set(cuda_SRCS
+	common/cuda/rasteroverlapevaluatormatrixgls.cu
+	common/cuda/rasterpackingcudaproblem.cu
+	common/cuda/totaloverlapmatrix.cu
+	)
+
 set(gui_SRCS
 	common/raster/packingthread.cpp
 	RasterVoronoiPackingGUI/glsweightviewerdialog.cpp 
@@ -75,7 +81,7 @@ set_target_properties(RasterVoronoiPackingConsole PROPERTIES COMPILE_DEFINITIONS
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD 17)
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD_REQUIRED ON)
 
-cuda_add_executable(RasterVoronoiPackingCudaTester RasterVoronoiPackingConsole/mainCudaTest.cu  common/raster/rasteroverlapevaluatormatrixgls.cu common/raster/totaloverlapmatrix.cu common/raster/rasterpackingproblem.cu $<TARGET_OBJECTS:packing_core>)
+cuda_add_executable(RasterVoronoiPackingCudaTester RasterVoronoiPackingConsole/mainCudaTest.cu ${cuda_SRCS} $<TARGET_OBJECTS:packing_core>)
 target_link_libraries(RasterVoronoiPackingCudaTester Qt5::Core Qt5::Gui Qt5::Svg)
 target_compile_options(RasterVoronoiPackingCudaTester PRIVATE /arch:AVX2)
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD 17)

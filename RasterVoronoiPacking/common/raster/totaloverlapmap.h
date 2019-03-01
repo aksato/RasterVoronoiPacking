@@ -3,7 +3,6 @@
 
 #include "rasternofitpolygon.h"
 #include "rasterstrippackingparameters.h"
-#include <Eigen/Core>
 #ifdef GRAYSCALE
 #include<iostream>
 #endif
@@ -49,9 +48,6 @@ namespace RASTERVORONOIPACKING {
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
 		virtual void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt);
 		virtual void changeTotalItems(int _totalNumItems) {} // FIXME: Better way to evaluate partial cached overlap map
-		void addToMatrix(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix);
-		void addToMatrixCuda(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, std::shared_ptr<quint32> d_overlapMatrix);
-		void setDataFromMatrix(Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &weightVec);
 		quint32 getMinimum(QPoint &minPt);
 		quint32 getMinimum(QPoint &minPt, int &stockLocation);
 		quint32 getBottomLeft(QPoint &minPt, bool borderOk = true);
@@ -61,6 +57,7 @@ namespace RASTERVORONOIPACKING {
 		void maskCuttingStock(); // For debug purposes
 
 		void setData(quint32 *_data) { delete[] data; data = _data; }
+		void copyData(quint32 *_data) { std::memcpy(data, _data, height*width * sizeof(quint32)); }
 		quint32 *getData() { return data; }
 		#ifdef GRAYSCALE
 		void print() { for (int i = 0; i < width*height; i++) std::cout << data[i] << std::endl; }
@@ -87,15 +84,31 @@ namespace RASTERVORONOIPACKING {
 		void findMinimum(quint32 &minVal, int &minid, int &curid, int blockSize);
     };
 
-    class TotalOverlapMapSet
+	template<class T>
+    class ItemGeometricToolSet
     {
     public:
-		TotalOverlapMapSet(int numItems);
-        TotalOverlapMapSet(int numberOfOrientations, int numItems);
+		ItemGeometricToolSet(int numItems) {
+			numAngles = 4;
+			initializeSet(numItems);
+		}
 
-        void addOverlapMap(int orbitingPieceId, int orbitingAngleId, std::shared_ptr<TotalOverlapMap> ovm);
-        std::shared_ptr<TotalOverlapMap> getOverlapMap(int orbitingPieceId, int orbitingAngleId);
-		void clear() { mapSet = QVector<std::shared_ptr<TotalOverlapMap>>(mapSet.length()); }
+		ItemGeometricToolSet(int numberOfOrientations, int numItems) {
+			initializeSet(numItems);
+		}
+
+		void addOverlapMap(int orbitingPieceId, int orbitingAngleId, T ovm) {
+			int orbitingKey = orbitingPieceId * numAngles + orbitingAngleId;
+			//mapSet.insert(orbitingKey, ovm);
+			mapSet[orbitingKey] = ovm;
+		}
+
+		T getOverlapMap(int orbitingPieceId, int orbitingAngleId) {
+			int orbitingKey = orbitingPieceId * numAngles + orbitingAngleId;
+			return mapSet[orbitingKey];
+		}
+
+		void clear() { mapSet = QVector<T>(mapSet.length()); }
 
         //QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cbegin() {return mapSet.cbegin();}
         //QHash<int, std::shared_ptr<TotalOverlapMap>>::const_iterator cend() {return mapSet.cend();}
@@ -106,31 +119,12 @@ namespace RASTERVORONOIPACKING {
 		int getShrinkValY() { return this->shrinkValY; }
     private:
         //QHash<int, std::shared_ptr<TotalOverlapMap>> mapSet;
-		void initializeSet(int numItems);
-		QVector<std::shared_ptr<TotalOverlapMap>> mapSet;
+		void initializeSet(int numItems) {
+			mapSet = QVector<T>(numItems*numAngles);
+		}
+		QVector<T> mapSet;
 		int numAngles, shrinkValX, shrinkValY;
     };
-
-	class TotalOverlapMapCuda : public TotalOverlapMap
-	{
-	public:
-		TotalOverlapMapCuda(std::shared_ptr<RasterNoFitPolygon> ifp, int _numItems, int _cuttingStockLength = -1);
-		TotalOverlapMapCuda(int width, int height, QPoint _reference, int _numItems, int _cuttingStockLength = -1);
-		TotalOverlapMapCuda(QRect &boundingBox, int _numItems, int _cuttingStockLength = -1);
-		~TotalOverlapMapCuda();
-
-		void initCuda(uint _width, uint _height);
-
-		void reset();
-		void setDimensions(int _width, int _height);
-		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos);
-		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight) {}
-		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {}
-		void changeTotalItems(int _totalNumItems) {} // FIXME: Better way to evaluate partial cached overlap map
-
-	private:
-		int numItems;
-	};
 }
 
 #endif // TOTALOVERLAPMAP_H

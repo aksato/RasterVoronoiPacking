@@ -44,7 +44,7 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<RasterPackingProblem> problem;
 
 		// --> Set of all item total overlap maps
-		TotalOverlapMapSet maps;
+		ItemGeometricToolSet<std::shared_ptr<TotalOverlapMap>> maps;
 	};
 
 	// --> Overlap evaluator class with guided local search metaheuristic

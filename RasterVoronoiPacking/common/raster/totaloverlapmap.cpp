@@ -3,30 +3,6 @@
 
 using namespace RASTERVORONOIPACKING;
 
-TotalOverlapMapSet::TotalOverlapMapSet(int numItems) : shrinkValX(0), shrinkValY(0) {
-    numAngles = 4;
-	initializeSet(numItems);
-}
-
-TotalOverlapMapSet::TotalOverlapMapSet(int numberOfOrientations, int numItems) : shrinkValX(0), shrinkValY(0), numAngles(numberOfOrientations) {
-	initializeSet(numItems);
-}
-
-void TotalOverlapMapSet::initializeSet(int numItems) {
-	mapSet = QVector<std::shared_ptr<TotalOverlapMap>>(numItems*numAngles);
-}
-
-void TotalOverlapMapSet::addOverlapMap(int orbitingPieceId, int orbitingAngleId, std::shared_ptr<TotalOverlapMap> ovm) {
-    int orbitingKey =  orbitingPieceId*numAngles + orbitingAngleId;
-    //mapSet.insert(orbitingKey, ovm);
-	mapSet[orbitingKey] = ovm;
-}
-
-std::shared_ptr<TotalOverlapMap> TotalOverlapMapSet::getOverlapMap(int orbitingPieceId, int orbitingAngleId) {
-    int orbitingKey =  orbitingPieceId*numAngles + orbitingAngleId;
-    return mapSet[orbitingKey];
-}
-
 TotalOverlapMap::TotalOverlapMap(std::shared_ptr<RasterNoFitPolygon> ifp, int _cuttingStockLength) : originalWidth(ifp->width()), originalHeight(ifp->height()), cuttingStockLength(_cuttingStockLength) {
 	zoomFactor = 1;
 	initialWidth = -1;
@@ -161,34 +137,6 @@ void TotalOverlapMap::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon>
 			*mapPointer += weight * (*nfpPointer);
 		mapPointer += offsetHeight; nfpPointer += nfp->getFlipMultiplier()*nfpOffsetHeight;
 	}
-}
-
-// Does not support reflected nfps
-void TotalOverlapMap::addToMatrix(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix) {
-	// Get intersection between innerfit and nofit polygon bounding boxes
-	QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
-	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? -relativeOrigin.x() : 0;
-	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? -relativeOrigin.y() : 0;
-	int relativeTopRightX = width - relativeOrigin.x(); relativeTopRightX = relativeTopRightX <  nfp->width() ? relativeTopRightX - 1 : nfp->width() - 1;
-	int relativeTopRightY = height - relativeOrigin.y(); relativeTopRightY = relativeTopRightY < nfp->height() ? relativeTopRightY - 1 : nfp->height() - 1;
-
-	// Create pointers to initial positions and calculate offsets for moving vertically
-	int offsetHeight = height - (relativeTopRightY - relativeBotttomLeftY + 1);
-	int nfpOffsetHeight = nfp->height() - (relativeTopRightY - relativeBotttomLeftY + 1);
-	quint32 *mapPointer = overlapMatrix.data() + itemId * overlapMatrix.rows() + (relativeBotttomLeftX + relativeOrigin.x())*height + relativeBotttomLeftY + relativeOrigin.y();
-	quint32 *nfpPointer = nfp->getPixelRef(relativeBotttomLeftX, relativeBotttomLeftY);
-
-	// Add nofit polygon values to overlap map
-	for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++) {
-		int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
-		std::memcpy(mapPointer, nfpPointer, lineLength * sizeof(quint32));
-		mapPointer += lineLength + offsetHeight; nfpPointer += lineLength + nfpOffsetHeight;
-	}
-}
-
-void TotalOverlapMap::setDataFromMatrix(Eigen::Matrix< unsigned int, Eigen::Dynamic, Eigen::Dynamic > &overlapMatrix, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &weightVec) {
-	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > overlapResult = overlapMatrix * weightVec;
-	std::memcpy(data, overlapResult.data(), height*width*sizeof(quint32));
 }
 
 quint32 TotalOverlapMap::getMinimum(QPoint &minPt) {

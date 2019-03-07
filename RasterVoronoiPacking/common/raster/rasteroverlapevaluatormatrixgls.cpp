@@ -27,7 +27,6 @@ RasterTotalOverlapMapEvaluatorMatrixGLS::RasterTotalOverlapMapEvaluatorMatrixGLS
 }
 
 void RasterTotalOverlapMapEvaluatorMatrixGLS::updateMapsLength(int pixelWidth) {
-	RasterTotalOverlapMapEvaluatorGLS::updateMapsLength(pixelWidth);
 	for (int itemId = 0; itemId < problem->count(); itemId++)
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<TotalOverlapMatrix> curMatrix = matrices.getOverlapMap(itemId, angle);
@@ -38,7 +37,7 @@ void RasterTotalOverlapMapEvaluatorMatrixGLS::updateMapsLength(int pixelWidth) {
 void RasterTotalOverlapMapEvaluatorMatrixGLSBase::createWeigthVector(int itemId, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &vec) {
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
-		vec.coeffRef(i) = glsWeights->getWeight(itemId, i);
+		vec.coeffRef(i) = getWeight(itemId, i);
 	}
 }
 
@@ -54,7 +53,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorMatrixGLS::getTot
 	
 	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >  weightVec = Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >::Zero(solution.getNumItems());
 	createWeigthVector(itemId, weightVec);
-	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(currrentPieceMat->getRect(), currrentPieceMat->getCuttingStockLength()));
 	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > overlapMapMat = currrentPieceMat->getMatrixRef() * weightVec;
 	currrentPieceMap->copyData(overlapMapMat.data());
 	return currrentPieceMap;

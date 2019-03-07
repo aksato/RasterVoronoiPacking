@@ -8,89 +8,119 @@
 #include "glsweightset.h"
 
 //class MainWindow;
+int main(int argc, char *argv[]);
 
 namespace RASTERVORONOIPACKING {
 
-	// --> Class that performs determine overlap operations for solver
+	// --> Base class that performs determine overlap operations for solver without specifying the overlap map type
 	class RasterTotalOverlapMapEvaluator
 	{
 		friend class ::MainWindow;
+		friend int ::main(int argc, char *argv[]);
 	public:
 		// --> Default constructor
 		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock = false);
 
-		// --> Determines the item total overlap map
+		// --> Constructor using a custom weights
+		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock = false);
+
+		// --> Determines the item best position
 		virtual QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);
 		virtual QPoint getBottomLeftPosition(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 
-		// --> Guided Local Search functions
-		virtual void updateWeights(RasterPackingSolution &solution) = 0;
-		virtual void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap) = 0;
-		virtual void resetWeights() = 0;
-		virtual std::shared_ptr<GlsWeightSet> getGlsWeights() { return nullptr; }
-
 		// --> Container size update functions
-		virtual void updateMapsLength(int pixelWidth);
-		virtual void updateMapsDimensions(int pixelWidth, int pixelHeight);
+		virtual void updateMapsLength(int pixelWidth) = 0;
+		virtual void updateMapsDimensions(int pixelWidth, int pixelHeight) = 0;
 
-		// --> Option functions
-		virtual void disableMapCache();
-		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+		// --> Guided Local Search functions
+		// --> Update guided local search weights
+		virtual void updateWeights(RasterPackingSolution &solution);
+		virtual void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap);
+
+		// --> Reset guided local search weights
+		virtual void resetWeights();
+
 	protected:
-		
-		virtual std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
+		// Access weigths
+		int getWeight(int itemId1, int itemId2) { return glsWeights->getWeight(itemId1, itemId2); }
+
+		// --> Overlap map creation function
+		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) = 0;
+		virtual std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) = 0;
 
 		// --> Pointer to problem
 		std::shared_ptr<RasterPackingProblem> problem;
 
-		// --> Set of all item total overlap maps
-		ItemGeometricToolSet<std::shared_ptr<TotalOverlapMap>> maps;
+	private:
+		// Guided local search weights
+		std::shared_ptr<GlsWeightSet> glsWeights;
+
+		// Debug functions
+		void setgetGlsWeights(std::shared_ptr<GlsWeightSet> _glsWeights) { this->glsWeights = _glsWeights; }
+		std::shared_ptr<GlsWeightSet> getGlsWeights() { return glsWeights; }
 	};
 
 	// --> Overlap evaluator class with guided local search metaheuristic
 	class RasterTotalOverlapMapEvaluatorGLS : public RasterTotalOverlapMapEvaluator
 	{
 		friend class ::MainWindow;
+		friend int ::main(int argc, char *argv[]);
+
 	public:
 		// --> Default constructors
-		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock = false) : RasterTotalOverlapMapEvaluator(_problem, cuttingStock) { glsWeights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); }
+		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cache = true, bool cuttingStock = false);
 
 		// --> Constructors using a custom weights
-		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock = false) : RasterTotalOverlapMapEvaluator(_problem, cuttingStock), glsWeights(_glsWeights) {}
-		
-		// --> Update guided local search weights
-		void updateWeights(RasterPackingSolution &solution);
-		void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap);
-		
-		// --> Reset guided local search weights
-		void resetWeights();
+		RasterTotalOverlapMapEvaluatorGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cache = true, bool cuttingStock = false);
+
+		// --> Container size update functions
+		void updateMapsLength(int pixelWidth);
+		void updateMapsDimensions(int pixelWidth, int pixelHeight);
 
 	protected:
 		// --> Determines the item total overlap map with guided local search
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
 		virtual std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 
-		// Guided local search weights
-		std::shared_ptr<GlsWeightSet> glsWeights;
+		// --> Set of all item total overlap maps
+		ItemGeometricToolSet<std::shared_ptr<TotalOverlapMap>> maps;
 
 	private:
-		// Debug functions
-		void setgetGlsWeights(std::shared_ptr<GlsWeightSet> _glsWeights) { this->glsWeights = _glsWeights; }
-		std::shared_ptr<GlsWeightSet> getGlsWeights() { return glsWeights; }
-		
+		void populateMaps(bool cache, bool cuttingStock);
+	};
+
+	// --> Class that performs determine overlap operations for solver
+	class RasterTotalOverlapMapEvaluatorNoGLS : public RasterTotalOverlapMapEvaluatorGLS
+	{
+		friend class ::MainWindow;
+		friend int ::main(int argc, char *argv[]);
+
+	public:
+		// --> Default constructor
+		RasterTotalOverlapMapEvaluatorNoGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cache = true, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, cache, cuttingStock) {}
+
+		//// --> Guided Local Search functions
+		void updateWeights(RasterPackingSolution &solution) {}
+		void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap) {}
+		void resetWeights() {}
+
+	protected:
+		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+		std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems);
 	};
 
 	// --> Overlap evaluator class with dual resolution approach and support for guided local search metaheuristic
 	class RasterTotalOverlapMapEvaluatorDoubleGLS : public RasterTotalOverlapMapEvaluatorGLS
 	{
-                friend class ::MainWindow;
+		friend class ::MainWindow;
+		friend int ::main(int argc, char *argv[]);
 
 	public:
 		// --> Default constructors
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, cuttingStock), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cuttingStock); }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, false, cuttingStock), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cuttingStock); }
 
 		// --> Constructors using a custom weights
-		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights, cuttingStock), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cuttingStock); }
+		RasterTotalOverlapMapEvaluatorDoubleGLS(std::shared_ptr<RasterPackingProblem> _problem, int _zoomFactorInt, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights, false, cuttingStock), zoomFactorInt(_zoomFactorInt) { createSearchMaps(cuttingStock); }
 
 		// --> Determines the item total overlap map
 		QPoint getMinimumOverlapPosition(int itemId, int orientation, RasterPackingSolution &solution, quint32 &value);

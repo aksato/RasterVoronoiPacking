@@ -7,17 +7,18 @@
 #include <Eigen/Core>
 
 namespace RASTERVORONOIPACKING {
-	class RasterTotalOverlapMapEvaluatorMatrixGLSBase : public RasterTotalOverlapMapEvaluatorGLS
+	class RasterTotalOverlapMapEvaluatorMatrixGLSBase : public RasterTotalOverlapMapEvaluator
 	{
 	public:
 		// --> Default constructors
-		RasterTotalOverlapMapEvaluatorMatrixGLSBase(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, cuttingStock) {}
+		RasterTotalOverlapMapEvaluatorMatrixGLSBase(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock = false) : RasterTotalOverlapMapEvaluator(_problem, cuttingStock) {}
 
 		// --> Constructors using a custom weights
-		RasterTotalOverlapMapEvaluatorMatrixGLSBase(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock = false) : RasterTotalOverlapMapEvaluatorGLS(_problem, _glsWeights, cuttingStock) {}
+		RasterTotalOverlapMapEvaluatorMatrixGLSBase(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock = false) : RasterTotalOverlapMapEvaluator(_problem, _glsWeights, cuttingStock) {}
 
 		// --> Container size update functions
 		virtual void updateMapsLength(int pixelWidth) = 0;
+		virtual void updateMapsDimensions(int pixelWidth, int pixelHeight) = 0;
 
 	protected:
 		// --> Creates vector of weights
@@ -41,9 +42,15 @@ namespace RASTERVORONOIPACKING {
 		// --> Container size update functions
 		void updateMapsLength(int pixelWidth);
 
+		// --> TODO: Implementation
+		void updateMapsDimensions(int pixelWidth, int pixelHeight) {}
+
 	protected:
 		// --> Determines the item total overlap map with guided local search
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+
+		// --> TODO: Implementation
+		std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) { return nullptr; };
 
 		// --> Set of all item overlap matrices
 		ItemGeometricToolSet<std::shared_ptr<TotalOverlapMatrix>> matrices;
@@ -61,9 +68,15 @@ namespace RASTERVORONOIPACKING {
 		// --> Container size update functions
 		void updateMapsLength(int pixelWidth);
 
+		// --> TODO: Implementation
+		void updateMapsDimensions(int pixelWidth, int pixelHeight) {}
+
 	protected:
 		// --> Determines the item total overlap map with guided local search
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);
+
+		// --> TODO: Implementation
+		std::shared_ptr<TotalOverlapMap> getPartialTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution, QList<int> &placedItems) { return nullptr; };
 
 		// --> Set of all item overlap matrices
 		ItemGeometricToolSet<std::shared_ptr<TotalOverlapMatrixCuda>> matrices;

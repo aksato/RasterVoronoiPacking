@@ -15,8 +15,7 @@ std::shared_ptr<RasterStripPackingSolver> RasterStripPackingSolver::createRaster
 	// Determine overlap evaluator
 	if (parameters.getZoomFactor() > 1)
 		overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(problem, parameters.getZoomFactor(), weights, parameters.getCompaction() == RASTERVORONOIPACKING::CUTTINGSTOCK));
-	else overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problem, weights, parameters.getCompaction() == RASTERVORONOIPACKING::CUTTINGSTOCK));
-	if (!parameters.isCacheMaps()) overlapEvaluator->disableMapCache();
+	else overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problem, weights, parameters.isCacheMaps(), parameters.getCompaction() == RASTERVORONOIPACKING::CUTTINGSTOCK));
 	// Create solver
 	solver = std::shared_ptr<RasterStripPackingSolver>(new RasterStripPackingSolver(problem, overlapEvaluator));
 	return solver;

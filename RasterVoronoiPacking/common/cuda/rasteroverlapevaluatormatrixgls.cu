@@ -25,7 +25,6 @@ RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaM
 }
 
 void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::updateMapsLength(int pixelWidth) {
-	RasterTotalOverlapMapEvaluatorGLS::updateMapsLength(pixelWidth);
 	for (int itemId = 0; itemId < problem->count(); itemId++)
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<TotalOverlapMatrixCuda> curMatrix = matrices.getOverlapMap(itemId, angle);
@@ -49,8 +48,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::ge
 	
 	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >  weightVec = Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >::Zero(solution.getNumItems());
 	createWeigthVector(itemId, weightVec);
-	std::shared_ptr<TotalOverlapMap> currrentPieceMap = maps.getOverlapMap(itemId, orientation);
-	//currrentPieceMap->setDataFromMatrix(overlapMatrix, weightVec);
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(currrentPieceMat->getRect(), currrentPieceMat->getCuttingStockLength()));
 	Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > overlapMapMat = overlapMatrix * weightVec;
 	currrentPieceMap->copyData(overlapMapMat.data());
 	return currrentPieceMap;

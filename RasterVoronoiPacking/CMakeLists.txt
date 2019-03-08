@@ -25,6 +25,7 @@ set(common_SRCS
 	common/raster/rasterrectpackingcompactor.cpp
 	common/raster/rasterstrippackingsolver.cpp
 	common/raster/rasteroverlapevaluator.cpp
+	common/raster/rasteroverlapevaluatorfull.cpp
 	common/raster/rasteroverlapevaluatorgls.cpp
 	common/raster/rasteroverlapevaluatormatrixgls.cpp
 	common/raster/rasteroverlapevaluatordoublegls.cpp

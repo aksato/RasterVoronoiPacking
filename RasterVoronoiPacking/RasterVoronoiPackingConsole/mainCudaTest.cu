@@ -4,6 +4,7 @@
 #include "cuda/rasterpackingcudaproblem.h"
 #include "cuda/rasteroverlapevaluatorcudagls.h"
 #include "raster/rasteroverlapevaluator.h"
+#include "raster/rasteroverlapevaluatorfull.h"
 #include "raster/rasteroverlapevaluatormatrixgls.h"
 #include "raster/rasterstrippackingparameters.h"
 #include "raster/rasterstrippackingsolver.h"
@@ -31,8 +32,8 @@ int main(int argc, char *argv[])
 	catch (args::Help) { std::cout << parser; return 0; }
 	catch (args::ParseError e) { std::cerr << e.what() << std::endl << parser; return 1; }
 
-	//qsrand(4939495);
-	qsrand(QTime::currentTime().msec());
+	qsrand(4939495);
+	//qsrand(QTime::currentTime().msec());
 
 	// Load problem on the CPU
 	QString originalPath = QDir::currentPath();
@@ -74,6 +75,20 @@ int main(int argc, char *argv[])
 	long long serialduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of default method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us." << std::endl;
 	//curMap->getImage().save("map.png");
+
+	// Full version
+	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapFullEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorFull>(new RasterTotalOverlapMapEvaluatorFull(rasterProblem, weights));
+	std::shared_ptr<RasterStripPackingCompactor> compactorFull = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapFullEvaluator, 0.04, 0.01));
+	start = std::chrono::system_clock::now();
+	for (int i = 0; i < REPETITIONS; i++) {
+		for (int k = 0; k < rasterProblem->count(); k++) {
+			curMap = overlapFullEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
+		}
+	}
+	end = std::chrono::system_clock::now();
+	long long fullduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of full method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us. Speedup was " << (float)serialduration/(float)fullduration << "." << std::endl;
+	//curMap->getImage().save("mapfull.png");
 
 	// Matrix version
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorMatrixGLS>(new RasterTotalOverlapMapEvaluatorMatrixGLS(rasterProblem, weights, false));

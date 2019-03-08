@@ -2,6 +2,7 @@
 #include "packingproblem.h"
 #include "raster/rasterpackingproblem.h"
 #include "cuda/rasterpackingcudaproblem.h"
+#include "cuda/rasteroverlapevaluatorcudagls.h"
 #include "raster/rasteroverlapevaluator.h"
 #include "raster/rasteroverlapevaluatormatrixgls.h"
 #include "raster/rasterstrippackingparameters.h"
@@ -30,6 +31,10 @@ int main(int argc, char *argv[])
 	catch (args::Help) { std::cout << parser; return 0; }
 	catch (args::ParseError e) { std::cerr << e.what() << std::endl << parser; return 1; }
 
+	//qsrand(4939495);
+	qsrand(QTime::currentTime().msec());
+
+	// Load problem on the CPU
 	QString originalPath = QDir::currentPath();
 	QString  fileName = QString::fromStdString(args::get(argPuzzle));
 	QDir::setCurrent(QFileInfo(fileName).absolutePath());
@@ -39,8 +44,7 @@ int main(int argc, char *argv[])
 	QVector<std::shared_ptr<RasterPackingSolution>> solutions;
 	QDir::setCurrent(originalPath);
 
-	//qsrand(4939495);
-	qsrand(QTime::currentTime().msec());
+	// Generate random weights
 	std::shared_ptr<GlsWeightSet> weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(rasterProblem->count()));
 	for (int i = 0; i < rasterProblem->count(); i++) 
 		for (int j = 0; j < rasterProblem->count(); j++) {
@@ -50,6 +54,7 @@ int main(int argc, char *argv[])
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, weights, false));
 	std::shared_ptr<RasterStripPackingCompactor> compactor = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapEvaluator, 0.04, 0.01));
 	
+	// Generate random solutions
 	for (int i = 0; i < REPETITIONS; i++) {
 		std::shared_ptr<RasterPackingSolution> cursolution = std::shared_ptr<RasterPackingSolution>(new RasterPackingSolution(rasterProblem->count()));
 		compactor->generateRandomSolution(*cursolution);
@@ -84,17 +89,33 @@ int main(int argc, char *argv[])
 	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of matrix method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us. Speedup was " << (float)serialduration/(float)matrixduration << "." << std::endl;
 	//curMap->getImage().save("mapmat.png");
 
-	// Cuda matrix version
+	// Load problem on the GPU
 	QDir::setCurrent(QFileInfo(fileName).absolutePath());
-	RASTERPACKING::PackingProblem problem2;
-	problem2.load(fileName);
-	std::shared_ptr<RasterPackingProblem> rasterCudaProblem = std::shared_ptr<RasterPackingProblem>(new RasterPackingCudaProblem(problem2));
+	RASTERPACKING::PackingProblem problemCuda;
+	problemCuda.load(fileName);
+	std::shared_ptr<RasterPackingProblem> rasterCudaProblem = std::shared_ptr<RasterPackingProblem>(new RasterPackingCudaProblem(problemCuda));
 	QDir::setCurrent(originalPath);
+
+	// Cuda version
+	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaGLS>(new RasterTotalOverlapMapEvaluatorCudaGLS(rasterCudaProblem, weights));
+	std::shared_ptr<RasterStripPackingCompactor> compactorCuda = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterCudaProblem, overlapCudaEvaluator, 0.04, 0.01));
+	start = std::chrono::system_clock::now();
+	for (int i = 0; i < REPETITIONS; i++) {
+		for (int k = 0; k < rasterProblem->count(); k++) {
+			curMap = overlapCudaEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
+		}
+	}
+	end = std::chrono::system_clock::now();
+	long long cudaduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of cuda method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us. Speedup was " << (float)serialduration / (float)cudaduration << "." << std::endl;
+	//curMap->getImage().save("mapcuda.png");
+
+	// Cuda matrix version
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaMatrixGLS>(new RasterTotalOverlapMapEvaluatorCudaMatrixGLS(rasterCudaProblem, weights, false));
 	std::shared_ptr<RasterStripPackingCompactor> compactorCudaMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterCudaProblem, overlapCudaMatrixEvaluator, 0.04, 0.01));
 	start = std::chrono::system_clock::now();
 	for (int i = 0; i < REPETITIONS; i++) {
-		for (int k = 0; k < rasterCudaProblem->count(); k++) {
+		for (int k = 0; k < rasterProblem->count(); k++) {
 			curMap = overlapCudaMatrixEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
 		}
 	}

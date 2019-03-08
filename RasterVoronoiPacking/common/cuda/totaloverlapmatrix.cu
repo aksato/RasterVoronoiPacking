@@ -8,8 +8,8 @@ using namespace RASTERVORONOIPACKING;
 __global__
 void filloverlapmatrix(int totalLines, int lineLength, int mapInitIdx, int nfpInitIdx, int mapOffsetHeight, int nfpOffsetHeight, quint32 *map, quint32 *nfp)
 {
-	int mapidx = mapInitIdx + blockIdx.x * (lineLength + mapOffsetHeight) + threadIdx.x;
-	int nfpidx = nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + threadIdx.x;
+	int mapidx = mapInitIdx + blockIdx.x * (lineLength + mapOffsetHeight) + blockIdx.y * blockDim.y + threadIdx.x;
+	int nfpidx = nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + blockIdx.y * blockDim.y + threadIdx.x;
 	if (threadIdx.x < lineLength)
 		map[mapidx] = nfp[nfpidx];
 }
@@ -65,5 +65,6 @@ void TotalOverlapMatrixCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitP
 
 	int totalLines = relativeTopRightX - relativeBotttomLeftX + 1;
 	int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
-	filloverlapmatrix << < totalLines, THREADS_PER_BLOCK >> >(totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0));
+	dim3 numBlocks(totalLines, (lineLength + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK);
+	filloverlapmatrix << < numBlocks, THREADS_PER_BLOCK >> >(totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0));
 }

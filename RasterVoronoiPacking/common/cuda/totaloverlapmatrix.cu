@@ -35,12 +35,12 @@ TotalOverlapMatrixCuda::~TotalOverlapMatrixCuda() {
 }
 
 void TotalOverlapMatrixCuda::initCuda(uint _width, uint _height) {
-	cudaFree(data);
 	cudaMalloc((void **)&data, _width * _height * numItems * sizeof(quint32));
 	cudaMemset(data, 0, _width * _height * numItems * sizeof(quint32));
 }
 
 void TotalOverlapMatrixCuda::setDimensions(int _width, int _height) {
+	cudaFree(data);
 	initCuda(_width, _height);
 	this->width = _width; this->height = _height;
 }

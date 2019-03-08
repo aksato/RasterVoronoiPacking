@@ -19,6 +19,41 @@
 
 using namespace RASTERVORONOIPACKING;
 
+QVector<std::shared_ptr<RasterPackingSolution>> solutions;
+
+std::shared_ptr<GlsWeightSet> generateRandomWeigths(int count) {
+	std::shared_ptr<GlsWeightSet> weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(count));
+	for (int i = 0; i < count; i++) 
+		for (int j = 0; j < count; j++) {
+			if (i == j) continue;
+			weights->addWeight(i, j, rand() % 100+100);
+		}
+	return weights;
+}
+
+void generateRandomSolutions(std::shared_ptr<RasterPackingProblem> rasterProblem, int length, int repetitions) {
+	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, std::shared_ptr<GlsNoWeightSet>(new GlsNoWeightSet), false));
+	std::shared_ptr<RasterStripPackingCompactor> compactor = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapEvaluator, 0.04, 0.01));
+	for (int i = 0; i < repetitions; i++) {
+		std::shared_ptr<RasterPackingSolution> cursolution = std::shared_ptr<RasterPackingSolution>(new RasterPackingSolution(rasterProblem->count()));
+		compactor->generateRandomSolution(*cursolution);
+		solutions.push_back(cursolution);
+		//solution.exportToPgf("sol.pgf", rasterProblem, (qreal)compactor->getCurrentLength() / rasterProblem->getScale(), (qreal)compactor->getCurrentHeight() / rasterProblem->getScale());
+	}
+}
+
+long long measureOverlapEvaluatorTime(std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator, int count) {
+	auto start = std::chrono::system_clock::now();
+	std::shared_ptr<TotalOverlapMap> curMap;
+	for (int i = 0; i < solutions.size(); i++) {
+		for (int k = 0; k < count; k++) {
+			curMap = overlapEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
+		}
+	}
+	auto end = std::chrono::system_clock::now();
+	return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+}
+
 int main(int argc, char *argv[])
 {
 	// --> Parse command line arguments
@@ -42,66 +77,32 @@ int main(int argc, char *argv[])
 	RASTERPACKING::PackingProblem problem;
 	if (!problem.load(fileName)) { std::cerr << "Could not read puzzle file " << fileName.toStdString() << "." << std::endl; return 1; }
 	std::shared_ptr<RasterPackingProblem> rasterProblem = std::shared_ptr<RasterPackingProblem>(new RasterPackingProblem(problem));
-	QVector<std::shared_ptr<RasterPackingSolution>> solutions;
 	QDir::setCurrent(originalPath);
 
 	// Generate random weights
-	std::shared_ptr<GlsWeightSet> weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(rasterProblem->count()));
-	for (int i = 0; i < rasterProblem->count(); i++) 
-		for (int j = 0; j < rasterProblem->count(); j++) {
-			if (i == j) continue;
-			weights->addWeight(i, j, rand() % 100+100);
-		}
+	std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterProblem->count());
+	// Generate random solutions
+	generateRandomSolutions(rasterProblem, args::get(argLength), REPETITIONS);
+
+	// Default creation	
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, weights, false));
 	std::shared_ptr<RasterStripPackingCompactor> compactor = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapEvaluator, 0.04, 0.01));
-	
-	// Generate random solutions
-	for (int i = 0; i < REPETITIONS; i++) {
-		std::shared_ptr<RasterPackingSolution> cursolution = std::shared_ptr<RasterPackingSolution>(new RasterPackingSolution(rasterProblem->count()));
-		compactor->generateRandomSolution(*cursolution);
-		solutions.push_back(cursolution);
-	}
-	//solution.exportToPgf("sol.pgf", rasterProblem, (qreal)compactor->getCurrentLength() / rasterProblem->getScale(), (qreal)compactor->getCurrentHeight() / rasterProblem->getScale());
-
-	// Default creation
-	auto start = std::chrono::system_clock::now();
-	std::shared_ptr<TotalOverlapMap> curMap;
-	for (int i = 0; i < REPETITIONS; i++) {
-		for (int k = 0; k < rasterProblem->count(); k++) {
-			curMap = overlapEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
-		}
-	}
-	auto end = std::chrono::system_clock::now();
-	long long serialduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of default method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us." << std::endl;
+	long long serialduration = measureOverlapEvaluatorTime(overlapEvaluator, rasterProblem->count());
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of default method was " << serialduration << "us." << std::endl;
 	//curMap->getImage().save("map.png");
 
 	// Full version
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapFullEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorFull>(new RasterTotalOverlapMapEvaluatorFull(rasterProblem, weights));
 	std::shared_ptr<RasterStripPackingCompactor> compactorFull = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapFullEvaluator, 0.04, 0.01));
-	start = std::chrono::system_clock::now();
-	for (int i = 0; i < REPETITIONS; i++) {
-		for (int k = 0; k < rasterProblem->count(); k++) {
-			curMap = overlapFullEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
-		}
-	}
-	end = std::chrono::system_clock::now();
-	long long fullduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of full method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us. Speedup was " << (float)serialduration/(float)fullduration << "." << std::endl;
+	long long fullduration = measureOverlapEvaluatorTime(overlapFullEvaluator, rasterProblem->count());
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of full method was " << fullduration << "us. Speedup was " << (float)serialduration/(float)fullduration << "." << std::endl;
 	//curMap->getImage().save("mapfull.png");
 
 	// Matrix version
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorMatrixGLS>(new RasterTotalOverlapMapEvaluatorMatrixGLS(rasterProblem, weights, false));
 	std::shared_ptr<RasterStripPackingCompactor> compactorMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterProblem, overlapMatrixEvaluator, 0.04, 0.01));
-	start = std::chrono::system_clock::now();
-	for (int i = 0; i < REPETITIONS; i++) {
-		for (int k = 0; k < rasterProblem->count(); k++) {
-			curMap = overlapMatrixEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
-		}
-	}
-	end = std::chrono::system_clock::now();
-	long long matrixduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of matrix method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us. Speedup was " << (float)serialduration/(float)matrixduration << "." << std::endl;
+	long long matrixduration = measureOverlapEvaluatorTime(overlapMatrixEvaluator, rasterProblem->count());
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of matrix method was " << matrixduration<< "us. Speedup was " << (float)serialduration/(float)matrixduration << "." << std::endl;
 	//curMap->getImage().save("mapmat.png");
 
 	// Load problem on the GPU
@@ -114,29 +115,15 @@ int main(int argc, char *argv[])
 	// Cuda version
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaGLS>(new RasterTotalOverlapMapEvaluatorCudaGLS(rasterCudaProblem, weights));
 	std::shared_ptr<RasterStripPackingCompactor> compactorCuda = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterCudaProblem, overlapCudaEvaluator, 0.04, 0.01));
-	start = std::chrono::system_clock::now();
-	for (int i = 0; i < REPETITIONS; i++) {
-		for (int k = 0; k < rasterProblem->count(); k++) {
-			curMap = overlapCudaEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
-		}
-	}
-	end = std::chrono::system_clock::now();
-	long long cudaduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of cuda method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us. Speedup was " << (float)serialduration / (float)cudaduration << "." << std::endl;
+	long long cudaduration = measureOverlapEvaluatorTime(overlapCudaEvaluator, rasterProblem->count());
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of cuda method was " << cudaduration << "us. Speedup was " << (float)serialduration / (float)cudaduration << "." << std::endl;
 	//curMap->getImage().save("mapcuda.png");
 
 	// Cuda matrix version
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaMatrixGLS>(new RasterTotalOverlapMapEvaluatorCudaMatrixGLS(rasterCudaProblem, weights, false));
 	std::shared_ptr<RasterStripPackingCompactor> compactorCudaMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(args::get(argLength), rasterCudaProblem, overlapCudaMatrixEvaluator, 0.04, 0.01));
-	start = std::chrono::system_clock::now();
-	for (int i = 0; i < REPETITIONS; i++) {
-		for (int k = 0; k < rasterProblem->count(); k++) {
-			curMap = overlapCudaMatrixEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
-		}
-	}
-	end = std::chrono::system_clock::now();
-	long long cudamatrixduration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of cuda matrix method was " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "us. Speedup was " << (float) serialduration / (float)cudamatrixduration << "." << std::endl;
+	long long cudamatrixduration = measureOverlapEvaluatorTime(overlapCudaMatrixEvaluator, rasterProblem->count());
+	std::cout << "Total elapsed time for " << REPETITIONS << " repetitions of cuda matrix method was " << cudamatrixduration << "us. Speedup was " << (float) serialduration / (float)cudamatrixduration << "." << std::endl;
 	//curMap->getImage().save("mapmatcuda.png");
 
 	return 0;

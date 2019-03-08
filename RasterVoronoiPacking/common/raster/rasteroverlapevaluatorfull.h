@@ -6,15 +6,12 @@
 #include "totaloverlapmap.h"
 #include "glsweightset.h"
 
-int main(int argc, char *argv[]);
-
 namespace RASTERVORONOIPACKING {
 
 	// --> Full overlap evaluator class with guided local search metaheuristic
 	class RasterTotalOverlapMapEvaluatorFull : public RasterTotalOverlapMapEvaluatorGLS
 	{
 		friend class ::MainWindow;
-		friend int ::main(int argc, char *argv[]);
 
 	public:
 		// --> Default constructors

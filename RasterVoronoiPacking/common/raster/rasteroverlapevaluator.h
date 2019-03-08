@@ -8,7 +8,8 @@
 #include "glsweightset.h"
 
 //class MainWindow;
-int main(int argc, char *argv[]);
+namespace RASTERVORONOIPACKING { class RasterTotalOverlapMapEvaluator; }
+long long measureOverlapEvaluatorTime(std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> overlapEvaluator, int count);
 
 namespace RASTERVORONOIPACKING {
 
@@ -16,7 +17,7 @@ namespace RASTERVORONOIPACKING {
 	class RasterTotalOverlapMapEvaluator
 	{
 		friend class ::MainWindow;
-		friend int ::main(int argc, char *argv[]);
+		friend long long ::measureOverlapEvaluatorTime(std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator, int count);
 	public:
 		// --> Default constructor
 		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock = false);
@@ -64,7 +65,6 @@ namespace RASTERVORONOIPACKING {
 	class RasterTotalOverlapMapEvaluatorGLS : public RasterTotalOverlapMapEvaluator
 	{
 		friend class ::MainWindow;
-		friend int ::main(int argc, char *argv[]);
 
 	public:
 		// --> Default constructors
@@ -93,7 +93,6 @@ namespace RASTERVORONOIPACKING {
 	class RasterTotalOverlapMapEvaluatorNoGLS : public RasterTotalOverlapMapEvaluatorGLS
 	{
 		friend class ::MainWindow;
-		friend int ::main(int argc, char *argv[]);
 
 	public:
 		// --> Default constructor
@@ -113,7 +112,6 @@ namespace RASTERVORONOIPACKING {
 	class RasterTotalOverlapMapEvaluatorDoubleGLS : public RasterTotalOverlapMapEvaluatorGLS
 	{
 		friend class ::MainWindow;
-		friend int ::main(int argc, char *argv[]);
 
 	public:
 		// --> Default constructors

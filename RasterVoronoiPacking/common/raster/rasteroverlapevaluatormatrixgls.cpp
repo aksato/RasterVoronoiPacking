@@ -41,6 +41,13 @@ void RasterTotalOverlapMapEvaluatorMatrixGLSBase::createWeigthVector(int itemId,
 	}
 }
 
+void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::createWeigthVector(int itemId, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &vec) {
+	for (int i = 0; i < problem->count(); i++) {
+		if (i == itemId) continue;
+		vec.coeffRef(i) = getWeight(itemId, i);
+	}
+}
+
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorMatrixGLS::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) {
 	std::shared_ptr<TotalOverlapMatrix> currrentPieceMat = matrices.getOverlapMap(itemId, orientation);
 	currrentPieceMat->reset();

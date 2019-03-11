@@ -38,9 +38,6 @@ namespace RASTERVORONOIPACKING {
 
 	protected:
 		GlsWeightSet() {}
-
-    private:
-
 		int numItems;
         QVector<unsigned int> weights;
 

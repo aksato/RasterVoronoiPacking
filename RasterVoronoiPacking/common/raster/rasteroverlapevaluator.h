@@ -43,7 +43,7 @@ namespace RASTERVORONOIPACKING {
 
 	protected:
 		// Access weigths
-		int getWeight(int itemId1, int itemId2) { return glsWeights->getWeight(itemId1, itemId2); }
+		virtual int getWeight(int itemId1, int itemId2) { return glsWeights->getWeight(itemId1, itemId2); }
 
 		// --> Overlap map creation function
 		virtual std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) = 0;

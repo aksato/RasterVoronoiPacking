@@ -4,7 +4,7 @@
 
 using namespace RASTERVORONOIPACKING;
 
-RasterTotalOverlapMapEvaluatorMatrixGLS::RasterTotalOverlapMapEvaluatorMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock) : RasterTotalOverlapMapEvaluatorMatrixGLSBase(_problem, cuttingStock), matrices(_problem->count()) {
+RasterTotalOverlapMapEvaluatorMatrixGLS::RasterTotalOverlapMapEvaluatorMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock) : RasterTotalOverlapMapEvaluator(_problem, cuttingStock), matrices(_problem->count()) {
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
@@ -15,7 +15,7 @@ RasterTotalOverlapMapEvaluatorMatrixGLS::RasterTotalOverlapMapEvaluatorMatrixGLS
 	}
 }
 
-RasterTotalOverlapMapEvaluatorMatrixGLS::RasterTotalOverlapMapEvaluatorMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock) : RasterTotalOverlapMapEvaluatorMatrixGLSBase(_problem, _glsWeights, cuttingStock), matrices(_problem->count()) {
+RasterTotalOverlapMapEvaluatorMatrixGLS::RasterTotalOverlapMapEvaluatorMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cuttingStock) : RasterTotalOverlapMapEvaluator(_problem, _glsWeights, cuttingStock), matrices(_problem->count()) {
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
@@ -34,14 +34,7 @@ void RasterTotalOverlapMapEvaluatorMatrixGLS::updateMapsLength(int pixelWidth) {
 		}
 }
 
-void RasterTotalOverlapMapEvaluatorMatrixGLSBase::createWeigthVector(int itemId, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &vec) {
-	for (int i = 0; i < problem->count(); i++) {
-		if (i == itemId) continue;
-		vec.coeffRef(i) = getWeight(itemId, i);
-	}
-}
-
-void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::createWeigthVector(int itemId, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &vec) {
+void RasterTotalOverlapMapEvaluatorMatrixGLS::createWeigthVector(int itemId, Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 > &vec) {
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
 		vec.coeffRef(i) = getWeight(itemId, i);

@@ -1,6 +1,4 @@
-#include "raster/totaloverlapmap.h"
-#include "raster/totaloverlapmatrix.h"
-#include <stdio.h>
+#include "cuda/totaloverlapmatrixcuda.h"
 using namespace RASTERVORONOIPACKING;
 
 #define THREADS_PER_BLOCK 512

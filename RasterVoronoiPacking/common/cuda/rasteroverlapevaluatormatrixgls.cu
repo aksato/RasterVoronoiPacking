@@ -115,7 +115,8 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::ge
 	gemv << <dim_grid, dim_block >> >(currrentPieceMat->getData(), glsWeightsCuda->getCudaWeights(itemId), map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), solution.getNumItems());
 	//gemv << <dim_grid, dim_block >> >(currrentPieceMat->getData(), weight, map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), solution.getNumItems());
 
-	std::shared_ptr<TotalOverlapMap> dummyPieceMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(currrentPieceMat->getRect(), currrentPieceMat->getCuttingStockLength()));
-	cudaMemcpy(dummyPieceMap->getData(), map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * sizeof(quint32), cudaMemcpyDeviceToHost);
-	return dummyPieceMap;
+	return std::shared_ptr<TotalOverlapMap>();
+	//std::shared_ptr<TotalOverlapMap> dummyPieceMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(currrentPieceMat->getRect(), currrentPieceMat->getCuttingStockLength()));
+	//cudaMemcpy(dummyPieceMap->getData(), map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * sizeof(quint32), cudaMemcpyDeviceToHost);
+	//return dummyPieceMap;
 }

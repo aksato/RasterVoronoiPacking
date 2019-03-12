@@ -3,6 +3,7 @@
 #include "raster/rasterpackingproblem.h"
 #include "cuda/rasterpackingcudaproblem.h"
 #include "cuda/rasteroverlapevaluatorcudagls.h"
+#include "cuda/rasteroverlapevaluatorcudamatrixgls.h"
 #include "cuda/glsweightsetcuda.h"
 #include "raster/rasteroverlapevaluator.h"
 #include "raster/rasteroverlapevaluatorfull.h"
@@ -62,11 +63,11 @@ long long measureOverlapEvaluatorTime(std::shared_ptr<RasterTotalOverlapMapEvalu
 		for (int k = 0; k < count; k++) {
 		//for (int k = 2; k < 3; k++) {
 			curMap = overlapEvaluator->getTotalOverlapMap(k, solutions[i]->getOrientation(k), *solutions[i]);
+			//curMap->getImage().save("map" + QString::number(mapcount++) + ".png");
 		}
 	}
 	if(cuda) cudaDeviceSynchronize();
 	auto end = std::chrono::system_clock::now();
-	//curMap->getImage().save("map" + QString::number(mapcount++) + ".png");
 	return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 }
 

@@ -1,6 +1,7 @@
 #ifndef TOTALOVERLAPMATRIXCUDA_H
 #define TOTALOVERLAPMATRIXCUDA_H
 
+#include <cuda_runtime.h>
 #include "raster/rasternofitpolygon.h"
 #include "raster/rasterstrippackingparameters.h"
 #include "raster/totaloverlapmatrix.h"
@@ -10,9 +11,9 @@ namespace RASTERVORONOIPACKING {
 	class TotalOverlapMatrixCuda : public TotalOverlapMap
 	{
 	public:
-		TotalOverlapMatrixCuda(std::shared_ptr<RasterNoFitPolygon> ifp, int _numItems, int _cuttingStockLength = -1);
-		TotalOverlapMatrixCuda(int width, int height, QPoint _reference, int _numItems, int _cuttingStockLength = -1);
-		TotalOverlapMatrixCuda(QRect &boundingBox, int _numItems, int _cuttingStockLength = -1);
+		TotalOverlapMatrixCuda(std::shared_ptr<RasterNoFitPolygon> ifp, int _numItems, std::vector<cudaStream_t> &_streams, int _cuttingStockLength = -1);
+		TotalOverlapMatrixCuda(int width, int height, QPoint _reference, int _numItems, std::vector<cudaStream_t> &_streams, int _cuttingStockLength = -1);
+		TotalOverlapMatrixCuda(QRect &boundingBox, int _numItems, std::vector<cudaStream_t> &_streams, int _cuttingStockLength = -1);
 		~TotalOverlapMatrixCuda();
 
 		void initCuda(uint _width, uint _height);
@@ -26,6 +27,7 @@ namespace RASTERVORONOIPACKING {
 
 	private:
 		int numItems;
+		std::vector<cudaStream_t> &streams;
 	};
 
 }

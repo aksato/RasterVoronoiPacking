@@ -12,17 +12,17 @@ void filloverlapmatrix(int totalLines, int lineLength, int mapInitIdx, int nfpIn
 		map[mapidx] = nfp[nfpidx];
 }
 
-TotalOverlapMatrixCuda::TotalOverlapMatrixCuda(std::shared_ptr<RasterNoFitPolygon> ifp, int _numItems, int _cuttingStockLength) : TotalOverlapMap(ifp, _cuttingStockLength), numItems(_numItems) {
+TotalOverlapMatrixCuda::TotalOverlapMatrixCuda(std::shared_ptr<RasterNoFitPolygon> ifp, int _numItems, std::vector<cudaStream_t> &_streams, int _cuttingStockLength) : TotalOverlapMap(ifp, _cuttingStockLength), numItems(_numItems), streams(_streams) {
 	delete[] data;
 	initCuda(width, height);
 }
 
-TotalOverlapMatrixCuda::TotalOverlapMatrixCuda(QRect &boundingBox, int _numItems, int _cuttingStockLength) : TotalOverlapMap(boundingBox, _cuttingStockLength), numItems(_numItems) {
+TotalOverlapMatrixCuda::TotalOverlapMatrixCuda(QRect &boundingBox, int _numItems, std::vector<cudaStream_t> &_streams, int _cuttingStockLength) : TotalOverlapMap(boundingBox, _cuttingStockLength), numItems(_numItems), streams(_streams) {
 	delete[] data;
 	initCuda(width, height);
 }
 
-TotalOverlapMatrixCuda::TotalOverlapMatrixCuda(int width, int height, QPoint _reference, int _numItems, int _cuttingStockLength) : TotalOverlapMap(width, height, _reference, _cuttingStockLength), numItems(_numItems) {
+TotalOverlapMatrixCuda::TotalOverlapMatrixCuda(int width, int height, QPoint _reference, int _numItems, std::vector<cudaStream_t> &_streams, int _cuttingStockLength) : TotalOverlapMap(width, height, _reference, _cuttingStockLength), numItems(_numItems), streams(_streams) {
 	delete[] data;
 	initCuda(width, height);
 }
@@ -64,5 +64,5 @@ void TotalOverlapMatrixCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitP
 	int totalLines = relativeTopRightX - relativeBotttomLeftX + 1;
 	int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
 	dim3 numBlocks(totalLines, (lineLength + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK);
-	filloverlapmatrix << < numBlocks, THREADS_PER_BLOCK >> >(totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0));
+	filloverlapmatrix << < numBlocks, THREADS_PER_BLOCK, 0, streams[itemId] >> >(totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0));
 }

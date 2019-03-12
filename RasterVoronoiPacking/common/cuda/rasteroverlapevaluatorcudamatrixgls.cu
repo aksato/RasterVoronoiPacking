@@ -1,7 +1,7 @@
-#include "raster/rasteroverlapevaluatormatrixgls.h"
+#include "cuda/rasteroverlapevaluatorcudamatrixgls.h"
+#include "cuda/totaloverlapmatrixcuda.h"
 
 #define     BLOCK_SIZE      16
-
 using namespace RASTERVORONOIPACKING;
 
 __global__ void gemv(const quint32 * __restrict__ dA, const quint32 * __restrict__ dx, quint32 * __restrict__ dy, const unsigned int nRows, const unsigned int nCols)
@@ -22,9 +22,7 @@ __global__ void gemv(const quint32 * __restrict__ dA, const quint32 * __restrict
 #pragma unroll
 		for (unsigned int e = 0; e < BLOCK_SIZE; ++e) {
 			// --- Column-major ordering - faster
-			y_val += dA[tid + (e + BLOCK_SIZE * m) * nRows] * x_shared[e];
-			// --- Row-major ordering - slower
-			//y_val += dA[tid * nCols + (e + BLOCK_SIZE * m)] * x_shared[e];
+			if(e < nCols) y_val += dA[tid + (e + BLOCK_SIZE * m) * nRows] * x_shared[e];
 		}
 
 		__syncthreads();
@@ -35,10 +33,14 @@ __global__ void gemv(const quint32 * __restrict__ dA, const quint32 * __restrict
 
 RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock) : RasterTotalOverlapMapEvaluator(_problem), matrices(_problem->count()) {
 	glsWeightsCuda = std::shared_ptr<GlsWeightSetCuda>(new GlsWeightSetCuda(problem->count()));
+	streams = std::vector<cudaStream_t>(problem->count());
+	for (int i = 0; i < problem->count(); i++) cudaStreamCreate(&streams[i]);
 	populateMaps();
 }
 
 RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSetCuda> _glsWeightsCuda, bool cuttingStock) : RasterTotalOverlapMapEvaluator(_problem, _glsWeightsCuda), glsWeightsCuda(_glsWeightsCuda), matrices(_problem->count()) {
+	streams = std::vector<cudaStream_t>(problem->count());
+	for (int i = 0; i < problem->count(); i++) cudaStreamCreate(&streams[i]);
 	populateMaps();
 }
 
@@ -46,7 +48,7 @@ void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::populateMaps() {
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
-			std::shared_ptr<TotalOverlapMatrixCuda> curMap = std::shared_ptr<TotalOverlapMatrixCuda>(new TotalOverlapMatrixCuda(ifp->width(), ifp->height(), ifp->getOrigin(), problem->count(), -1));
+			std::shared_ptr<TotalOverlapMatrixCuda> curMap = std::shared_ptr<TotalOverlapMatrixCuda>(new TotalOverlapMatrixCuda(ifp->width(), ifp->height(), ifp->getOrigin(), problem->count(), streams, -1));
 			matrices.addOverlapMap(itemId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}
@@ -96,6 +98,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::ge
 	std::shared_ptr<TotalOverlapMatrixCuda> currrentPieceMat = matrices.getOverlapMap(itemId, orientation);
 	currrentPieceMat->reset();
 
+	cudaDeviceSynchronize();
 	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
@@ -103,17 +106,13 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::ge
 		// Add nfp to overlap map
 		currrentPieceMat->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i)); 
 	}
-	//Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >  weightVec = Eigen::Matrix< unsigned int, Eigen::Dynamic, 1 >::Zero(solution.getNumItems());
-	//createWeigthVector(itemId, weightVec);
-	//quint32 *weight; cudaMalloc((void **)&weight, solution.getNumItems() * sizeof(quint32));
-	//cudaMemcpy(weight, weightVec.data(), solution.getNumItems() * sizeof(quint32), cudaMemcpyHostToDevice);
 	quint32 *map;
 	cudaMalloc((void **)&map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * sizeof(quint32)); 
 	cudaMemset(map, 0, currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * sizeof(quint32));
 	dim3 dim_grid((currrentPieceMat->getHeight()* currrentPieceMat->getWidth() + BLOCK_SIZE - 1) / BLOCK_SIZE);
 	dim3 dim_block(BLOCK_SIZE);
+	cudaDeviceSynchronize();
 	gemv << <dim_grid, dim_block >> >(currrentPieceMat->getData(), glsWeightsCuda->getCudaWeights(itemId), map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), solution.getNumItems());
-	//gemv << <dim_grid, dim_block >> >(currrentPieceMat->getData(), weight, map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), solution.getNumItems());
 
 	return std::shared_ptr<TotalOverlapMap>();
 	//std::shared_ptr<TotalOverlapMap> dummyPieceMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(currrentPieceMat->getRect(), currrentPieceMat->getCuttingStockLength()));

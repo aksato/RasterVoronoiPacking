@@ -1,9 +1,9 @@
 #ifndef RASTEROVERLAPEVALUATORCUDAMATRIXGLS_H
 #define RASTEROVERLAPEVALUATORCUDAMATRIXGLS_H
 
-#include "rasteroverlapevaluator.h"
-#include "totaloverlapmatrix.h"
-#include  "cuda/glsweightsetcuda.h"
+#include "raster/rasteroverlapevaluator.h"
+#include "cuda/totaloverlapmatrixcuda.h"
+#include "cuda/glsweightsetcuda.h"
 
 namespace RASTERVORONOIPACKING {
 	class RasterTotalOverlapMapEvaluatorCudaMatrixGLS : public RasterTotalOverlapMapEvaluator
@@ -47,6 +47,7 @@ namespace RASTERVORONOIPACKING {
 
 	private:
 		void populateMaps();
+		std::vector<cudaStream_t> streams;
 	};
 }
 

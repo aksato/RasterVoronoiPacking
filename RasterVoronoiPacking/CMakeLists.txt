@@ -14,6 +14,9 @@ find_package(CUDA 10 REQUIRED)
 set(CMAKE_AUTOMOC ON)
 include_directories(${Qt5Widgets_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} common)
 
+# Pass options to NVCC
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; --default-stream per-thread)
+
 set(common_SRCS
 	common/colormap.cpp 
 	common/packingproblem.cpp
@@ -43,7 +46,7 @@ set(console_SRCS
 	
 set(cuda_SRCS
 	common/cuda/rasteroverlapevaluatorcudagls.cu
-	common/cuda/rasteroverlapevaluatormatrixgls.cu
+	common/cuda/rasteroverlapevaluatorcudamatrixgls.cu
 	common/cuda/rasterpackingcudaproblem.cu
 	common/cuda/totaloverlapmapcuda.cu
 	common/cuda/totaloverlapmatrixcuda.cu

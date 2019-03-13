@@ -22,7 +22,7 @@ __global__ void gemv(const quint32 * __restrict__ dA, const quint32 * __restrict
 #pragma unroll
 		for (unsigned int e = 0; e < BLOCK_SIZE; ++e) {
 			// --- Column-major ordering - faster
-			if(e < nCols) y_val += dA[tid + (e + BLOCK_SIZE * m) * nRows] * x_shared[e];
+			if(e + BLOCK_SIZE * m < nCols && tid < nRows) y_val += dA[tid + (e + BLOCK_SIZE * m) * nRows] * x_shared[e];
 		}
 
 		__syncthreads();

@@ -31,20 +31,20 @@ __global__ void gemv(const quint32 * __restrict__ dA, const quint32 * __restrict
 	if (tid < nRows) dy[tid] = y_val;
 }
 
-RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock) : RasterTotalOverlapMapEvaluator(_problem), matrices(_problem->count()) {
+RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock) : RasterTotalOverlapMapEvaluatorCudaGLS(_problem), matrices(_problem->count()) {
 	glsWeightsCuda = std::shared_ptr<GlsWeightSetCuda>(new GlsWeightSetCuda(problem->count()));
 	streams = std::vector<cudaStream_t>(problem->count());
 	for (int i = 0; i < problem->count(); i++) cudaStreamCreate(&streams[i]);
-	populateMaps();
+	populateMatrices();
 }
 
-RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSetCuda> _glsWeightsCuda, bool cuttingStock) : RasterTotalOverlapMapEvaluator(_problem, _glsWeightsCuda), glsWeightsCuda(_glsWeightsCuda), matrices(_problem->count()) {
+RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaMatrixGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSetCuda> _glsWeightsCuda, bool cuttingStock) : RasterTotalOverlapMapEvaluatorCudaGLS(_problem, _glsWeightsCuda), glsWeightsCuda(_glsWeightsCuda), matrices(_problem->count()) {
 	streams = std::vector<cudaStream_t>(problem->count());
 	for (int i = 0; i < problem->count(); i++) cudaStreamCreate(&streams[i]);
-	populateMaps();
+	populateMatrices();
 }
 
-void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::populateMaps() {
+void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::populateMatrices() {
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
@@ -56,6 +56,7 @@ void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::populateMaps() {
 }
 
 void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::updateMapsLength(int pixelWidth) {
+	RasterTotalOverlapMapEvaluatorCudaGLS::updateMapsLength(pixelWidth);
 	for (int itemId = 0; itemId < problem->count(); itemId++)
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<TotalOverlapMatrixCuda> curMatrix = matrices.getOverlapMap(itemId, angle);
@@ -106,16 +107,11 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::ge
 		// Add nfp to overlap map
 		currrentPieceMat->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i)); 
 	}
-	quint32 *map;
-	cudaMalloc((void **)&map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * sizeof(quint32)); 
-	cudaMemset(map, 0, currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * sizeof(quint32));
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = cudamaps.getOverlapMap(itemId, orientation);
 	dim3 dim_grid((currrentPieceMat->getHeight()* currrentPieceMat->getWidth() + BLOCK_SIZE - 1) / BLOCK_SIZE);
 	dim3 dim_block(BLOCK_SIZE);
 	cudaDeviceSynchronize();
-	gemv << <dim_grid, dim_block >> >(currrentPieceMat->getData(), glsWeightsCuda->getCudaWeights(itemId), map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), solution.getNumItems());
+	gemv << <dim_grid, dim_block >> > (currrentPieceMat->getData(), glsWeightsCuda->getCudaWeights(itemId), currrentPieceMap->getData() , currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), solution.getNumItems());
 
-	return std::shared_ptr<TotalOverlapMap>();
-	//std::shared_ptr<TotalOverlapMap> dummyPieceMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(currrentPieceMat->getRect(), currrentPieceMat->getCuttingStockLength()));
-	//cudaMemcpy(dummyPieceMap->getData(), map, currrentPieceMat->getHeight() * currrentPieceMat->getWidth() * sizeof(quint32), cudaMemcpyDeviceToHost);
-	//return dummyPieceMap;
+	return currrentPieceMap;
 }

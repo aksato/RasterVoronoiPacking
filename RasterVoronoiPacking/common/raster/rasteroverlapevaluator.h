@@ -10,6 +10,7 @@
 //class MainWindow;
 namespace RASTERVORONOIPACKING { class RasterTotalOverlapMapEvaluator; }
 long long measureOverlapEvaluatorTime(std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> overlapEvaluator, int count, bool cuda);
+void outputOverlapMaps(std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> overlapEvaluator, QString basename, int count, bool cuda);
 
 namespace RASTERVORONOIPACKING {
 
@@ -18,6 +19,7 @@ namespace RASTERVORONOIPACKING {
 	{
 		friend class ::MainWindow;
 		friend long long ::measureOverlapEvaluatorTime(std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator, int count, bool cuda);
+		friend void ::outputOverlapMaps(std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator, QString basename, int count, bool cuda);
 	public:
 		// --> Default constructor
 		RasterTotalOverlapMapEvaluator(std::shared_ptr<RasterPackingProblem> _problem, bool cuttingStock = false);

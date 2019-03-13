@@ -39,7 +39,4 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaGLS::getTotal
 		currrentPieceMap->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i), getWeight(itemId, i));
 	}
 	return currrentPieceMap;
-	//std::shared_ptr<TotalOverlapMap> dummyPieceMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(currrentPieceMap->getRect(), currrentPieceMap->getCuttingStockLength()));
-	//cudaMemcpy(dummyPieceMap->getData(), currrentPieceMap->getData(), currrentPieceMap->getHeight() * currrentPieceMap->getWidth() * sizeof(quint32), cudaMemcpyDeviceToHost);
-	//return dummyPieceMap;
 }

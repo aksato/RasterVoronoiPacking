@@ -45,11 +45,11 @@ RasterTotalOverlapMapEvaluatorCudaMatrixGLS::RasterTotalOverlapMapEvaluatorCudaM
 }
 
 void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::populateMatrices() {
-	for (int itemId = 0; itemId < problem->count(); itemId++) {
-		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
-			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle);
+	for (int itemTypeId = 0; itemTypeId < problem->getItemTypeCount(); itemTypeId++) {
+		for (uint angle = 0; angle < (*problem->getItemByType(itemTypeId))->getAngleCount(); angle++) {
+			std::shared_ptr<RasterNoFitPolygon> ifp = problem->getIfps()->getRasterNoFitPolygon(0, 0, itemTypeId, angle);
 			std::shared_ptr<TotalOverlapMatrixCuda> curMap = std::shared_ptr<TotalOverlapMatrixCuda>(new TotalOverlapMatrixCuda(ifp->width(), ifp->height(), ifp->getOrigin(), problem->count(), streams, -1));
-			matrices.addOverlapMap(itemId, angle, curMap);
+			matrices.addOverlapMap(itemTypeId, angle, curMap);
 			// FIXME: Delete innerift polygons as they are used to release memomry
 		}
 	}
@@ -59,7 +59,7 @@ void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::updateMapsLength(int pixelWidt
 	RasterTotalOverlapMapEvaluatorCudaGLS::updateMapsLength(pixelWidth);
 	for (int itemId = 0; itemId < problem->count(); itemId++)
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
-			std::shared_ptr<TotalOverlapMatrixCuda> curMatrix = matrices.getOverlapMap(itemId, angle);
+			std::shared_ptr<TotalOverlapMatrixCuda> curMatrix = matrices.getOverlapMap(problem->getItemType(itemId), angle);
 			curMatrix->setRelativeWidth(problem->getContainerWidth() - pixelWidth);
 		}
 }
@@ -96,7 +96,7 @@ void RasterTotalOverlapMapEvaluatorCudaMatrixGLS::resetWeights() {
 	glsWeightsCuda->reset(problem->count());
 }
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution) {
-	std::shared_ptr<TotalOverlapMatrixCuda> currrentPieceMat = matrices.getOverlapMap(itemId, orientation);
+	std::shared_ptr<TotalOverlapMatrixCuda> currrentPieceMat = matrices.getOverlapMap(problem->getItemType(itemId), orientation);
 	currrentPieceMat->reset();
 
 	cudaDeviceSynchronize();
@@ -107,7 +107,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::ge
 		// Add nfp to overlap map
 		currrentPieceMat->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i)); 
 	}
-	std::shared_ptr<TotalOverlapMap> currrentPieceMap = cudamaps.getOverlapMap(itemId, orientation);
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = cudamaps.getOverlapMap(problem->getItemType(itemId), orientation);
 	dim3 dim_grid((currrentPieceMat->getHeight()* currrentPieceMat->getWidth() + BLOCK_SIZE - 1) / BLOCK_SIZE);
 	dim3 dim_block(BLOCK_SIZE);
 	cudaDeviceSynchronize();

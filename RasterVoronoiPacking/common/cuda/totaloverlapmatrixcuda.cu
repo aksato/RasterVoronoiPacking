@@ -34,7 +34,22 @@ TotalOverlapMatrixCuda::~TotalOverlapMatrixCuda() {
 
 void TotalOverlapMatrixCuda::initCuda(uint _width, uint _height) {
 	cudaMalloc((void **)&data, _width * _height * numItems * sizeof(quint32));
-	cudaMemset(data, 0, _width * _height * numItems * sizeof(quint32));
+	cudaDeviceSynchronize();
+	auto error = cudaGetLastError();
+	if (error != cudaSuccess) {
+		printf("CUDA error allocating total overlap matrix of size %f MB: %s\n", _width * _height * sizeof(quint32), cudaGetErrorString(error));
+		// show memory usage of GPU
+		size_t free_byte, total_byte;
+		auto cuda_status = cudaMemGetInfo(&free_byte, &total_byte);
+		if (cudaSuccess != cuda_status) printf("Error: cudaMemGetInfo fails, %s \n", cudaGetErrorString(cuda_status));
+		else {
+			double free_db = (double)free_byte;
+			double total_db = (double)total_byte;
+			double used_db = total_db - free_db;
+			printf("Memory report:: used = %.2f MB, free = %.2f MB, total = %.2f MB\n", used_db / 1024.0 / 1024.0, free_db / 1024.0 / 1024.0, total_db / 1024.0 / 1024.0);
+		}
+	}
+	else cudaMemset(data, 0, _width * _height * numItems * sizeof(quint32));
 }
 
 void TotalOverlapMatrixCuda::setDimensions(int _width, int _height) {

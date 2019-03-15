@@ -19,7 +19,6 @@
 #include <QTime>
 
 using namespace RASTERVORONOIPACKING;
-#define IGNOREFULLMETHOD
 
 QVector<std::shared_ptr<RasterPackingSolution>> solutions;
 
@@ -90,6 +89,8 @@ int main(int argc, char *argv[])
 	args::ValueFlag<int> argSeed(parser, "value", "Manual seed input for the random number generator (for debugging purposes)", { "seed" });
 	args::ValueFlag<std::string> argReport(parser, "filename", "Name of generated report of overlap evaluators performance (elapsed time in us) in the following order: serial, full, matrix, cuda, cuda matrix", { "report" });
 	args::Flag argOutputImages(parser, "flag", "Output overlap map images and generated random layouts", { "output" });
+	args::Flag argIgnoreMatrix(parser, "flag", "Skip evaluation of matrix overlap evaluator methods", { "skipmatrix" });
+	args::Flag testFullMethod(parser, "flag", "Evaluate full method (very inefficient)", { "testfull" });
 	args::Positional<std::string> argPuzzle(parser, "source", "Input problem file path");
 	args::Positional<int> argLength(parser, "length", "Container length");
 	args::Positional<int> argRepetitions(parser, "repetitions", "Number of overlap map creator executions");
@@ -123,19 +124,23 @@ int main(int argc, char *argv[])
 	std::shared_ptr<RasterStripPackingCompactor> compactor = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapEvaluator, 0.04, 0.01));
 	long long serialduration = measureOverlapEvaluatorTime(overlapEvaluator, "serial", argOutputImages); std::cout << std::endl;
 
-	#ifndef IGNOREFULLMETHOD
-	// 2 - Full version
-	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapFullEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorFull>(new RasterTotalOverlapMapEvaluatorFull(rasterProblem, weights));
-	std::shared_ptr<RasterStripPackingCompactor> compactorFull = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapFullEvaluator, 0.04, 0.01));
-	long long fullduration = measureOverlapEvaluatorTime(overlapFullEvaluator, "full", argOutputImages);
-	std::cout << " Speedup was " << (float)serialduration/(float)fullduration << "." << std::endl;
-	#endif
+	long long fullduration;
+	if (testFullMethod) {
+		// 2 - Full version
+		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapFullEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorFull>(new RasterTotalOverlapMapEvaluatorFull(rasterProblem, weights));
+		std::shared_ptr<RasterStripPackingCompactor> compactorFull = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapFullEvaluator, 0.04, 0.01));
+		fullduration = measureOverlapEvaluatorTime(overlapFullEvaluator, "full", argOutputImages);
+		std::cout << " Speedup was " << (float)serialduration / (float)fullduration << "." << std::endl;
+	}
 
-	// 3 - Matrix version
-	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorMatrixGLS>(new RasterTotalOverlapMapEvaluatorMatrixGLS(rasterProblem, weights, false));
-	std::shared_ptr<RasterStripPackingCompactor> compactorMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapMatrixEvaluator, 0.04, 0.01));
-	long long matrixduration = measureOverlapEvaluatorTime(overlapMatrixEvaluator, "matrix", argOutputImages);
-	std::cout << " Speedup was " << (float)serialduration/(float)matrixduration << "." << std::endl;
+	long long matrixduration;
+	if(!argIgnoreMatrix) {
+		// 3 - Matrix version
+		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorMatrixGLS>(new RasterTotalOverlapMapEvaluatorMatrixGLS(rasterProblem, weights, false));
+		std::shared_ptr<RasterStripPackingCompactor> compactorMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapMatrixEvaluator, 0.04, 0.01));
+		matrixduration = measureOverlapEvaluatorTime(overlapMatrixEvaluator, "matrix", argOutputImages);
+		std::cout << " Speedup was " << (float)serialduration/(float)matrixduration << "." << std::endl;
+	}
 
 	// Load problem on the GPU
 	QDir::setCurrent(QFileInfo(fileName).absolutePath());
@@ -151,21 +156,25 @@ int main(int argc, char *argv[])
 	long long cudaduration = measureOverlapEvaluatorTime(overlapCudaEvaluator, "cuda", argOutputImages, true);
 	std::cout << " Speedup was " << (float)serialduration / (float)cudaduration << "." << std::endl;
 
-	// 5 - Cuda matrix version
-	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaMatrixGLS>(new RasterTotalOverlapMapEvaluatorCudaMatrixGLS(rasterCudaProblem, weightsCuda, false));
-	std::shared_ptr<RasterStripPackingCompactor> compactorCudaMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterCudaProblem, overlapCudaMatrixEvaluator, 0.04, 0.01));
-	long long cudamatrixduration = measureOverlapEvaluatorTime(overlapCudaMatrixEvaluator, "matcuda", argOutputImages, true);
-	std::cout << " Speedup was " << (float) serialduration / (float)cudamatrixduration << "." << std::endl;
+	long long cudamatrixduration;
+	if (!argIgnoreMatrix) {
+		// 5 - Cuda matrix version
+		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaMatrixEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaMatrixGLS>(new RasterTotalOverlapMapEvaluatorCudaMatrixGLS(rasterCudaProblem, weightsCuda, false));
+		std::shared_ptr<RasterStripPackingCompactor> compactorCudaMatrix = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterCudaProblem, overlapCudaMatrixEvaluator, 0.04, 0.01));
+		cudamatrixduration = measureOverlapEvaluatorTime(overlapCudaMatrixEvaluator, "matcuda", argOutputImages, true);
+		std::cout << " Speedup was " << (float)serialduration / (float)cudamatrixduration << "." << std::endl;
+	}
 
 	// Print report of results
 	if (argReport) {
 		std::ofstream outfile;
 		outfile.open(args::get(argReport), std::ios_base::app);
-		outfile << QFileInfo(fileName).baseName().toStdString() << "\t" << rasterProblem->getScale() << "\t" << serialduration << "\t" << matrixduration << "\t" 
-		#ifndef IGNOREFULLMETHOD
-			<< fullduration << "\t"
-		#endif
-			<< cudaduration << "\t" << cudamatrixduration << std::endl;
+		outfile << QFileInfo(fileName).baseName().toStdString() << "\t" << rasterProblem->getScale() << "\t" << serialduration << "\t";
+		if (!argIgnoreMatrix) outfile << matrixduration << "\t";
+		if (testFullMethod) outfile << fullduration << "\t";
+		outfile << cudaduration << "\t";
+		if (!argIgnoreMatrix) outfile << cudamatrixduration;
+		outfile << std::endl;
 		outfile.close();
 	}
 

@@ -15,6 +15,9 @@ void GlsWeightSetCuda::initCuda(int numItems) {
 	//weights = QVector<unsigned int>(numItems * numItems);
 	//weights.fill(INITWEIGHTVAL);
 	cudaMalloc((void **)&cudaWeights, numItems * numItems * sizeof(unsigned int));
+	cudaDeviceSynchronize();
+	auto error = cudaGetLastError();
+	if (error != cudaSuccess) printf("CUDA error allocating weight set: %s\n", cudaGetErrorString(error));
 	cudaMemset(cudaWeights, INITWEIGHTVAL, numItems * numItems * sizeof(unsigned int));
 }
 

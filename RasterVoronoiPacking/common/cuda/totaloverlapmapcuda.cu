@@ -1,5 +1,4 @@
 #include "totaloverlapmapcuda.h"
-#include <stdio.h>
 using namespace RASTERVORONOIPACKING;
 
 #define THREADS_PER_BLOCK 512
@@ -7,9 +6,10 @@ using namespace RASTERVORONOIPACKING;
 __global__
 void add2overlapmap(int totalLines, int lineLength, int mapInitIdx, int nfpInitIdx, int mapOffsetHeight, int nfpOffsetHeight, quint32 *map, quint32 *nfp, int weight)
 {
-	int mapidx = mapInitIdx + blockIdx.x * (lineLength + mapOffsetHeight) + blockIdx.y * blockDim.y + threadIdx.x;
-	int nfpidx = nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + blockIdx.y * blockDim.y + threadIdx.x;
-	if (threadIdx.x < lineLength)
+	int localRowIdx = blockIdx.y * blockDim.x + threadIdx.x;
+	int mapidx = mapInitIdx + blockIdx.x * (lineLength + mapOffsetHeight) + localRowIdx;
+	int nfpidx = nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + localRowIdx;
+	if (localRowIdx < lineLength)
 		map[mapidx] += weight*nfp[nfpidx];
 }
 
@@ -35,7 +35,22 @@ TotalOverlapMapCuda::~TotalOverlapMapCuda() {
 
 void TotalOverlapMapCuda::initCuda(uint _width, uint _height) {
 	cudaMalloc((void **)&data, _width * _height * sizeof(quint32));
-	cudaMemset(data, 0, _width * _height * sizeof(quint32));
+	cudaDeviceSynchronize();
+	auto error = cudaGetLastError();
+	if (error != cudaSuccess) {
+		printf("CUDA error allocating total overlap map of size %f MB: %s\n", _width * _height * sizeof(quint32), cudaGetErrorString(error));
+		// show memory usage of GPU
+		size_t free_byte, total_byte;
+		auto cuda_status = cudaMemGetInfo(&free_byte, &total_byte);
+		if (cudaSuccess != cuda_status) printf("Error: cudaMemGetInfo fails, %s \n", cudaGetErrorString(cuda_status));
+		else {
+			double free_db = (double)free_byte;
+			double total_db = (double)total_byte;
+			double used_db = total_db - free_db;
+			printf("Memory report:: used = %.2f MB, free = %.2f MB, total = %.2f MB\n", used_db / 1024.0 / 1024.0, free_db / 1024.0 / 1024.0, total_db / 1024.0 / 1024.0);
+		}
+	}
+	else cudaMemset(data, 0, _width * _height * sizeof(quint32));
 }
 
 void TotalOverlapMapCuda::setDimensions(int _width, int _height) {

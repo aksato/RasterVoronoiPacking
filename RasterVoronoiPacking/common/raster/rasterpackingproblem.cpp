@@ -69,6 +69,7 @@ bool RasterPackingProblem::load(RASTERPACKING::PackingProblem &problem) {
 			qreal minX, maxX, minY, maxY; (*it)->getPolygon()->getBoundingBox(minX, maxX, minY, maxY); curItem->setBoundingBox(minX, maxX, minY, maxY);
 			items.append(curItem);
         }
+	itemTypeCount = std::distance(problem.cpbegin(), problem.cpend());
 
     std::shared_ptr<RASTERPACKING::Container> container = *problem.ccbegin();
     std::shared_ptr<RASTERPACKING::Polygon> pol = container->getPolygon();

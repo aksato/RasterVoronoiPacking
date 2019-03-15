@@ -36,6 +36,7 @@ bool RasterPackingCudaProblem::load(RASTERPACKING::PackingProblem &problem) {
 			qreal minX, maxX, minY, maxY; (*it)->getPolygon()->getBoundingBox(minX, maxX, minY, maxY); curItem->setBoundingBox(minX, maxX, minY, maxY);
 			items.append(curItem);
         }
+	itemTypeCount = std::distance(problem.cpbegin(), problem.cpend());
 
     std::shared_ptr<RASTERPACKING::Container> container = *problem.ccbegin();
     std::shared_ptr<RASTERPACKING::Polygon> pol = container->getPolygon();
@@ -161,8 +162,25 @@ quint32 *RasterPackingCudaProblem::loadBinaryNofitPolygonsOnDevice(QString fileN
 
 	//
 	quint32 *d_data;
+	numBytes = numElements * sizeof(quint32);
 	cudaMalloc((void **)&d_data, numBytes);
-	cudaMemcpy(d_data, data, numBytes, cudaMemcpyHostToDevice);
+	cudaDeviceSynchronize();
+
+	auto error = cudaGetLastError();
+	if (error != cudaSuccess) {
+		printf("CUDA error loading %.2f MB binary NFPs on device: %s\n", numBytes / (1024.0 * 1024.0), cudaGetErrorString(error));
+		// show memory usage of GPU
+		size_t free_byte, total_byte;
+		auto cuda_status = cudaMemGetInfo(&free_byte, &total_byte);
+		if (cudaSuccess != cuda_status) printf("Error: cudaMemGetInfo fails, %s \n", cudaGetErrorString(cuda_status));
+		else {
+			double free_db = (double)free_byte;
+			double total_db = (double)total_byte;
+			double used_db = total_db - free_db;
+			printf("Memory report:: used = %.2f MB, free = %.2f MB, total = %.2f MB\n", used_db / 1024.0 / 1024.0, free_db / 1024.0 / 1024.0, total_db / 1024.0 / 1024.0);
+		}
+	}
+	else cudaMemcpy(d_data, data, numBytes, cudaMemcpyHostToDevice);
 
 	return d_data;
 }

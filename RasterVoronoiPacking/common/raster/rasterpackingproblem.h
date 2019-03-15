@@ -88,6 +88,7 @@ namespace RASTERVORONOIPACKING {
 
         virtual bool load(RASTERPACKING::PackingProblem &problem);
         std::shared_ptr<RasterPackingItem> getItem(int id) {return items[id];}
+		QVector<std::shared_ptr<RasterPackingItem>>::iterator getItemByType(int typeId) { return std::find_if(items.begin(), items.end(), [&typeId](const std::shared_ptr<RasterPackingItem> &i) { return i->getPieceType() == typeId; });}
 		QVector<std::shared_ptr<RasterPackingItem>>::iterator ibegin() { return items.begin(); }
 		QVector<std::shared_ptr<RasterPackingItem>>::iterator iend() { return items.end(); }
 		qreal getDensity(RasterPackingSolution &solution);
@@ -98,6 +99,7 @@ namespace RASTERVORONOIPACKING {
         std::shared_ptr<RasterNoFitPolygonSet> getNfps() {return noFitPolygons;}
         int count() {return items.size();}
         int getItemType(int id) {return items[id]->getPieceType();}
+		int getItemTypeCount() { return itemTypeCount; }
         int getContainerWidth() {return containerWidth;}
 		int getContainerHeight() { return containerHeight; }
 		qreal getOriginalHeight();
@@ -118,6 +120,7 @@ namespace RASTERVORONOIPACKING {
 		int maxWidth, maxHeight;
         QString containerName;
         unsigned int maxOrientations;
+		unsigned int itemTypeCount;
         QVector<std::shared_ptr<RasterPackingItem>> items;
 		std::shared_ptr<RasterPackingItem> container;
         std::shared_ptr<RasterNoFitPolygonSet> noFitPolygons;

@@ -107,6 +107,7 @@ namespace RASTERVORONOIPACKING {
 		int getMaxHeight() { return this->maxHeight; }
         QString getContainerName() {return containerName;}
         qreal getScale() {return scale;}
+		int getMultiplicity(int itemTypeId) { return multiplicity[itemTypeId]; }
 
 		// Processing of nfp values
 		quint32 getDistanceValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
@@ -125,6 +126,7 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<RasterPackingItem> container;
         std::shared_ptr<RasterNoFitPolygonSet> noFitPolygons;
         std::shared_ptr<RasterNoFitPolygonSet> innerFitPolygons;
+		std::vector<int> multiplicity;
         qreal scale;
 		qreal totalArea;
 

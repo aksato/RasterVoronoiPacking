@@ -37,7 +37,7 @@ void TotalOverlapMatrixCuda::initCuda(uint _width, uint _height) {
 	cudaDeviceSynchronize();
 	auto error = cudaGetLastError();
 	if (error != cudaSuccess) {
-		printf("CUDA error allocating total overlap matrix of size %f MB: %s\n", _width * _height * sizeof(quint32), cudaGetErrorString(error));
+		printf("CUDA error allocating total overlap matrix of size %f MB: %s\n", (float)(_width * _height * sizeof(quint32)) / 1024.0, cudaGetErrorString(error));
 		// show memory usage of GPU
 		size_t free_byte, total_byte;
 		auto cuda_status = cudaMemGetInfo(&free_byte, &total_byte);

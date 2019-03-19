@@ -22,6 +22,14 @@ using namespace RASTERVORONOIPACKING;
 
 QVector<std::shared_ptr<RasterPackingSolution>> solutions;
 
+bool fileExists(const char *fileName)
+{
+	std::ifstream infile(fileName);
+	bool ans = infile.good();
+	infile.close();
+	return ans;
+}
+
 std::shared_ptr<GlsWeightSet> generateRandomWeigths(int count) {
 	std::shared_ptr<GlsWeightSet> weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(count));
 	for (int i = 0; i < count; i++) 
@@ -80,6 +88,31 @@ long long measureOverlapEvaluatorTime(std::shared_ptr<RasterTotalOverlapMapEvalu
 	return duration;
 }
 
+auto computeProblemStatistics(std::shared_ptr<RasterPackingProblem> rasterProblem) {
+	double avgNfpSize, avgIfpSize;
+	avgIfpSize = 0; avgNfpSize = 0;
+	int ifpCount = 0;
+	for (int itemTypeId = 0; itemTypeId < rasterProblem->getItemTypeCount(); itemTypeId++) {
+		for (uint angle = 0; angle < (*rasterProblem->getItemByType(itemTypeId))->getAngleCount(); angle++) {
+			std::shared_ptr<RasterNoFitPolygon> curIfp = rasterProblem->getIfps()->getRasterNoFitPolygon(0, 0, itemTypeId, angle);
+			avgIfpSize += curIfp->width() * curIfp->height() * rasterProblem->getMultiplicity(itemTypeId);
+			ifpCount += rasterProblem->getMultiplicity(itemTypeId);
+		}
+	}
+	avgIfpSize /= ifpCount;
+	int nfpCount = 0;
+	for (int item1TypeId = 0; item1TypeId < rasterProblem->getItemTypeCount(); item1TypeId++)
+		for (uint angle1 = 0; angle1 < (*rasterProblem->getItemByType(item1TypeId))->getAngleCount(); angle1++)
+			for (int item2TypeId = item1TypeId + 1; item2TypeId < rasterProblem->getItemTypeCount(); item2TypeId++)
+				for (uint angle2 = 0; angle2 < (*rasterProblem->getItemByType(item2TypeId))->getAngleCount(); angle2++) {
+					std::shared_ptr<RasterNoFitPolygon> curNfp = rasterProblem->getNfps()->getRasterNoFitPolygon(item1TypeId, angle1, item2TypeId, angle2);
+					avgNfpSize += curNfp->width() * curNfp->height() * rasterProblem->getMultiplicity(item1TypeId) * rasterProblem->getMultiplicity(item2TypeId);
+					nfpCount += rasterProblem->getMultiplicity(item1TypeId) * rasterProblem->getMultiplicity(item2TypeId);
+				}
+	avgNfpSize /= nfpCount;
+	return std::make_tuple(avgNfpSize, avgIfpSize);
+}
+
 int main(int argc, char *argv[])
 {
 	// --> Parse command line arguments
@@ -118,6 +151,9 @@ int main(int argc, char *argv[])
 	// Generate random solutions
 	int length = args::get(argLength) * rasterProblem->getScale();
 	generateRandomSolutions(rasterProblem, length, repetitions, argOutputImages);
+	// Compute statistics
+	int avgNfpSize, avgIfpSize;
+	std::tie(avgNfpSize, avgIfpSize) = computeProblemStatistics(rasterProblem);
 
 	// 1 - Default creation	
 	std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, weights, false));
@@ -168,12 +204,18 @@ int main(int argc, char *argv[])
 	// Print report of results
 	if (argReport) {
 		std::ofstream outfile;
+		if (!fileExists(args::get(argReport).c_str())) {
+			outfile.open(args::get(argReport));
+			outfile << "Case, Scale, Items, Avg Ifp Size, Avg Nfp Size, Serial" << (!argIgnoreMatrix ? ", Matrix" : "") << (testFullMethod ? ", Full" : "") << ", Cuda" << (!argIgnoreMatrix ? ", Cuda Matrix" : "") << std::endl;
+			outfile.close();
+		}
 		outfile.open(args::get(argReport), std::ios_base::app);
-		outfile << QFileInfo(fileName).baseName().toStdString() << "\t" << rasterProblem->getScale() << "\t" << serialduration << "\t";
-		if (!argIgnoreMatrix) outfile << matrixduration << "\t";
-		if (testFullMethod) outfile << fullduration << "\t";
-		outfile << cudaduration << "\t";
-		if (!argIgnoreMatrix) outfile << cudamatrixduration;
+		outfile << QFileInfo(fileName).baseName().toStdString() << "," << rasterProblem->getScale() << "," << rasterProblem->count() << "," << avgIfpSize << "," << avgNfpSize;
+		outfile << "," << serialduration;
+		if (!argIgnoreMatrix) outfile << "," << matrixduration;
+		if (testFullMethod) outfile << "," << fullduration;
+		outfile << "," << cudaduration ;
+		if (!argIgnoreMatrix) outfile << "," << cudamatrixduration;
 		outfile << std::endl;
 		outfile.close();
 	}

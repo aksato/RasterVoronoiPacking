@@ -23,6 +23,8 @@ namespace RASTERVORONOIPACKING {
 		// --> TODO: Implementation
 		void updateMapsDimensions(int pixelWidth, int pixelHeight) {}
 
+		static std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> getOverlapMapFromDevice(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> deviceMap);
+
 	protected:
 		// --> Determines the item total overlap map with guided local search
 		std::shared_ptr<TotalOverlapMap> getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution &solution);

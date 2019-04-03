@@ -4,6 +4,8 @@
 #include "raster/rasterstrippackingcompactor.h"
 #include "raster/rastersquarepackingcompactor.h"
 #include "raster/rasterrectpackingcompactor.h"
+#include "cuda/rasterpackingcudaproblem.h"
+#include "cuda/rasteroverlapevaluatorcudagls.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -57,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_8, SIGNAL(clicked()), this, SLOT(glsWeightedlocalSearch()));
     connect(ui->pushButton_12, SIGNAL(clicked()), this, SLOT(updateGlsWeightedOverlapMap()));
     connect(ui->pushButton_13, SIGNAL(clicked()), this, SLOT(resetGlsWeightedOverlapMap()));
+	connect(ui->pushButton_23, SIGNAL(clicked()), this, SLOT(generateCurrentTotalCudaGlsWeightedOverlapMap()));
     connect(&weightViewer, SIGNAL(weightViewerSelectionChanged(int,int)), ui->graphicsView, SLOT(highlightPair(int,int)));
     connect(ui->pushButton, SIGNAL(clicked()), &runConfig, SLOT(exec()));
     connect(&runConfig, &RunConfigurationsDialog::accepted, this, &MainWindow::executePacking);
@@ -105,6 +108,13 @@ std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::crea
 	//solverGls->overlapEvaluator = this->overlapEvaluatorGls;
 	if (currentContainerHeight == -1) { std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> compactorGls = createCompactor(solverGls); compactorGls->setContainerWidth(currentContainerWidth, solution); }
 	else { std::shared_ptr<RASTERVORONOIPACKING::RasterRectangularPackingCompactor> compactorGls = createRectangularCompactor(solverGls); compactorGls->setContainerDimensions(currentContainerWidth, currentContainerHeight, solution); }
+	return solverGls;
+}
+
+std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> MainWindow::createCudaGLSSolver() {
+	RasterStripPackingParameters tempParameters(RASTERVORONOIPACKING::GLS, 1); tempParameters.setCompaction(cuttingStock ? RASTERVORONOIPACKING::CUTTINGSTOCK : RASTERVORONOIPACKING::STRIPPACKING); tempParameters.setCuda(true);
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverGls = RASTERVORONOIPACKING::RasterStripPackingSolver::createRasterPackingSolver({ rasterCudaProblem }, tempParameters);
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> compactorGls = createCompactor(solverGls); compactorGls->setContainerWidth(currentContainerWidth, solution);
 	return solverGls;
 }
 
@@ -204,6 +214,7 @@ void MainWindow::loadPuzzle() {
 		ui->pushButton_32->setEnabled(true);
 		ui->pushButton_21->setEnabled(true);
 		ui->pushButton_22->setEnabled(true);
+		ui->pushButton_23->setEnabled(true);
 
         ui->actionLoad_Zoomed_Problem->setEnabled(true);
 
@@ -212,6 +223,11 @@ void MainWindow::loadPuzzle() {
 		weightViewer.setWeights(weights, solution.getNumItems());
         runConfig.setInitialLenght((qreal)rasterProblem->getContainerWidth()/ui->graphicsView->getScale(), 1.0/ui->graphicsView->getScale());
 		runConfig.setInitialZoomFactor(rasterProblem->getScale());
+
+		// Load CUDA
+		RASTERPACKING::PackingProblem problemCuda;
+		problemCuda.load(fileName);
+		rasterCudaProblem = std::shared_ptr<RasterPackingProblem>(new RasterPackingCudaProblem(problemCuda));
     }
     else {
        // Display error message
@@ -358,6 +374,20 @@ void MainWindow::generateCurrentTotalGlsWeightedOverlapMap() {
 	weightViewer.updateImage();
 	weightViewer.show();
 	ui->statusBar->showMessage("Total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
+}
+
+void MainWindow::generateCurrentTotalCudaGlsWeightedOverlapMap() {
+	ui->graphicsView->getCurrentSolution(solution);
+	int itemId = ui->graphicsView->getCurrentItemId();
+	QTime myTimer; myTimer.start();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solverCudaGls = createCudaGLSSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> deviceMap = solverCudaGls->overlapEvaluator->getTotalOverlapMap(itemId, solution.getOrientation(itemId), solution);
+	int milliseconds = myTimer.elapsed();
+	std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> curMap = RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluatorCudaGLS::getOverlapMapFromDevice(deviceMap);
+	ui->graphicsView->showTotalOverlapMap(curMap);
+	weightViewer.updateImage();
+	weightViewer.show();
+	ui->statusBar->showMessage("Cuda total overlap map created. Elapsed Time: " + QString::number(milliseconds) + " miliseconds");
 }
 
 void MainWindow::updateGlsWeightedOverlapMap() {

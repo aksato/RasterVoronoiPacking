@@ -57,7 +57,7 @@ set(gui_SRCS
 	common/raster/packingthread.cpp
 	RasterVoronoiPackingGUI/glsweightviewerdialog.cpp 
 	RasterVoronoiPackingGUI/main.cpp
-	RasterVoronoiPackingGUI/mainwindow.cpp 
+	RasterVoronoiPackingGUI/mainwindow.cpp
 	RasterVoronoiPackingGUI/runconfigurationsdialog.cpp
 	RasterVoronoiPackingGUI/zoomedmapviewdialog.cpp
 	RasterVoronoiPackingGUI/viewer/graphicsindexedrectitem.cpp
@@ -79,7 +79,7 @@ qt5_add_resources (ResourceSources RasterVoronoiPackingGUI/resources.qrc)
 
 add_library(packing_core OBJECT ${common_SRCS})
 
-add_executable(RasterVoronoiPackingGUI RasterVoronoiPackingGUI/main.cpp ${gui_SRCS} ${UIS_HDRS} ${ResourceSources} $<TARGET_OBJECTS:packing_core>)
+cuda_add_executable(RasterVoronoiPackingGUI RasterVoronoiPackingGUI/main.cpp ${gui_SRCS} ${UIS_HDRS} ${cuda_SRCS} ${ResourceSources} $<TARGET_OBJECTS:packing_core>)
 target_link_libraries(RasterVoronoiPackingGUI Qt5::Core Qt5::Gui Qt5::Svg)
 
 add_executable(RasterVoronoiPackingConsole RasterVoronoiPackingConsole/mainConsole.cpp ${console_SRCS} $<TARGET_OBJECTS:packing_core>)

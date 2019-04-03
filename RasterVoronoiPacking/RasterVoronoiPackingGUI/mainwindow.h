@@ -39,6 +39,7 @@ private slots:
     void showGlobalOverlap();
     void localSearch();
     void generateCurrentTotalGlsWeightedOverlapMap();
+	void generateCurrentTotalCudaGlsWeightedOverlapMap();
     void updateGlsWeightedOverlapMap();
     void resetGlsWeightedOverlapMap();
     void translateCurrentToGlsWeightedMinimumPosition();
@@ -73,6 +74,7 @@ private:
 	std::shared_ptr<RASTERVORONOIPACKING::RasterTotalOverlapMapEvaluator> overlapEvaluator, overlapEvaluatorGls, overlapEvaluatorDoubleGls;
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createBasicSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createGLSSolver();
+	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createCudaGLSSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> createDoubleGLSSolver();
 	std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingCompactor> createCompactor(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver);
 	std::shared_ptr<RASTERVORONOIPACKING::RasterRectangularPackingCompactor> createRectangularCompactor(std::shared_ptr<RASTERVORONOIPACKING::RasterStripPackingSolver> solver);
@@ -80,7 +82,7 @@ private:
 	int logposition(qreal value);
 
     Ui::MainWindow *ui;
-    std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem;
+    std::shared_ptr<RASTERVORONOIPACKING::RasterPackingProblem> rasterProblem, rasterCudaProblem;
     RASTERVORONOIPACKING::RasterPackingSolution solution;
 	std::shared_ptr<RASTERVORONOIPACKING::GlsWeightSet> weights;
 	RASTERVORONOIPACKING::RasterStripPackingParameters params;

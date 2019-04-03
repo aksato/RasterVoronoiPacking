@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1869</width>
+    <width>1689</width>
     <height>1383</height>
    </rect>
   </property>
@@ -477,6 +477,30 @@
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>Cuda</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_23">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Display Total Overlap Map</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_10">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_15">
             <property name="enabled">
              <bool>false</bool>
@@ -541,7 +565,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1869</width>
+     <width>1689</width>
      <height>18</height>
     </rect>
    </property>

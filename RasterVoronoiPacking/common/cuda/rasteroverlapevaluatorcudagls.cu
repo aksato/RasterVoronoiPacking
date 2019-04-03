@@ -40,3 +40,9 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaGLS::getTotal
 	}
 	return currrentPieceMap;
 }
+
+std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaGLS::getOverlapMapFromDevice(std::shared_ptr<RASTERVORONOIPACKING::TotalOverlapMap> deviceMap) {
+	std::shared_ptr<TotalOverlapMap> hostMap = std::shared_ptr<TotalOverlapMap>(new TotalOverlapMap(deviceMap->getRect(), deviceMap->getCuttingStockLength()));
+	cudaMemcpy(hostMap->getData(), deviceMap->getData(), deviceMap->getHeight() * deviceMap->getWidth() * sizeof(quint32), cudaMemcpyDeviceToHost);
+	return hostMap;
+}

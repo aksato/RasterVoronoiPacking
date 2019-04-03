@@ -1,4 +1,5 @@
 #include "rasterstrippackingsolver.h"
+#include "cuda/rasteroverlapevaluatorcudagls.h"
 #include <QtCore/qmath.h>
 
 using namespace RASTERVORONOIPACKING;
@@ -13,7 +14,9 @@ std::shared_ptr<RasterStripPackingSolver> RasterStripPackingSolver::createRaster
 	else weights = std::shared_ptr<GlsWeightSet>(new GlsWeightSet(problem->count())); // GLS
 
 	// Determine overlap evaluator
-	if (parameters.getZoomFactor() > 1)
+	if(parameters.isCuda())
+		overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaGLS>(new RasterTotalOverlapMapEvaluatorCudaGLS(problem, weights));
+	else if (parameters.getZoomFactor() > 1)
 		overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorDoubleGLS>(new RasterTotalOverlapMapEvaluatorDoubleGLS(problem, parameters.getZoomFactor(), weights, parameters.getCompaction() == RASTERVORONOIPACKING::CUTTINGSTOCK));
 	else overlapEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(problem, weights, parameters.isCacheMaps(), parameters.getCompaction() == RASTERVORONOIPACKING::CUTTINGSTOCK));
 	// Create solver

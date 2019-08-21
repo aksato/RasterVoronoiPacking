@@ -16,6 +16,8 @@ include_directories(${Qt5Widgets_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} common)
 
 # Pass options to NVCC
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; --default-stream per-thread)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /FS")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /FS")
 
 set(common_SRCS
 	common/colormap.cpp 
@@ -82,7 +84,7 @@ add_library(packing_core OBJECT ${common_SRCS})
 cuda_add_executable(RasterVoronoiPackingGUI RasterVoronoiPackingGUI/main.cpp ${gui_SRCS} ${UIS_HDRS} ${cuda_SRCS} ${ResourceSources} $<TARGET_OBJECTS:packing_core>)
 target_link_libraries(RasterVoronoiPackingGUI Qt5::Core Qt5::Gui Qt5::Svg)
 
-add_executable(RasterVoronoiPackingConsole RasterVoronoiPackingConsole/mainConsole.cpp ${console_SRCS} $<TARGET_OBJECTS:packing_core>)
+cuda_add_executable(RasterVoronoiPackingConsole RasterVoronoiPackingConsole/mainConsole.cpp ${console_SRCS} ${cuda_SRCS} $<TARGET_OBJECTS:packing_core>)
 target_link_libraries(RasterVoronoiPackingConsole Qt5::Core Qt5::Gui Qt5::Svg)
 set_target_properties(RasterVoronoiPackingConsole PROPERTIES COMPILE_DEFINITIONS "CONSOLE")
 set_property(TARGET RasterVoronoiPackingConsole PROPERTY CXX_STANDARD 17)

@@ -127,7 +127,7 @@ protected:
 
 		static pbINT Compare(const EVENT &a, const EVENT &b);
 
-		struct EVLS : public STD::binary_function<const EVENT &, const EVENT &, bool>
+		struct EVLS
 		{
 			bool operator()(const EVENT & x, const EVENT & y) const
 			{

@@ -211,7 +211,7 @@ namespace RASTERPACKING {
 	enum Symmetry {NONE, PAIR};
     class PackingProblem {
     public:
-		PackingProblem() : nfpDataSymmetry(NONE) {}
+		PackingProblem() : nfpDataSymmetry(PAIR) {}
         ~PackingProblem() {}
 
         bool load(QString fileName);
@@ -233,9 +233,10 @@ namespace RASTERPACKING {
         void setDescription(QString _description) {this->description = _description;}
         QString getDescription() {return this->description;}
         bool copyHeader(QString fileName);
-		QString getNfpDataFileName() { return this->nfpDataFileName; }
 		Symmetry getDataSymmetry() { return this->nfpDataSymmetry; }
-		
+        QByteArray *getNfpDataRef() { return &this->nfpData; }
+        quint32* loadBinaryNofitPolygons(QVector<QPair<quint32, quint32>>& sizes, QVector<QPoint>& rps);
+
 		void resizeRasterNoFitPolygon() { this->rasterNofitPolygons.resize(nofitPolygons.size()); }
         void addRasterNofitPolygon(std::shared_ptr<RasterNoFitPolygon> rasterNfp) {this->rasterNofitPolygons.push_back(rasterNfp);}
 		void addRasterNofitPolygon(std::shared_ptr<RasterNoFitPolygon> rasterNfp, int index) { this->rasterNofitPolygons[index] = rasterNfp; }
@@ -312,6 +313,7 @@ namespace RASTERPACKING {
 		qreal maxLength, maxWidth;
 		QString nfpDataFileName;
 		Symmetry nfpDataSymmetry;
+        QByteArray nfpData;
     };
 }
 

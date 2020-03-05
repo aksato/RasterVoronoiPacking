@@ -131,7 +131,6 @@ namespace RASTERVORONOIPACKING {
 		qreal totalArea;
 
 	private:
-		quint32 *loadBinaryNofitPolygons(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
 		quint32 getNfpValue(int itemId1, QPoint pos1, int orientation1, int itemId2, QPoint pos2, int orientation2);
 		// Debug functions. TODO: remove them!
 		qreal getCurrentWidth(RasterPackingSolution &solution);

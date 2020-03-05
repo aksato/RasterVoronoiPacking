@@ -260,17 +260,12 @@ QStringList Piece::getXML() {
     commands.push_back("writeAttribute"); commands.push_back("quantity"); commands.push_back(QString::number(this->multiplicity));
 
     commands.push_back("writeStartElement"); commands.push_back("orientation");
-    if(this->getOrientationsCount() == 0) {
+    
+    Q_ASSERT_X(this->getOrientationsCount() > 0, "Piece::getXML", "Piece must have at least one orientation");
+    for(QVector<unsigned int>::const_iterator it = this->corbegin(); it != this->corend(); it++) {
         commands.push_back("writeStartElement"); commands.push_back("enumeration");
-        commands.push_back("writeAttribute"); commands.push_back("angle"); commands.push_back("0");
+        commands.push_back("writeAttribute"); commands.push_back("angle"); commands.push_back(QString::number(*it));
         commands.push_back("writeEndElement"); // enumeration
-    }
-    else {
-        for(QVector<unsigned int>::const_iterator it = this->corbegin(); it != this->corend(); it++) {
-            commands.push_back("writeStartElement"); commands.push_back("enumeration");
-            commands.push_back("writeAttribute"); commands.push_back("angle"); commands.push_back(QString::number(*it));
-            commands.push_back("writeEndElement"); // enumeration
-        }
     }
     commands.push_back("writeEndElement"); // orientation
 
@@ -843,4 +838,42 @@ bool PackingProblem::savePuzzle(QString fileName) {
 		}
 	}
 	return true;
+}
+
+quint32* PackingProblem::loadBinaryNofitPolygons(QVector<QPair<quint32, quint32>>& sizes, QVector<QPoint>& rps) {
+    QDataStream in(this->nfpData);
+    QFile file(this->nfpDataFileName);
+    if (!this->nfpDataFileName.isEmpty()) {
+        if (!file.open(QIODevice::ReadOnly)) return nullptr;
+        in.setDevice(&file);
+    }
+
+    in.setByteOrder(QDataStream::LittleEndian);
+    quint32 numNfps;
+    in >> numNfps;
+    sizes.reserve(numNfps); rps.reserve(numNfps);
+    quint32 numElements = 0;
+    for (unsigned int i = 0; i < numNfps; i++) {
+        quint32 width, height, rpx, rpy;
+        in >> width >> height >> rpx >> rpy;
+        numElements += width * height;
+        sizes << QPair<quint32, quint32>(width, height);
+        rps << QPoint(rpx, rpy);
+    }
+    quint32* data = new quint32[numElements];
+    quint64 numBytes = numElements * sizeof(quint32);
+    quint64 maxInt = (quint32)std::numeric_limits<int>::max();
+    if (numBytes > maxInt) {
+        char* dataPtr = (char*)data;
+        for (; numBytes > maxInt; numBytes -= maxInt) {
+            in.readRawData(dataPtr, maxInt);
+            dataPtr += maxInt;
+        }
+        in.readRawData(dataPtr, numBytes);
+    }
+    else in.readRawData((char*)data, numBytes);
+    
+    if (!this->nfpDataFileName.isEmpty()) file.close();
+
+    return data;
 }

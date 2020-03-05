@@ -65,7 +65,7 @@ bool RasterPackingCudaProblem::load(RASTERPACKING::PackingProblem &problem) {
 	// 4. Read Raster Data
 	QVector<QPair<quint32, quint32>> sizes;
 	QVector<QPoint> rps;
-	quint32 *nfpData = loadBinaryNofitPolygonsOnDevice(problem.getNfpDataFileName(), sizes, rps);
+	quint32 *nfpData = problem.loadBinaryNofitPolygons(sizes, rps);
 	quint32 *curNfpData = nfpData;
 
     // 5. Load innerfit polygons

@@ -53,7 +53,8 @@ bool isPointOnGrid(QPointF &pt, qreal eps) {
 int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 	QPolygonF polygon;
 	qreal xMin, xMax, yMin, yMax;
-
+	int MARKED_VAL = 0;
+	int EMPTY_VAL = 1;
 	const_iterator it = cbegin();
 	xMin = scale*(*it).x(); xMax = scale*(*it).x();
 	yMin = scale*(*it).y(); yMax = scale*(*it).y();
@@ -74,7 +75,7 @@ int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 	width = ceilEpsilon(xMax, RASTER_EPS) + RP.x() + 1;
 	height = ceilEpsilon(yMax, RASTER_EPS) + RP.y() + 1;
 	int *S = new int[width*height];
-	std::fill_n(S, width*height, 1);
+	std::fill_n(S, width*height, EMPTY_VAL);
 
 	int curScanline = 0;
 	for (int pixelY = 0; pixelY < height; pixelY++) {
@@ -111,7 +112,7 @@ int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 			endCoord = compareEpsilon(nodeX[i + 1], qRound(nodeX[i + 1]), RASTER_EPS) ? qRound(nodeX[i + 1]) - 1 : qFloor(nodeX[i + 1]);
 			line += initCoord;
 			for (j = initCoord; j <= endCoord; j++, line += 1)
-				S[line] = 0;
+				S[line] = MARKED_VAL;
 		}
 
 		curScanline += width;
@@ -121,7 +122,7 @@ int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 	for (QPolygonF::const_iterator iti = polygon.cbegin(); iti != polygon.cend(); iti++) {
 		qreal x = (*iti).x();
 		qreal y = (*iti).y();
-		if ((qAbs(x - qRound(x)) < RASTER_EPS) && (qAbs(y - qRound(y)) < RASTER_EPS)) S[qRound(y)*width + qRound(x)] = 1;
+		if ((qAbs(x - qRound(x)) < RASTER_EPS) && (qAbs(y - qRound(y)) < RASTER_EPS)) S[qRound(y)*width + qRound(x)] = EMPTY_VAL;
 	}
 
 	// FIXME: Delete horizontal lines
@@ -137,7 +138,7 @@ int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 			endCoord = compareEpsilon(right, qRound(right), RASTER_EPS) ? qRound(right) - 1 : qFloor(right);
 			int line = (int)(*iti).y()*width + initCoord;
 			for (int i = initCoord; i <= endCoord; i++, line += 1) {
-				S[line] = 1;
+				S[line] = EMPTY_VAL;
 			}
 		}
 	}
@@ -157,23 +158,23 @@ int *Polygon::getRasterImage(QPoint &RP, qreal scale, int &width, int &height) {
 		if (compareEpsilon(polyYi, polyYj, RASTER_EPS)) {
 			if(isCoordOnGrid(polyYi, RASTER_EPS)) continue;
 			int initX = ceilEpsilon(p1.x(), RASTER_EPS); int endX = floorEpsilon(p2.x(), RASTER_EPS);
-			//for (int pixelX = initX; pixelX <= endX; pixelX++) S[qRound(polyYi)*width + pixelX] = 1;
+			//for (int pixelX = initX; pixelX <= endX; pixelX++) S[qRound(polyYi)*width + pixelX] = EMPTY_VAL;
 			int index = qRound(polyYi)*width + initX;
-			for (int pixelX = initX; pixelX <= endX; pixelX++) S[index++] = 1;
+			for (int pixelX = initX; pixelX <= endX; pixelX++) S[index++] = EMPTY_VAL;
 			continue;
 		}
 		
 		for (int pixelY = initY; pixelY <= endY; pixelY++) {
 			qreal crossX = polyXi + (pixelY - polyYi) / (polyYj - polyYi)*(polyXj - polyXi);
 			QPointF crossPt(crossX, pixelY);
-			if (isPointOnGrid(crossPt, RASTER_EPS)) S[qRound(crossPt.y())*width + qRound(crossPt.x())] = 1;	
+			if (isPointOnGrid(crossPt, RASTER_EPS)) S[qRound(crossPt.y())*width + qRound(crossPt.x())] = EMPTY_VAL;
 		}
 	}
 
 	// Delete degenerate vertexes
 	for (QVector<QPointF>::const_iterator it = this->degNodes.cbegin(); it != this->degNodes.cend(); it++) {
 		QPointF p1 = scale*(*it); p1 -= QPointF(xMin, yMin);
-		if (isPointOnGrid(p1, RASTER_EPS)) S[qRound(p1.y())*width + qRound(p1.x())] = 1;
+		if (isPointOnGrid(p1, RASTER_EPS)) S[qRound(p1.y())*width + qRound(p1.x())] = EMPTY_VAL;
 	}
 
 	return S;
@@ -361,6 +362,7 @@ bool PackingProblem::loadCFREFP(QTextStream &stream, qreal scale, qreal auxScale
 		for (unsigned int i = 0; i < curShape->getAnglesCount(); i++){
 			curPiece->addOrientation(curShape->getAngle(i));
 		}
+		if(curShape->getAnglesCount() == 0) curPiece->addOrientation(0);
 		curShape->getPlacement()->updatePlacement(cVector(0, 0));
 		curShape->setRot(0); curShape->setdRot(0);
 		QString pieceName = "polygon" + QString::number(polygonid); polygonid++;

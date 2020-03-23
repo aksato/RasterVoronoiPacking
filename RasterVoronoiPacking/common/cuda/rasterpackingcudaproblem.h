@@ -16,7 +16,7 @@ namespace RASTERVORONOIPACKING {
 		bool load(RASTERPACKING::PackingProblem &problem);
 
 	private:
-		quint32 * loadBinaryNofitPolygonsOnDevice(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
+		quint32 * loadBinaryNofitPolygonsOnDevice(RASTERPACKING::PackingProblem& problem, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps);
 	};
 }
 #endif // RASTERPACKINGCUDAPROBLEM_H

@@ -211,7 +211,7 @@ namespace RASTERPACKING {
 	enum Symmetry {NONE, PAIR};
     class PackingProblem {
     public:
-		PackingProblem() : nfpDataSymmetry(PAIR) {}
+		PackingProblem() : nfpDataSymmetry(NONE) {}
         ~PackingProblem() {}
 
         bool load(QString fileName);

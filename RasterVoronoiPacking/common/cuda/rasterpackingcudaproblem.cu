@@ -65,7 +65,7 @@ bool RasterPackingCudaProblem::load(RASTERPACKING::PackingProblem &problem) {
 	// 4. Read Raster Data
 	QVector<QPair<quint32, quint32>> sizes;
 	QVector<QPoint> rps;
-	quint32 *nfpData = problem.loadBinaryNofitPolygons(sizes, rps);
+	quint32 *nfpData = loadBinaryNofitPolygonsOnDevice(problem, sizes, rps);
 	quint32 *curNfpData = nfpData;
 
     // 5. Load innerfit polygons
@@ -132,39 +132,14 @@ bool RasterPackingCudaProblem::load(RASTERPACKING::PackingProblem &problem) {
     return true;
 }
 
-quint32 *RasterPackingCudaProblem::loadBinaryNofitPolygonsOnDevice(QString fileName, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps) {
-	QFile file(fileName);
-	if(!file.open(QIODevice::ReadOnly)) return nullptr;
-	QDataStream in(&file);
-	in.setByteOrder(QDataStream::LittleEndian);
-	quint32 numNfps;
-	in >> numNfps;
-	sizes.reserve(numNfps); rps.reserve(numNfps);
+quint32 *RasterPackingCudaProblem::loadBinaryNofitPolygonsOnDevice(RASTERPACKING::PackingProblem& problem, QVector<QPair<quint32, quint32>> &sizes, QVector<QPoint> &rps) {
+	quint32* data = problem.loadBinaryNofitPolygons(sizes, rps);
 	quint32 numElements = 0;
-	for (unsigned int i = 0; i < numNfps; i++) {
-		quint32 width, height, rpx, rpy;
-		in >> width >> height >> rpx >> rpy;
-		numElements += width * height;
-		sizes << QPair<quint32, quint32>(width, height);
-		rps << QPoint(rpx, rpy);
-	}
-	quint32 *data = new quint32[numElements];
-	quint64 numBytes = numElements * sizeof(quint32);
-	quint64 maxInt = (quint32)std::numeric_limits<int>::max();
-	if (numBytes > maxInt) {
-		char *dataPtr = (char *)data;
-		for (; numBytes > maxInt; numBytes -= maxInt) {
-			in.readRawData(dataPtr, maxInt);
-			dataPtr += maxInt;
-		}
-		in.readRawData(dataPtr, numBytes);
-	}
-	else in.readRawData((char *)data, numBytes);
-	file.close();
+	for (auto s : sizes) numElements += s.first * s.second;
 
 	//
 	quint32 *d_data;
-	numBytes = numElements * sizeof(quint32);
+	quint64 numBytes = numElements * sizeof(quint32);
 	cudaMalloc((void **)&d_data, numBytes);
 	cudaDeviceSynchronize();
 

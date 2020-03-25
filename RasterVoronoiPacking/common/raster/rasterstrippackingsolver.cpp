@@ -86,6 +86,7 @@ void RasterStripPackingSolver::performLocalSearch(RasterPackingSolution &solutio
 				}
 			}
 		}
+		overlapEvaluator->signalNewItemPosition(shuffledId, minAngle, minPos);
 		solution.setOrientation(shuffledId, minAngle);
 		solution.setPosition(shuffledId, minPos);
 	}

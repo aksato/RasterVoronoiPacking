@@ -82,6 +82,8 @@ void RasterStripPackingCompactor::generateRandomSolution(RasterPackingSolution &
 	    int rnd_x =  qrand() % ((maxX + 1) - minX) + minX;
 	    int rnd_y =  qrand() % ((maxY + 1) - minY) + minY;
 	    solution.setPosition(i, QPoint(rnd_x, rnd_y));
+
+		overlapEvaluator->signalNewItemPosition(i, rnd_angle, QPoint(rnd_x, rnd_y));
 	}
 }
 

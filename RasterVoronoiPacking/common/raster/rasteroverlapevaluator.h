@@ -41,6 +41,9 @@ namespace RASTERVORONOIPACKING {
 		// --> Reset guided local search weights
 		virtual void resetWeights();
 
+		// --> Signal placement update
+		virtual void signalNewItemPosition(int itemId, int orientation, QPoint newPos) {}
+
 	protected:
 		// Access weigths
 		virtual int getWeight(int itemId1, int itemId2) { return glsWeights->getWeight(itemId1, itemId2); }

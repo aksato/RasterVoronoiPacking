@@ -31,7 +31,6 @@ namespace RASTERVORONOIPACKING {
 		// --> Local search
 		void performLocalSearch(RasterPackingSolution &solution);
 		// --> Guided Local Search functions
-		virtual void updateWeights(RasterPackingSolution &solution) { overlapEvaluator->updateWeights(solution); };
 		virtual void updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap) { overlapEvaluator->updateWeights(solution, overlaps, maxOverlap); };
 		virtual void resetWeights() { overlapEvaluator->resetWeights(); };
 		// --> Size information function

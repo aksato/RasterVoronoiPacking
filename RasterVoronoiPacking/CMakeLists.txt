@@ -32,6 +32,7 @@ set(common_SRCS
 	common/raster/rasteroverlapevaluator.cpp
 	common/raster/rasteroverlapevaluatorfull.cpp
 	common/raster/rasteroverlapevaluatorgls.cpp
+	common/raster/rasteroverlapevaluatorincremental.cpp
 	common/raster/rasteroverlapevaluatormatrixgls.cpp
 	common/raster/rasteroverlapevaluatordoublegls.cpp
 	common/raster/rasterpackingsolution.cpp
@@ -95,3 +96,9 @@ target_link_libraries(RasterVoronoiPackingCudaTester Qt5::Core Qt5::Gui Qt5::Svg
 target_compile_options(RasterVoronoiPackingCudaTester PRIVATE /arch:AVX2)
 set_property(TARGET RasterVoronoiPackingCudaTester PROPERTY CXX_STANDARD 17)
 set_property(TARGET RasterVoronoiPackingCudaTester PROPERTY CXX_STANDARD_REQUIRED ON)
+
+cuda_add_executable(RasterVoronoiPackingIncTester RasterVoronoiPackingConsole/mainIncrementalTest.cpp ${cuda_SRCS} $<TARGET_OBJECTS:packing_core>)
+target_link_libraries(RasterVoronoiPackingIncTester Qt5::Core Qt5::Gui Qt5::Svg)
+target_compile_options(RasterVoronoiPackingIncTester PRIVATE /arch:AVX2)
+set_property(TARGET RasterVoronoiPackingIncTester PROPERTY CXX_STANDARD 17)
+set_property(TARGET RasterVoronoiPackingIncTester PROPERTY CXX_STANDARD_REQUIRED ON)

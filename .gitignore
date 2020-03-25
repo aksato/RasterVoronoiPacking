@@ -12,3 +12,5 @@ RasterVoronoiPacking/RasterVoronoiPackingGUI/.vs/
 *.xml
 *.pgf
 *.dat
+*.png
+*.csv

@@ -23,6 +23,7 @@ namespace RASTERVORONOIPACKING {
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight);
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {}
 		void changeTotalItems(int _totalNumItems) {} // FIXME: Better way to evaluate partial cached overlap map
+		quint32 getMinimum(QPoint& minPt);
 	};
 }
 

@@ -3,6 +3,35 @@ using namespace RASTERVORONOIPACKING;
 
 #define THREADS_PER_BLOCK 512
 
+// TODO: More efficient parallel minimum algorithm
+__global__ void findMinimumDevice(quint32* d, int n, quint32 maxVal, quint32* min, quint32* pos) {
+	extern __shared__ quint32 s[];
+	quint32* sm = s;
+	quint32* im = &sm[blockDim.x];
+
+	uint tid = threadIdx.x;
+	uint i = blockIdx.x * blockDim.x + threadIdx.x;
+	sm[tid] = i < n ? d[i] : maxVal;
+	im[tid] = i;
+
+	for (int stride = 1; stride < blockDim.x; stride *= 2)
+	{
+		__syncthreads();
+		if (tid % (2 * stride) == 0) {
+			if (sm[tid + stride] < sm[tid] ||
+				(sm[tid] == sm[tid + stride] && im[tid + stride] < im[tid])) {
+				im[tid] = im[tid + stride];
+				sm[tid] = sm[tid + stride];
+			}
+		}
+	}
+	if (tid == 0) {
+		min[blockIdx.x] = sm[0];
+		pos[blockIdx.x] = im[0];
+	}
+}
+
+
 __global__
 void add2overlapmap(int totalLines, int lineLength, int mapInitIdx, int nfpInitIdx, int mapOffsetHeight, int nfpOffsetHeight, quint32 *map, quint32 *nfp, int weight)
 {
@@ -100,4 +129,31 @@ void TotalOverlapMapCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPoly
 	int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
 	dim3 numBlocks(totalLines, (lineLength + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK);
 	add2overlapmap << < numBlocks, THREADS_PER_BLOCK >> >(totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0), weight);
+}
+
+quint32 TotalOverlapMapCuda::getMinimum(QPoint& minPt) {
+	// TODO: Process more than one stock
+	quint32 *d_min, *d_pos;
+	quint32 maxVal = std::numeric_limits<quint32>::max();
+	int numBlocks = (width * height + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+	cudaMalloc((void**)&d_min, numBlocks * sizeof(quint32));
+	cudaMalloc((void**)&d_pos, numBlocks * sizeof(quint32));
+	findMinimumDevice << < numBlocks, THREADS_PER_BLOCK, 2*THREADS_PER_BLOCK * sizeof(quint32) >> > (data, width * height, maxVal, d_min, d_pos);
+	quint32* min = new quint32[numBlocks];
+	quint32* pos = new quint32[numBlocks];
+	cudaMemcpy(min, d_min, numBlocks * sizeof(quint32) , cudaMemcpyDeviceToHost);
+	cudaMemcpy(pos, d_pos, numBlocks * sizeof(quint32), cudaMemcpyDeviceToHost);
+
+	quint32 minVal = std::numeric_limits<quint32>::max();
+	int minid = 0;
+	for (int i = 0; i < numBlocks; i++) {
+		if (min[i] < minVal) {
+			minVal = min[i];
+			minid = pos[i];
+		}
+		if (minVal == 0) break;
+	}
+
+	minPt = QPoint(minid / height, minid % height) - this->reference;
+	return minVal;
 }

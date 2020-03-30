@@ -14,16 +14,15 @@ __global__ void findMinimumDevice(quint32* d, int n, quint32 maxVal, quint32* mi
 	sm[tid] = i < n ? d[i] : maxVal;
 	im[tid] = i;
 
-	for (int stride = 1; stride < blockDim.x; stride *= 2)
-	{
-		__syncthreads();
-		if (tid % (2 * stride) == 0) {
+	for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+		if (tid < stride) {
 			if (sm[tid + stride] < sm[tid] ||
 				(sm[tid] == sm[tid + stride] && im[tid + stride] < im[tid])) {
 				im[tid] = im[tid + stride];
 				sm[tid] = sm[tid + stride];
 			}
 		}
+		__syncthreads();
 	}
 	if (tid == 0) {
 		min[blockIdx.x] = sm[0];
@@ -42,16 +41,15 @@ __global__ void findMinimumDevice2(int n, quint32 maxVal, quint32* min, quint32*
 	sm[tid] = i < n ? min[i] : maxVal;
 	im[tid] = i < n ? pos[i] : -1;
 
-	for (int stride = 1; stride < blockDim.x; stride *= 2)
-	{
-		__syncthreads();
-		if (tid % (2 * stride) == 0) {
+	for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+		if (tid < stride) {
 			if (sm[tid + stride] < sm[tid] ||
 				(sm[tid] == sm[tid + stride] && im[tid + stride] < im[tid])) {
 				im[tid] = im[tid + stride];
 				sm[tid] = sm[tid + stride];
 			}
 		}
+		__syncthreads();
 	}
 	if (tid == 0) {
 		min[blockIdx.x] = sm[0];

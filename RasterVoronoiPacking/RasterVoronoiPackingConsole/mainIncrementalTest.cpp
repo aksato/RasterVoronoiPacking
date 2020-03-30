@@ -72,6 +72,7 @@ int main(int argc, char* argv[])
 		serialduration = measureOverlapEvaluatorTime(solver, "serial", compactor, argOutputImages); std::cout << std::endl;
 	}
 
+	long long serialincduration;
 	{
 		// 2 - Incremental creation
 		qsrand(seed);
@@ -79,10 +80,11 @@ int main(int argc, char* argv[])
 		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapIncEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorIncremental>(new RasterTotalOverlapMapEvaluatorIncremental(rasterProblem, weights, false));
 		std::shared_ptr<RasterStripPackingCompactor> compactorInc = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapIncEvaluator, 0.04, 0.01));
 		std::shared_ptr<RasterStripPackingSolver> solverInc(new RasterStripPackingSolver(rasterProblem, overlapIncEvaluator));
-		long long serialincduration = measureOverlapEvaluatorTime(solverInc, "serialinc", compactorInc, argOutputImages);
+		serialincduration = measureOverlapEvaluatorTime(solverInc, "serialinc", compactorInc, argOutputImages);
 		std::cout << " Speedup was " << (float)serialduration / (float)serialincduration << "." << std::endl;
 	}
 
+	long long cacheduration;
 	{
 		// 3 - Cache creation
 		qsrand(seed);
@@ -90,7 +92,7 @@ int main(int argc, char* argv[])
 		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluatorCache = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, weights, true));
 		std::shared_ptr<RasterStripPackingCompactor> compactorCache = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapEvaluatorCache, 0.04, 0.01));
 		std::shared_ptr<RasterStripPackingSolver> solverCache(new RasterStripPackingSolver(rasterProblem, overlapEvaluatorCache));
-		long long cacheduration = measureOverlapEvaluatorTime(solverCache, "cache", compactorCache, argOutputImages);
+		cacheduration = measureOverlapEvaluatorTime(solverCache, "cache", compactorCache, argOutputImages);
 		std::cout << " Speedup was " << (float)serialduration / (float)cacheduration << "." << std::endl;
 	}
 
@@ -101,6 +103,7 @@ int main(int argc, char* argv[])
 	std::shared_ptr<RasterPackingProblem> rasterCudaProblem = std::shared_ptr<RasterPackingProblem>(new RasterPackingCudaProblem(problemCuda));
 	QDir::setCurrent(originalPath);
 
+	long long cudaduration;
 	{
 		// 4 - Cuda version
 		qsrand(seed);
@@ -109,8 +112,22 @@ int main(int argc, char* argv[])
 		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaGLS>(new RasterTotalOverlapMapEvaluatorCudaGLS(rasterCudaProblem, weightsCuda));
 		std::shared_ptr<RasterStripPackingCompactor> compactorCuda = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterCudaProblem, overlapCudaEvaluator, 0.04, 0.01));
 		std::shared_ptr<RasterStripPackingSolver> solverCuda(new RasterStripPackingSolver(rasterProblem, overlapCudaEvaluator));
-		long long cudaduration = measureOverlapEvaluatorTime(solverCuda, "cuda", compactorCuda, argOutputImages);
+		cudaduration = measureOverlapEvaluatorTime(solverCuda, "cuda", compactorCuda, argOutputImages);
 		std::cout << " Speedup was " << (float)serialduration / (float)cudaduration << "." << std::endl;
+	}
+
+	// Print report of results
+	if (argReport) {
+		std::ofstream outfile;
+		if (!fileExists(args::get(argReport).c_str())) {
+			outfile.open(args::get(argReport));
+			outfile << "Case, Scale, Serial, Increment, Cache, Cuda" << std::endl;
+			outfile.close();
+		}
+		outfile.open(args::get(argReport), std::ios_base::app);
+		outfile << QFileInfo(fileName).baseName().toStdString() << "," << rasterProblem->getScale() <<
+			"," << serialduration << "," << serialincduration << "," << cacheduration << "," << cudaduration << std::endl;
+		outfile.close();
 	}
 
 	return 0;

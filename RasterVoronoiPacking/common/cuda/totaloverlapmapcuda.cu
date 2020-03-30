@@ -3,6 +3,14 @@ using namespace RASTERVORONOIPACKING;
 
 #define THREADS_PER_BLOCK 512
 
+__device__ void getMin(quint32& minVal, quint32& minPos, quint32 val2, quint32 pos2) {
+	if (val2 < minVal ||
+		(val2 == minVal && pos2 < minPos)) {
+		minVal = val2;
+		minPos = pos2;
+	}
+}
+
 // TODO: More efficient parallel minimum algorithm
 __global__ void findMinimumDevice(quint32* d, int n, quint32 maxVal, quint32* min, quint32* pos) {
 	extern __shared__ quint32 s[];
@@ -10,19 +18,38 @@ __global__ void findMinimumDevice(quint32* d, int n, quint32 maxVal, quint32* mi
 	quint32* im = &sm[blockDim.x];
 
 	uint tid = threadIdx.x;
-	uint i = blockIdx.x * blockDim.x + threadIdx.x;
-	sm[tid] = i < n ? d[i] : maxVal;
-	im[tid] = i;
-
-	for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
-		if (tid < stride) {
-			if (sm[tid + stride] < sm[tid] ||
-				(sm[tid] == sm[tid + stride] && im[tid + stride] < im[tid])) {
-				im[tid] = im[tid + stride];
-				sm[tid] = sm[tid + stride];
-			}
+	uint i = blockIdx.x * (blockDim.x*2) + threadIdx.x;
+	if(i >= n)
+		sm[tid] = maxVal;
+	else if (i + blockDim.x >= n) {
+		sm[tid] = d[i];
+		im[tid] = i;
+	}
+	else {
+		if (d[i + blockDim.x] < d[i])  {
+			sm[tid] = d[i + blockDim.x];
+			im[tid] = i + blockDim.x;
 		}
+		else {
+			sm[tid] = d[i];
+			im[tid] = i;
+		}
+	}
+	__syncthreads();
+
+	for (int stride = blockDim.x / 2; stride > 32; stride >>= 1) {
+		if (tid < stride)
+			getMin(sm[tid], im[tid], sm[tid + stride], im[tid + stride]);
 		__syncthreads();
+	}
+	if (tid < 32)
+	{
+		getMin(sm[tid], im[tid], sm[tid + 32], im[tid + 32]);
+		getMin(sm[tid], im[tid], sm[tid + 16], im[tid + 16]);
+		getMin(sm[tid], im[tid], sm[tid + 8], im[tid + 8]);
+		getMin(sm[tid], im[tid], sm[tid + 4], im[tid + 4]);
+		getMin(sm[tid], im[tid], sm[tid + 2], im[tid + 2]);
+		getMin(sm[tid], im[tid], sm[tid + 1], im[tid + 1]);
 	}
 	if (tid == 0) {
 		min[blockIdx.x] = sm[0];
@@ -37,19 +64,40 @@ __global__ void findMinimumDevice2(int n, quint32 maxVal, quint32* min, quint32*
 	quint32* im = &sm[blockDim.x];
 
 	uint tid = threadIdx.x;
-	uint i = blockIdx.x * blockDim.x + threadIdx.x;
-	sm[tid] = i < n ? min[i] : maxVal;
-	im[tid] = i < n ? pos[i] : -1;
+	uint i = blockIdx.x * (blockDim.x*2) + threadIdx.x;
 
-	for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
-		if (tid < stride) {
-			if (sm[tid + stride] < sm[tid] ||
-				(sm[tid] == sm[tid + stride] && im[tid + stride] < im[tid])) {
-				im[tid] = im[tid + stride];
-				sm[tid] = sm[tid + stride];
-			}
+	if (i >= n)
+		sm[tid] = maxVal;
+	else if (i + blockDim.x >= n) {
+		sm[tid] = min[i];
+		im[tid] = pos[i];
+	}
+	else {
+		if (min[i + blockDim.x] < min[i] ||
+			(min[i] == min[tid + blockDim.x] && pos[i + blockDim.x] < pos[i])) {
+			sm[tid] = min[i + blockDim.x];
+			im[tid] = pos[i + blockDim.x];
 		}
+		else {
+			sm[tid] = min[i];
+			im[tid] = pos[i];
+		}
+	}
+	__syncthreads();
+
+	for (int stride = blockDim.x / 2; stride > 32; stride >>= 1) {
+		if (tid < stride)
+			getMin(sm[tid], im[tid], sm[tid + stride], im[tid + stride]);
 		__syncthreads();
+	}
+	if (tid < 32)
+	{
+		getMin(sm[tid], im[tid], sm[tid + 32], im[tid + 32]);
+		getMin(sm[tid], im[tid], sm[tid + 16], im[tid + 16]);
+		getMin(sm[tid], im[tid], sm[tid + 8], im[tid + 8]);
+		getMin(sm[tid], im[tid], sm[tid + 4], im[tid + 4]);
+		getMin(sm[tid], im[tid], sm[tid + 2], im[tid + 2]);
+		getMin(sm[tid], im[tid], sm[tid + 1], im[tid + 1]);
 	}
 	if (tid == 0) {
 		min[blockIdx.x] = sm[0];
@@ -162,7 +210,7 @@ quint32 TotalOverlapMapCuda::getMinimum(QPoint& minPt) {
 	quint32* d_min, * d_pos;
 	quint32 maxVal = std::numeric_limits<quint32>::max();
 	int n = width * height;
-	int numBlocks = (n + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+	int numBlocks = (n + (THREADS_PER_BLOCK * 2 - 1)) / (THREADS_PER_BLOCK * 2);
 	cudaMalloc((void**)&d_min, numBlocks * sizeof(quint32));
 	cudaMalloc((void**)&d_pos, numBlocks * sizeof(quint32));
 	
@@ -170,7 +218,7 @@ quint32 TotalOverlapMapCuda::getMinimum(QPoint& minPt) {
 	int totalIts = numBlocks > 1 ? 1 + numBlocks / THREADS_PER_BLOCK : 0;
 	for (int i = 0; i < totalIts; i++) {
 		n = numBlocks;
-		numBlocks = (n + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
+		numBlocks = (n + (THREADS_PER_BLOCK * 2 - 1)) / (THREADS_PER_BLOCK * 2);
 		findMinimumDevice2 << < numBlocks, THREADS_PER_BLOCK, 2 * THREADS_PER_BLOCK * sizeof(quint32) >> > (n, maxVal, d_min, d_pos);
 	}
 	quint32 minVal, minid;

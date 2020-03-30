@@ -157,8 +157,12 @@ void TotalOverlapMapCuda::initCuda(uint _width, uint _height) {
 }
 
 void TotalOverlapMapCuda::setDimensions(int _width, int _height) {
-	cudaFree(data);
-	initCuda(_width, _height);
+	Q_ASSERT_X(_width > 0 && _height > 0, "TotalOverlapMap::shrink", "Item does not fit the container");
+	if (_width > this->width || _height > this->height) {
+		// Expanding the map buffer
+		cudaFree(data);
+		initCuda(_width, _height);
+	}
 	this->width = _width; this->height = _height;
 }
 

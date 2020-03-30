@@ -8,6 +8,7 @@
 #include "raster/rastersquarepackingcompactor.h"
 #include "cuda/rasterpackingcudaproblem.h"
 #include "cuda/rasteroverlapevaluatorcudagls.h"
+#include "cuda/rasteroverlapevaluatorcudainc.h"
 #include "cuda/glsweightsetcuda.h"
 #include <fstream>
 #include <iostream>
@@ -114,6 +115,19 @@ int main(int argc, char* argv[])
 		std::shared_ptr<RasterStripPackingSolver> solverCuda(new RasterStripPackingSolver(rasterProblem, overlapCudaEvaluator));
 		cudaduration = measureOverlapEvaluatorTime(solverCuda, "cuda", compactorCuda, argOutputImages);
 		std::cout << " Speedup was " << (float)serialduration / (float)cudaduration << "." << std::endl;
+	}
+
+	long long cudaincduration;
+	{
+		// 5 - Incremental Cuda version
+		qsrand(seed);
+		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
+		std::shared_ptr<GlsWeightSetCuda> weightsCudaInc = copyWeights(weights, rasterCudaProblem->count());
+		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapCudaIncEvaluator = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaIncremental>(new RasterTotalOverlapMapEvaluatorCudaIncremental(rasterCudaProblem, weightsCudaInc));
+		std::shared_ptr<RasterStripPackingCompactor> compactorCudaInc = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterCudaProblem, overlapCudaIncEvaluator, 0.04, 0.01));
+		std::shared_ptr<RasterStripPackingSolver> solverCudaInc(new RasterStripPackingSolver(rasterProblem, overlapCudaIncEvaluator));
+		cudaincduration = measureOverlapEvaluatorTime(solverCudaInc, "cudainc", compactorCudaInc, argOutputImages);
+		std::cout << " Speedup was " << (float)serialduration / (float)cudaincduration << "." << std::endl;
 	}
 
 	// Print report of results

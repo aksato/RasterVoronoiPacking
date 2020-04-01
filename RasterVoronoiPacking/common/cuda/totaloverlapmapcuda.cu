@@ -107,11 +107,11 @@ __global__ void findMinimumDevice2(int n, quint32 maxVal, quint32* min, quint32*
 
 
 __global__
-void add2overlapmap(int totalLines, int lineLength, int mapInitIdx, int nfpInitIdx, int mapOffsetHeight, int nfpOffsetHeight, quint32* map, quint32* nfp, int weight)
+void add2overlapmap(int totalLines, int lineLength, int mapInitIdx, int nfpInitIdx, int mapOffsetHeight, int nfpOffsetHeight, quint32* map, quint32* nfp, int weight, int multiplier)
 {
 	int localRowIdx = blockIdx.y * blockDim.x + threadIdx.x;
 	int mapidx = mapInitIdx + blockIdx.x * (lineLength + mapOffsetHeight) + localRowIdx;
-	int nfpidx = nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + localRowIdx;
+	int nfpidx = multiplier * (nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + localRowIdx);
 	if (localRowIdx < lineLength)
 		map[mapidx] += weight * nfp[nfpidx];
 }
@@ -206,7 +206,7 @@ void TotalOverlapMapCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPoly
 	int totalLines = relativeTopRightX - relativeBotttomLeftX + 1;
 	int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
 	dim3 numBlocks(totalLines, (lineLength + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK);
-	add2overlapmap << < numBlocks, THREADS_PER_BLOCK >> > (totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0), weight);
+	add2overlapmap << < numBlocks, THREADS_PER_BLOCK >> > (totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0), weight, nfp->getFlipMultiplier());
 }
 
 quint32 TotalOverlapMapCuda::getMinimum(QPoint& minPt) {

@@ -4,6 +4,7 @@
 #include "raster/rasternofitpolygon.h"
 #include "raster/rasterstrippackingparameters.h"
 #include "raster/totaloverlapmap.h"
+#include <cuda_runtime.h>
 
 namespace RASTERVORONOIPACKING {
 
@@ -24,6 +25,11 @@ namespace RASTERVORONOIPACKING {
 		void addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos, int weight, int zoomFactorInt) {}
 		void changeTotalItems(int _totalNumItems) {} // FIXME: Better way to evaluate partial cached overlap map
 		quint32 getMinimum(QPoint& minPt);
+
+	private:
+		cudaStream_t stream;
+		quint32* d_min, * d_pos;
+		int numBlocks;
 	};
 }
 

@@ -154,6 +154,10 @@ void TotalOverlapMapCuda::initCuda(uint _width, uint _height) {
 		}
 	}
 	else cudaMemset(data, 0, _width * _height * sizeof(quint32));
+	cudaStreamCreate(&stream);
+	numBlocks = (_width * _height + (THREADS_PER_BLOCK * 2 - 1)) / (THREADS_PER_BLOCK * 2);
+	cudaMalloc((void**)&d_min, numBlocks * sizeof(quint32));
+	cudaMalloc((void**)&d_pos, numBlocks * sizeof(quint32));
 }
 
 void TotalOverlapMapCuda::setDimensions(int _width, int _height) {
@@ -167,7 +171,7 @@ void TotalOverlapMapCuda::setDimensions(int _width, int _height) {
 }
 
 void TotalOverlapMapCuda::reset() {
-	cudaMemset(data, 0, width * height * sizeof(quint32));
+	cudaMemsetAsync(data, 0, width * height * sizeof(quint32), stream);
 }
 
 void TotalOverlapMapCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
@@ -206,26 +210,22 @@ void TotalOverlapMapCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPoly
 	int totalLines = relativeTopRightX - relativeBotttomLeftX + 1;
 	int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
 	dim3 numBlocks(totalLines, (lineLength + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK);
-	add2overlapmap << < numBlocks, THREADS_PER_BLOCK >> > (totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0), weight, nfp->getFlipMultiplier());
+	add2overlapmap <<< numBlocks, THREADS_PER_BLOCK, 0, stream >>> (totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0), weight, nfp->getFlipMultiplier());
 }
 
 quint32 TotalOverlapMapCuda::getMinimum(QPoint& minPt) {
 	// TODO: Process more than one stock
-	quint32* d_min, * d_pos;
 	quint32 maxVal = std::numeric_limits<quint32>::max();
-	int n = width * height;
-	int numBlocks = (n + (THREADS_PER_BLOCK * 2 - 1)) / (THREADS_PER_BLOCK * 2);
-	cudaMalloc((void**)&d_min, numBlocks * sizeof(quint32));
-	cudaMalloc((void**)&d_pos, numBlocks * sizeof(quint32));
-	
-	findMinimumDevice << < numBlocks, THREADS_PER_BLOCK, 2 * THREADS_PER_BLOCK * sizeof(quint32) >> > (data, n, maxVal, d_min, d_pos);
+	findMinimumDevice <<< numBlocks, THREADS_PER_BLOCK, 2 * THREADS_PER_BLOCK * sizeof(quint32), stream >>> (data, width * height, maxVal, d_min, d_pos);
 	int totalIts = numBlocks > 1 ? 1 + numBlocks / THREADS_PER_BLOCK : 0;
+	int reductionNumBlocks = numBlocks;
 	for (int i = 0; i < totalIts; i++) {
-		n = numBlocks;
-		numBlocks = (n + (THREADS_PER_BLOCK * 2 - 1)) / (THREADS_PER_BLOCK * 2);
-		findMinimumDevice2 << < numBlocks, THREADS_PER_BLOCK, 2 * THREADS_PER_BLOCK * sizeof(quint32) >> > (n, maxVal, d_min, d_pos);
+		int n = reductionNumBlocks;
+		reductionNumBlocks = (reductionNumBlocks + (THREADS_PER_BLOCK * 2 - 1)) / (THREADS_PER_BLOCK * 2);
+		findMinimumDevice2 <<< reductionNumBlocks, THREADS_PER_BLOCK, 2 * THREADS_PER_BLOCK * sizeof(quint32), stream >>> (n, maxVal, d_min, d_pos);
 	}
 	quint32 minVal, minid;
+	cudaStreamSynchronize(stream);
 	cudaMemcpy(&minVal, d_min, sizeof(quint32), cudaMemcpyDeviceToHost);
 	cudaMemcpy(&minid, d_pos, sizeof(quint32), cudaMemcpyDeviceToHost);
 

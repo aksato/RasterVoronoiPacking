@@ -51,6 +51,7 @@ set(cuda_SRCS
 	common/cuda/rasteroverlapevaluatorcudagls.cu
 	common/cuda/rasteroverlapevaluatorcudainc.cu
 	common/cuda/rasteroverlapevaluatorcudamatrixgls.cu
+	common/cuda/rasteroverlapevaluatorcudafull.cu
 	common/cuda/rasterpackingcudaproblem.cu
 	common/cuda/totaloverlapmapcuda.cu
 	common/cuda/totaloverlapmatrixcuda.cu

@@ -74,7 +74,8 @@ namespace RASTERVORONOIPACKING {
 		std::shared_ptr<ItemRasterNoFitPolygonSet> getItemRasterNoFitPolygonSet(int orbitingPieceTypeId, int orbitingAngleId);
         //void eraseRasterNoFitPolygon(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
         //void clear();
-
+		int getSize() { return nfpSet.size(); }
+		int getNumAngles() { return numAngles; }
     private:
         //QHash<QPair<int,int>, std::shared_ptr<RasterNoFitPolygon>> Nfps;
 		void initializeSet(int numItems);

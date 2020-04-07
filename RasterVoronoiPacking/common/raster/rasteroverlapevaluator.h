@@ -55,10 +55,10 @@ namespace RASTERVORONOIPACKING {
 		// --> Pointer to problem
 		std::shared_ptr<RasterPackingProblem> problem;
 
-	private:
 		// Guided local search weights
 		std::shared_ptr<GlsWeightSet> glsWeights;
 
+	private:
 		// Debug functions
 		void setgetGlsWeights(std::shared_ptr<GlsWeightSet> _glsWeights) { this->glsWeights = _glsWeights; }
 		std::shared_ptr<GlsWeightSet> getGlsWeights() { return glsWeights; }

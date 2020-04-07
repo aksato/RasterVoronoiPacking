@@ -19,7 +19,10 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorFull::getTotalOve
 				std::shared_ptr<RasterNoFitPolygon> nfp = problem->getNfps()->getRasterNoFitPolygon(problem->getItemType(k), solution.getOrientation(k), problem->getItemType(itemId), orientation);
 				QPoint relativeOrigin = currrentPieceMap->getReferencePoint() + solution.getPosition(k) - nfp->getFlipMultiplier()*nfp->getOrigin() + QPoint(nfp->width() - 1, nfp->height() - 1)*(nfp->getFlipMultiplier() - 1) / 2;
 				if (i < relativeOrigin.x() || i > relativeOrigin.x() + nfp->width() - 1 || j < relativeOrigin.y() || j > relativeOrigin.y() + nfp->height() - 1) continue;
-				else *mapPointer += nfp->getPixel(i - relativeOrigin.x(), j - relativeOrigin.y()) * getWeight(itemId, k);
+				else {
+					quint32* nfpPointer = nfp->getPixelRef(i - relativeOrigin.x(), j - relativeOrigin.y());
+					*mapPointer += *nfpPointer * getWeight(itemId, k);
+				}
 			}
 			mapPointer++;
 		}

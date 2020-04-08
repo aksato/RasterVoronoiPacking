@@ -49,11 +49,12 @@ void cudaGetTotalOverlapMap(quint32* map, int width, int height, int referencePo
 
 RasterTotalOverlapMapEvaluatorCudaFull::RasterTotalOverlapMapEvaluatorCudaFull(std::shared_ptr<RasterPackingProblem> _problem) :
 	RasterTotalOverlapMapEvaluatorCudaGLS(_problem) {
+	glsWeightsCuda = std::shared_ptr<GlsWeightSetCuda>(new GlsWeightSetCuda(_problem->count()));
 	initCuda(_problem);
 }
 
-RasterTotalOverlapMapEvaluatorCudaFull::RasterTotalOverlapMapEvaluatorCudaFull(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights) :
-	RasterTotalOverlapMapEvaluatorCudaGLS(_problem, _glsWeights) {
+RasterTotalOverlapMapEvaluatorCudaFull::RasterTotalOverlapMapEvaluatorCudaFull(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSetCuda> _glsWeightsCuda) : 
+	RasterTotalOverlapMapEvaluatorCudaGLS(_problem, _glsWeightsCuda), glsWeightsCuda(_glsWeightsCuda) {
 	initCuda(_problem);
 }
 
@@ -129,6 +130,39 @@ void RasterTotalOverlapMapEvaluatorCudaFull::initCuda(std::shared_ptr<RasterPack
 	delete[] itemId2ItemTypeMap;
 }
 
+void RasterTotalOverlapMapEvaluatorCudaFull::updateWeights(RasterPackingSolution &solution) {
+	QVector<WeightIncrement> solutionOverlapValues;
+
+	// Determine pair overlap values
+	for (int itemId1 = 0; itemId1 < problem->count(); itemId1++)
+		for (int itemId2 = 0; itemId2 < problem->count(); itemId2++) {
+			if (itemId1 == itemId2) continue;
+			quint32 curOValue = problem->getDistanceValue(itemId1, solution.getPosition(itemId1), solution.getOrientation(itemId1),
+				itemId2, solution.getPosition(itemId2), solution.getOrientation(itemId2));
+			if (curOValue != 0) {
+				solutionOverlapValues.append(WeightIncrement(itemId1, itemId2, 1));
+			}
+		}
+
+	// Add to the current weight map
+	glsWeightsCuda->updateWeights(solutionOverlapValues);
+	// Update on GPU
+	glsWeightsCuda->updateCudaWeights();
+}
+
+void RasterTotalOverlapMapEvaluatorCudaFull::updateWeights(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 maxOverlap) {
+	std::transform(glsWeightsCuda->begin(), glsWeightsCuda->end(), overlaps.begin(),
+		glsWeightsCuda->begin(), [&maxOverlap](const quint32 &a, const quint32 &b) {return a + qRound(100.0*(qreal)b / (qreal)maxOverlap); });
+	// Update on GPU
+	glsWeightsCuda->updateCudaWeights();
+}
+
+
+//  TODO: Update cache information!
+void RasterTotalOverlapMapEvaluatorCudaFull::resetWeights() {
+	glsWeightsCuda->reset(problem->count());
+}
+
 // Determines the item total overlap map for a given orientation in a solution
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaFull::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution& solution) {
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = cudamaps.getOverlapMap(itemId, orientation);
@@ -153,13 +187,6 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaFull::getTota
 	delete[] posY;
 	delete[] orientations;
 
-	unsigned int* d_weigths;
-	unsigned int* weigths = new unsigned int[problem->count() * problem->count()];
-	std::copy(glsWeights->begin(), glsWeights->end(), weigths);
-	cudaMalloc((void**)&d_weigths, (problem->count() * problem->count()) * sizeof(unsigned int));
-	cudaMemcpy(d_weigths, weigths, (problem->count() * problem->count()) * sizeof(unsigned int), cudaMemcpyHostToDevice);
-	delete[] weigths;
-
 	int numBlocksX = (currrentPieceMap->getWidth() + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
 	int numBlocksY = (currrentPieceMap->getHeight() + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
 	dim3 numBlocks(numBlocksX, numBlocksY);
@@ -167,12 +194,11 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaFull::getTota
 	cudaDeviceSynchronize();
 	cudaGetTotalOverlapMap <<< numThreads, numBlocks >>> (
 		currrentPieceMap->getData(), currrentPieceMap->getWidth(), currrentPieceMap->getHeight(), currrentPieceMap->getReferencePoint().x(), currrentPieceMap->getReferencePoint().y(),
-		d_nfps, d_solution, problem->count(), d_itemId2ItemTypeMap, itemId, orientation, numAngles, numKeys, d_weigths);
+		d_nfps, d_solution, problem->count(), d_itemId2ItemTypeMap, itemId, orientation, numAngles, numKeys, glsWeightsCuda->getCudaWeights(0));
 
 	cudaFree(d_solution.d_posX);
 	cudaFree(d_solution.d_posY);
 	cudaFree(d_solution.d_orientations);
-	cudaFree(d_weigths);
 	
 	return currrentPieceMap;
 }

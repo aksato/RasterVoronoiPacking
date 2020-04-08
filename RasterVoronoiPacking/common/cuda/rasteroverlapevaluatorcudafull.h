@@ -9,13 +9,13 @@
 
 namespace RASTERVORONOIPACKING {
 	struct DeviceRasterNoFitPolygonSet {
-		quint32** d_data;
-		int * d_widths, * d_heights;
-		int * d_originsX, * d_originsY, * d_multipliers;
+		quint32** data;
+		int * widths, * heights;
+		int * originsX, * originsY, * multipliers;
 	};
 
 	struct DeviceRasterPackingSolution {
-		int *d_posX, *d_posY, * d_orientations;
+		int *posX, *posY, * orientations;
 	};
 
 	class RasterTotalOverlapMapEvaluatorCudaFull : public RasterTotalOverlapMapEvaluatorCudaGLS
@@ -38,6 +38,9 @@ namespace RASTERVORONOIPACKING {
 		// --> Reset guided local search weights
 		void resetWeights();
 
+		// --> Signal placement update
+		void signalNewItemPosition(int itemId, int orientation, QPoint newPos);
+
 	protected:
 		// Access weigths
 		int getWeight(int itemId1, int itemId2) { return glsWeightsCuda->getWeight(itemId1, itemId2); }
@@ -52,6 +55,7 @@ namespace RASTERVORONOIPACKING {
 
 		void initCuda(std::shared_ptr<RasterPackingProblem> _problem);
 		DeviceRasterNoFitPolygonSet d_nfps;
+		DeviceRasterPackingSolution d_solution;
 		int* d_itemId2ItemTypeMap;
 		int getRasterNoFitPolygonKey(int staticPieceTypeId, int staticAngleId, int orbitingPieceTypeId, int orbitingAngleId);
 		int numAngles, numKeys;

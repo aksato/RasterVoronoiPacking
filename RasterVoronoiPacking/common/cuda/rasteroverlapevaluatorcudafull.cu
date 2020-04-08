@@ -25,17 +25,17 @@ void cudaGetTotalOverlapMap(quint32* map, int width, int height, int referencePo
 	
 	if (i >= width || j >= height)
 		return;
-
+	
+	map[i * height + j] = 0;
 	for (int k = 0; k < numItems; k++) {
-	//for (int k = 18; k < 19; k++) {
 		if (k == itemId) continue;
-		int nfpKey = getRasterNoFitPolygonKey(itemType[k], solution.d_orientations[k], itemType[itemId], orientation, numAngles, numKeys);
-		NfpData nfp = nfps.d_data[nfpKey];
-		int nfpWidth = nfps.d_widths[nfpKey]; int nfpHeight = nfps.d_heights[nfpKey];
-		int nfpOriginX = nfps.d_originsX[nfpKey]; int nfpOriginY = nfps.d_originsY[nfpKey];
-		int nfpMutiplier = nfps.d_multipliers[nfpKey];
-		int relativeOriginX = referencePointX + solution.d_posX[k] - nfpMutiplier * nfpOriginX + (nfpWidth - 1) * (nfpMutiplier - 1) / 2;
-		int relativeOriginY = referencePointY + solution.d_posY[k] - nfpMutiplier * nfpOriginY + (nfpHeight - 1) * (nfpMutiplier - 1) / 2;
+		int nfpKey = getRasterNoFitPolygonKey(itemType[k], solution.orientations[k], itemType[itemId], orientation, numAngles, numKeys);
+		NfpData nfp = nfps.data[nfpKey];
+		int nfpWidth = nfps.widths[nfpKey]; int nfpHeight = nfps.heights[nfpKey];
+		int nfpOriginX = nfps.originsX[nfpKey]; int nfpOriginY = nfps.originsY[nfpKey];
+		int nfpMutiplier = nfps.multipliers[nfpKey];
+		int relativeOriginX = referencePointX + solution.posX[k] - nfpMutiplier * nfpOriginX + (nfpWidth - 1) * (nfpMutiplier - 1) / 2;
+		int relativeOriginY = referencePointY + solution.posY[k] - nfpMutiplier * nfpOriginY + (nfpHeight - 1) * (nfpMutiplier - 1) / 2;
 
 		if (i < relativeOriginX || i > relativeOriginX + nfpWidth - 1 || j < relativeOriginY || j > relativeOriginY + nfpHeight - 1) {}
 		else {
@@ -59,13 +59,16 @@ RasterTotalOverlapMapEvaluatorCudaFull::RasterTotalOverlapMapEvaluatorCudaFull(s
 }
 
 RasterTotalOverlapMapEvaluatorCudaFull::~RasterTotalOverlapMapEvaluatorCudaFull() {
-	cudaFree(d_nfps.d_data);
-	cudaFree(d_nfps.d_widths);
-	cudaFree(d_nfps.d_heights);
-	cudaFree(d_nfps.d_originsX);
-	cudaFree(d_nfps.d_originsY);
-	cudaFree(d_nfps.d_multipliers);
+	cudaFree(d_nfps.data);
+	cudaFree(d_nfps.widths);
+	cudaFree(d_nfps.heights);
+	cudaFree(d_nfps.originsX);
+	cudaFree(d_nfps.originsY);
+	cudaFree(d_nfps.multipliers);
 	cudaFree(d_itemId2ItemTypeMap);
+	cudaFree(d_solution.posX);
+	cudaFree(d_solution.posY);
+	cudaFree(d_solution.orientations);
 }
 
 void RasterTotalOverlapMapEvaluatorCudaFull::initCuda(std::shared_ptr<RasterPackingProblem> _problem) {
@@ -99,28 +102,31 @@ void RasterTotalOverlapMapEvaluatorCudaFull::initCuda(std::shared_ptr<RasterPack
 	}
 
 	//allocation
-	cudaMalloc((void**)&d_nfps.d_data, (numKeys * numKeys) * sizeof(NfpData));
-	cudaMalloc((void**)&d_nfps.d_widths, (numKeys * numKeys) * sizeof(int));
-	cudaMalloc((void**)&d_nfps.d_heights, (numKeys * numKeys) * sizeof(int));
-	cudaMalloc((void**)&d_nfps.d_originsX, (numKeys * numKeys) * sizeof(int));
-	cudaMalloc((void**)&d_nfps.d_originsY, (numKeys * numKeys) * sizeof(int));
-	cudaMalloc((void**)&d_nfps.d_multipliers, (numKeys * numKeys) * sizeof(int));
+	cudaMalloc((void**)&d_nfps.data, (numKeys * numKeys) * sizeof(NfpData));
+	cudaMalloc((void**)&d_nfps.widths, (numKeys * numKeys) * sizeof(int));
+	cudaMalloc((void**)&d_nfps.heights, (numKeys * numKeys) * sizeof(int));
+	cudaMalloc((void**)&d_nfps.originsX, (numKeys * numKeys) * sizeof(int));
+	cudaMalloc((void**)&d_nfps.originsY, (numKeys * numKeys) * sizeof(int));
+	cudaMalloc((void**)&d_nfps.multipliers, (numKeys * numKeys) * sizeof(int));
 
 	//copying from host to device
-	cudaMemcpy(d_nfps.d_data, data, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_nfps.d_widths, widths, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_nfps.d_heights, heights, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_nfps.d_originsX, originsX, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_nfps.d_originsY, originsY, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_nfps.d_multipliers, multipliers, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
-
-
+	cudaMemcpy(d_nfps.data, data, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_nfps.widths, widths, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_nfps.heights, heights, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_nfps.originsX, originsX, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_nfps.originsY, originsY, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_nfps.multipliers, multipliers, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
+	
 	int* itemId2ItemTypeMap = new int[_problem->count()];
 	for (int k = 0; k < _problem->count(); k++)
 		itemId2ItemTypeMap[k] = _problem->getItemType(k);
 	cudaMalloc((void**)&d_itemId2ItemTypeMap, _problem->count() * sizeof(int));
 	cudaMemcpy(d_itemId2ItemTypeMap, itemId2ItemTypeMap, _problem->count() * sizeof(int), cudaMemcpyHostToDevice);
-
+	
+	cudaMalloc((void**)&d_solution.posX, (_problem->count()) * sizeof(int));
+	cudaMalloc((void**)&d_solution.posY, (_problem->count()) * sizeof(int));
+	cudaMalloc((void**)&d_solution.orientations, (_problem->count()) * sizeof(int));
+	
 	delete[] data;
 	delete[] widths;
 	delete[] heights;
@@ -166,39 +172,22 @@ void RasterTotalOverlapMapEvaluatorCudaFull::resetWeights() {
 // Determines the item total overlap map for a given orientation in a solution
 std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaFull::getTotalOverlapMap(int itemId, int orientation, RasterPackingSolution& solution) {
 	std::shared_ptr<TotalOverlapMap> currrentPieceMap = cudamaps.getOverlapMap(itemId, orientation);
-	currrentPieceMap->reset();
-
-	DeviceRasterPackingSolution d_solution;
-	int* posX = new int[problem->count()];
-	int* posY = new int[problem->count()];
-	int *orientations = new int[problem->count()];
-	for (int k = 0; k < problem->count(); k++) {
-		posX[k] = solution.getPosition(k).x();
-		posY[k] = solution.getPosition(k).y();
-		orientations[k] = solution.getOrientation(k);
-	}
-	cudaMalloc((void**)&d_solution.d_posX, (problem->count()) * sizeof(int));
-	cudaMalloc((void**)&d_solution.d_posY, (problem->count()) * sizeof(int));
-	cudaMalloc((void**)&d_solution.d_orientations, (problem->count()) * sizeof(int));
-	cudaMemcpy(d_solution.d_posX, posX, problem->count() * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_solution.d_posY, posY, problem->count() * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_solution.d_orientations, orientations, problem->count() * sizeof(int), cudaMemcpyHostToDevice);
-	delete[] posX;
-	delete[] posY;
-	delete[] orientations;
-
+	
 	int numBlocksX = (currrentPieceMap->getWidth() + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
 	int numBlocksY = (currrentPieceMap->getHeight() + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK;
 	dim3 numBlocks(numBlocksX, numBlocksY);
 	dim3 numThreads(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-	cudaDeviceSynchronize();
 	cudaGetTotalOverlapMap <<< numThreads, numBlocks >>> (
 		currrentPieceMap->getData(), currrentPieceMap->getWidth(), currrentPieceMap->getHeight(), currrentPieceMap->getReferencePoint().x(), currrentPieceMap->getReferencePoint().y(),
 		d_nfps, d_solution, problem->count(), d_itemId2ItemTypeMap, itemId, orientation, numAngles, numKeys, glsWeightsCuda->getCudaWeights(0));
-
-	cudaFree(d_solution.d_posX);
-	cudaFree(d_solution.d_posY);
-	cudaFree(d_solution.d_orientations);
+	cudaDeviceSynchronize();
 	
 	return currrentPieceMap;
+}
+
+void RasterTotalOverlapMapEvaluatorCudaFull::signalNewItemPosition(int itemId, int orientation, QPoint newPos) {
+	int newPosX = newPos.x(); int newPosY = newPos.y();
+	cudaMemcpy(&d_solution.posX[itemId], &newPosX, sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(&d_solution.posY[itemId], &newPosY, sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(&d_solution.orientations[itemId], &orientation, sizeof(int), cudaMemcpyHostToDevice);
 }

@@ -103,15 +103,14 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaMatrixGLS::ge
 	std::shared_ptr<ItemRasterNoFitPolygonSet> curItemNfpSet = problem->getNfps()->getItemRasterNoFitPolygonSet(problem->getItemType(itemId), orientation);
 	for (int i = 0; i < problem->count(); i++) {
 		if (i == itemId) continue;
-
-		// Add nfp to overlap map
 		currrentPieceMat->addVoronoi(i, curItemNfpSet->getRasterNoFitPolygon(problem->getItemType(i), solution.getOrientation(i)), solution.getPosition(i)); 
 	}
-	std::shared_ptr<TotalOverlapMap> currrentPieceMap = cudamaps.getOverlapMap(problem->getItemType(itemId), orientation);
+	std::shared_ptr<TotalOverlapMap> currrentPieceMap = cudamaps.getOverlapMap(itemId, orientation);
 	dim3 dim_grid((currrentPieceMat->getHeight()* currrentPieceMat->getWidth() + BLOCK_SIZE - 1) / BLOCK_SIZE);
 	dim3 dim_block(BLOCK_SIZE);
 	cudaDeviceSynchronize();
 	gemv << <dim_grid, dim_block >> > (currrentPieceMat->getData(), glsWeightsCuda->getCudaWeights(itemId), currrentPieceMap->getData() , currrentPieceMat->getHeight() * currrentPieceMat->getWidth(), solution.getNumItems());
+	cudaDeviceSynchronize();
 
 	return currrentPieceMap;
 }

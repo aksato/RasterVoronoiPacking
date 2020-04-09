@@ -31,7 +31,7 @@ void TotalOverlapMatrix::reset(){
 
 void TotalOverlapMatrix::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
 	// Get intersection between innerfit and nofit polygon bounding boxes
-	QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
+	QPoint relativeOrigin = this->reference + pos - nfp->getFlipMultiplier() * nfp->getOrigin() + QPoint(nfp->width() - 1, nfp->height() - 1) * (nfp->getFlipMultiplier() - 1) / 2;
 	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? -relativeOrigin.x() : 0;
 	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? -relativeOrigin.y() : 0;
 	int relativeTopRightX = width - relativeOrigin.x(); relativeTopRightX = relativeTopRightX <  nfp->width() ? relativeTopRightX - 1 : nfp->width() - 1;
@@ -44,9 +44,18 @@ void TotalOverlapMatrix::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolyg
 	quint32 *nfpPointer = nfp->getPixelRef(relativeBotttomLeftX, relativeBotttomLeftY);
 
 	// Add nofit polygon values to overlap map
-	for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++) {
-		int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
-		std::memcpy(mapPointer, nfpPointer, lineLength * sizeof(quint32));
-		mapPointer += lineLength + offsetHeight; nfpPointer += lineLength + nfpOffsetHeight;
+	if (nfp->getFlipMultiplier() > 0) {
+		for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++) {
+			for (int j = relativeBotttomLeftY; j <= relativeTopRightY; j++, mapPointer++, nfpPointer++)
+				*mapPointer = *nfpPointer;
+			mapPointer += offsetHeight; nfpPointer += nfpOffsetHeight;
+		}
+	}
+	else {
+		for (int i = relativeBotttomLeftX; i <= relativeTopRightX; i++) {
+			for (int j = relativeBotttomLeftY; j <= relativeTopRightY; j++, mapPointer++, nfpPointer--)
+				*mapPointer = *nfpPointer;
+			mapPointer += offsetHeight; nfpPointer -= nfpOffsetHeight;
+		}
 	}
 }

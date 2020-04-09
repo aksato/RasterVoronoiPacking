@@ -4,10 +4,10 @@ using namespace RASTERVORONOIPACKING;
 #define THREADS_PER_BLOCK 512
 
 __global__
-void filloverlapmatrix(int totalLines, int lineLength, int mapInitIdx, int nfpInitIdx, int mapOffsetHeight, int nfpOffsetHeight, quint32 *map, quint32 *nfp)
+void filloverlapmatrix(int totalLines, int lineLength, int mapInitIdx, int nfpInitIdx, int mapOffsetHeight, int nfpOffsetHeight, quint32 *map, quint32 *nfp, int multiplier)
 {
 	int mapidx = mapInitIdx + blockIdx.x * (lineLength + mapOffsetHeight) + blockIdx.y * blockDim.y + threadIdx.x;
-	int nfpidx = nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + blockIdx.y * blockDim.y + threadIdx.x;
+	int nfpidx = multiplier * (nfpInitIdx + blockIdx.x * (lineLength + nfpOffsetHeight) + blockIdx.y * blockDim.y + threadIdx.x);
 	if (threadIdx.x < lineLength)
 		map[mapidx] = nfp[nfpidx];
 }
@@ -59,15 +59,16 @@ void TotalOverlapMatrixCuda::setDimensions(int _width, int _height) {
 }
 
 void TotalOverlapMatrixCuda::reset(){
-	cudaMemset(data, 0, width * height * numItems * sizeof(quint32));
+	for(int itemId = 0; itemId < numItems; itemId++)
+		cudaMemsetAsync(data + width * height * itemId, 0, width * height * sizeof(quint32), streams[itemId]);
 }
 
 void TotalOverlapMatrixCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitPolygon> nfp, QPoint pos) {
 	// Get intersection between innerfit and nofit polygon bounding boxes
-	QPoint relativeOrigin = this->reference + pos - nfp->getOrigin();
+	QPoint relativeOrigin = this->reference + pos - nfp->getFlipMultiplier() * nfp->getOrigin() + QPoint(nfp->width() - 1, nfp->height() - 1) * (nfp->getFlipMultiplier() - 1) / 2;
 	int relativeBotttomLeftX = relativeOrigin.x() < 0 ? -relativeOrigin.x() : 0;
 	int relativeBotttomLeftY = relativeOrigin.y() < 0 ? -relativeOrigin.y() : 0;
-	int relativeTopRightX = width - relativeOrigin.x(); relativeTopRightX = relativeTopRightX <  nfp->width() ? relativeTopRightX - 1 : nfp->width() - 1;
+	int relativeTopRightX = width - relativeOrigin.x(); relativeTopRightX = relativeTopRightX < nfp->width() ? relativeTopRightX - 1 : nfp->width() - 1;
 	int relativeTopRightY = height - relativeOrigin.y(); relativeTopRightY = relativeTopRightY < nfp->height() ? relativeTopRightY - 1 : nfp->height() - 1;
 
 	// Create pointers to initial positions and calculate offsets for moving vertically
@@ -79,5 +80,5 @@ void TotalOverlapMatrixCuda::addVoronoi(int itemId, std::shared_ptr<RasterNoFitP
 	int totalLines = relativeTopRightX - relativeBotttomLeftX + 1;
 	int lineLength = relativeTopRightY - relativeBotttomLeftY + 1;
 	dim3 numBlocks(totalLines, (lineLength + THREADS_PER_BLOCK - 1) / THREADS_PER_BLOCK);
-	filloverlapmatrix << < numBlocks, THREADS_PER_BLOCK, 0, streams[itemId] >> >(totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0));
+	filloverlapmatrix << < numBlocks, THREADS_PER_BLOCK, 0, streams[itemId] >> >(totalLines, lineLength, mapInitIdx, nfpInitIdx, offsetHeight, nfpOffsetHeight, data, nfp->getPixelRef(0, 0), nfp->getFlipMultiplier());
 }

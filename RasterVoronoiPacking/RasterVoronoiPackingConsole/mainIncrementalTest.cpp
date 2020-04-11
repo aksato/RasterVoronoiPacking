@@ -189,12 +189,13 @@ int main(int argc, char* argv[])
 		std::ofstream outfile;
 		if (!fileExists(args::get(argReport).c_str())) {
 			outfile.open(args::get(argReport));
-			outfile << "Case, Scale, Serial, Increment, Cache, Cuda" << std::endl;
+			outfile << "Case, Scale, Serial, Increment, Full, Matrix, Cuda, CudaInc, CudaFull, CudaMat" << std::endl;
 			outfile.close();
 		}
 		outfile.open(args::get(argReport), std::ios_base::app);
 		outfile << QFileInfo(fileName).baseName().toStdString() << "," << rasterProblem->getScale() <<
-			"," << serialduration << "," << serialincduration << "," << cacheduration << "," << cudaduration << std::endl;
+			"," << serialduration << "," << serialincduration << "," << fullduration << "," << matrixduration << "," <<
+			"," << cudaduration << "," << cudaincduration << "," << cudafullduration << "," << cudamatrixduration << std::endl;
 		outfile.close();
 	}
 

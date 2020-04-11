@@ -46,21 +46,23 @@ quint32 RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &soluti
     return totalOverlap;
 }
 
-quint32 RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution &solution, QVector<quint32> &overlaps, quint32 &maxOverlap) {
+quint32 RasterStripPackingSolver::getGlobalOverlap(RasterPackingSolution& solution, QVector<quint32>& overlaps, quint32& maxOverlap) {
 	maxOverlap = 0;
 	quint32 totalOverlap = 0;
+	overlaps.fill(0);
 	int overlapIndex = 0;
 	for (int itemId = 0; itemId < originalProblem->count(); itemId++) {
 		quint32 curOverlap = 0;
 		int i = 0;
-		for (; i < itemId + 1; i++) overlaps[overlapIndex++] = 0;
+		for (; i < itemId + 1; i++, overlapIndex++);
 		for (; i < originalProblem->count(); i++) {
 			quint32 individualOverlap = originalProblem->getDistanceValue(itemId, solution.getPosition(itemId), solution.getOrientation(itemId), i, solution.getPosition(i), solution.getOrientation(i));
 			overlaps[overlapIndex++] = individualOverlap;
+			overlaps[itemId + originalProblem->count() * i] = individualOverlap;
 			curOverlap += individualOverlap;
 			if (individualOverlap > maxOverlap) maxOverlap = individualOverlap;
 		}
-		totalOverlap += 2*curOverlap;
+		totalOverlap += 2 * curOverlap;
 	}
 	return totalOverlap;
 }

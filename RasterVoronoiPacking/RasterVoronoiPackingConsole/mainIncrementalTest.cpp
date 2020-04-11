@@ -38,10 +38,8 @@ int main(int argc, char* argv[])
 	args::HelpFlag help(parser, "help", "Display this help menu", { 'h', "help" });
 	args::CompletionFlag completion(parser, { "complete" });
 	args::ValueFlag<int> argSeed(parser, "value", "Manual seed input for the random number generator (for debugging purposes)", { "seed" });
-	args::ValueFlag<std::string> argReport(parser, "filename", "Name of generated report of overlap evaluators performance (elapsed time in us) in the following order: serial, full, matrix, cuda, cuda matrix", { "report" });
+	args::ValueFlag<std::string> argReport(parser, "filename", "Name of generated report of overlap evaluators performance (elapsed time in us)", { "report" });
 	args::Flag argOutputImages(parser, "flag", "Output overlap map images and generated random layouts", { "output" });
-	args::Flag argIgnoreMatrix(parser, "flag", "Skip evaluation of matrix overlap evaluator methods", { "skipmatrix" });
-	args::Flag testFullMethod(parser, "flag", "Evaluate full method (very inefficient)", { "testfull" });
 	args::Positional<std::string> argPuzzle(parser, "source", "Input problem file path");
 	args::Positional<int> argLength(parser, "length", "Container length");
 	args::Positional<int> argRepetitions(parser, "repetitions", "Number of overlap map creator executions");
@@ -87,18 +85,6 @@ int main(int argc, char* argv[])
 		std::shared_ptr<RasterStripPackingSolver> solverInc(new RasterStripPackingSolver(rasterProblem, overlapIncEvaluator));
 		serialincduration = measureOverlapEvaluatorTime(solverInc, "serialinc", compactorInc, argOutputImages);
 		std::cout << " Speedup was " << (float)serialduration / (float)serialincduration << "." << std::endl;
-	}
-
-	long long cacheduration;
-	{
-		// 1.3 - Cache creation
-		qsrand(seed);
-		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterProblem->count());
-		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluatorCache = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, weights, true));
-		std::shared_ptr<RasterStripPackingCompactor> compactorCache = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapEvaluatorCache, 0.04, 0.01));
-		std::shared_ptr<RasterStripPackingSolver> solverCache(new RasterStripPackingSolver(rasterProblem, overlapEvaluatorCache));
-		cacheduration = measureOverlapEvaluatorTime(solverCache, "cache", compactorCache, argOutputImages);
-		std::cout << " Speedup was " << (float)serialduration / (float)cacheduration << "." << std::endl;
 	}
 
 	long long fullduration;
@@ -194,7 +180,7 @@ int main(int argc, char* argv[])
 		}
 		outfile.open(args::get(argReport), std::ios_base::app);
 		outfile << QFileInfo(fileName).baseName().toStdString() << "," << rasterProblem->getScale() <<
-			"," << serialduration << "," << serialincduration << "," << fullduration << "," << matrixduration << "," <<
+			"," << serialduration << "," << serialincduration << "," << fullduration << "," << matrixduration << 
 			"," << cudaduration << "," << cudaincduration << "," << cudafullduration << "," << cudamatrixduration << std::endl;
 		outfile.close();
 	}

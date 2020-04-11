@@ -72,8 +72,8 @@ RasterTotalOverlapMapEvaluatorCudaFull::~RasterTotalOverlapMapEvaluatorCudaFull(
 }
 
 void RasterTotalOverlapMapEvaluatorCudaFull::initCuda(std::shared_ptr<RasterPackingProblem> _problem) {
-	numKeys = _problem->getNfps()->getSize();
 	numAngles = problem->getNfps()->getNumAngles();
+	numKeys = problem->getItemTypeCount() * numAngles;
 
 	NfpData* data;
 	int* widths, * heights;
@@ -108,9 +108,11 @@ void RasterTotalOverlapMapEvaluatorCudaFull::initCuda(std::shared_ptr<RasterPack
 	cudaMalloc((void**)&d_nfps.originsX, (numKeys * numKeys) * sizeof(int));
 	cudaMalloc((void**)&d_nfps.originsY, (numKeys * numKeys) * sizeof(int));
 	cudaMalloc((void**)&d_nfps.multipliers, (numKeys * numKeys) * sizeof(int));
+	auto error = cudaGetLastError();
+	if (error != cudaSuccess) printf("CUDA error allocating nfp set: %s\n", cudaGetErrorString(error));
 
 	//copying from host to device
-	cudaMemcpy(d_nfps.data, data, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(d_nfps.data, data, (numKeys * numKeys) * sizeof(NfpData), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_nfps.widths, widths, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_nfps.heights, heights, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(d_nfps.originsX, originsX, (numKeys * numKeys) * sizeof(int), cudaMemcpyHostToDevice);
@@ -121,12 +123,17 @@ void RasterTotalOverlapMapEvaluatorCudaFull::initCuda(std::shared_ptr<RasterPack
 	for (int k = 0; k < _problem->count(); k++)
 		itemId2ItemTypeMap[k] = _problem->getItemType(k);
 	cudaMalloc((void**)&d_itemId2ItemTypeMap, _problem->count() * sizeof(int));
+	error = cudaGetLastError();
+	if (error != cudaSuccess) printf("CUDA error allocating item idx to type map: %s\n", cudaGetErrorString(error));
+
 	cudaMemcpy(d_itemId2ItemTypeMap, itemId2ItemTypeMap, _problem->count() * sizeof(int), cudaMemcpyHostToDevice);
 	
 	cudaMalloc((void**)&d_solution.posX, (_problem->count()) * sizeof(int));
 	cudaMalloc((void**)&d_solution.posY, (_problem->count()) * sizeof(int));
 	cudaMalloc((void**)&d_solution.orientations, (_problem->count()) * sizeof(int));
-	
+	error = cudaGetLastError();
+	if (error != cudaSuccess) printf("CUDA error allocating solution: %s\n", cudaGetErrorString(error));
+
 	delete[] data;
 	delete[] widths;
 	delete[] heights;
@@ -181,7 +188,7 @@ std::shared_ptr<TotalOverlapMap> RasterTotalOverlapMapEvaluatorCudaFull::getTota
 		currrentPieceMap->getData(), currrentPieceMap->getWidth(), currrentPieceMap->getHeight(), currrentPieceMap->getReferencePoint().x(), currrentPieceMap->getReferencePoint().y(),
 		d_nfps, d_solution, problem->count(), d_itemId2ItemTypeMap, itemId, orientation, numAngles, numKeys, glsWeightsCuda->getCudaWeights(0));
 	cudaDeviceSynchronize();
-	
+
 	return currrentPieceMap;
 }
 

@@ -40,6 +40,8 @@ int main(int argc, char* argv[])
 	args::ValueFlag<int> argSeed(parser, "value", "Manual seed input for the random number generator (for debugging purposes)", { "seed" });
 	args::ValueFlag<std::string> argReport(parser, "filename", "Name of generated report of overlap evaluators performance (elapsed time in us)", { "report" });
 	args::Flag argOutputImages(parser, "flag", "Output overlap map images and generated random layouts", { "output" });
+	args::Flag argIgnoreFullMethod(parser, "flag", "Skip evaluation of full methods (very inefficient)", { "skipfull" });
+	args::Flag testFullMethod(parser, "flag", "Evaluate only full method (very inefficient)", { "testfull" });
 	args::Positional<std::string> argPuzzle(parser, "source", "Input problem file path");
 	args::Positional<int> argLength(parser, "length", "Container length");
 	args::Positional<int> argRepetitions(parser, "repetitions", "Number of overlap map creator executions");
@@ -75,8 +77,8 @@ int main(int argc, char* argv[])
 		serialduration = measureOverlapEvaluatorTime(solver, "serial", compactor, argOutputImages); std::cout << std::endl;
 	}
 
-	long long serialincduration;
-	{
+	long long serialincduration = -1;
+	if(!testFullMethod) {
 		// 1.2 - Incremental creation
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterProblem->count());
@@ -87,8 +89,8 @@ int main(int argc, char* argv[])
 		std::cout << " Speedup was " << (float)serialduration / (float)serialincduration << "." << std::endl;
 	}
 
-	long long fullduration;
-	{
+	long long fullduration = -1;
+	if (!argIgnoreFullMethod) {
 		// 1.4 - Full creation
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterProblem->count());
@@ -99,9 +101,9 @@ int main(int argc, char* argv[])
 		std::cout << " Speedup was " << (float)serialduration / (float)fullduration << "." << std::endl;
 	}
 
-	long long matrixduration;
+	long long matrixduration = -1;
 	// 1.5 - Matrix version
-	{
+	if(!testFullMethod){
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterProblem->count());
 		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluatorMatrix = std::shared_ptr<RasterTotalOverlapMapEvaluatorMatrixGLS>(new RasterTotalOverlapMapEvaluatorMatrixGLS(rasterProblem, weights, true));
@@ -118,8 +120,8 @@ int main(int argc, char* argv[])
 	std::shared_ptr<RasterPackingProblem> rasterCudaProblem = std::shared_ptr<RasterPackingProblem>(new RasterPackingCudaProblem(problemCuda));
 	QDir::setCurrent(originalPath);
 
-	long long cudaduration;
-	{
+	long long cudaduration = -1;
+	if(!testFullMethod) {
 		// 1.1 - Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
@@ -131,8 +133,8 @@ int main(int argc, char* argv[])
 		std::cout << " Speedup was " << (float)serialduration / (float)cudaduration << "." << std::endl;
 	}
 
-	long long cudaincduration;
-	{
+	long long cudaincduration = -1;
+	if(!testFullMethod) {
 		// 1.2 - Incremental Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
@@ -144,8 +146,8 @@ int main(int argc, char* argv[])
 		std::cout << " Speedup was " << (float)serialduration / (float)cudaincduration << "." << std::endl;
 	}
 
-	long long cudafullduration;
-	{
+	long long cudafullduration = -1;
+	if (!argIgnoreFullMethod) {
 		// 1.4 - Full Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
@@ -157,8 +159,8 @@ int main(int argc, char* argv[])
 		std::cout << " Speedup was " << (float)serialduration / (float)cudafullduration << "." << std::endl;
 	}
 
-	long long cudamatrixduration;
-	{
+	long long cudamatrixduration = -1;
+	if(!testFullMethod) {
 		// 1.5 - Matrix Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());

@@ -12,10 +12,10 @@ namespace RASTERVORONOIPACKING {
 	{
 	public:
 		// --> Default constructors
-		RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem);
+		RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cache = false);
 
 		// --> Constructors using a custom weights
-		RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights);
+		RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cache = false);
 
 		// --> Container size update functions
 		void updateMapsLength(int pixelWidth);
@@ -36,7 +36,7 @@ namespace RASTERVORONOIPACKING {
 		ItemGeometricToolSet<std::shared_ptr<TotalOverlapMapCuda>> cudamaps;
 
 	private:
-		void populateMaps();
+		void populateMaps(bool cache);
 	};
 }
 

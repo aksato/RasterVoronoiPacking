@@ -2,15 +2,15 @@
 
 using namespace RASTERVORONOIPACKING;
 
-RasterTotalOverlapMapEvaluatorCudaGLS::RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem) : RasterTotalOverlapMapEvaluator(_problem, false), cudamaps(_problem->count()) {
-	populateMaps();
+RasterTotalOverlapMapEvaluatorCudaGLS::RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem, bool cache) : RasterTotalOverlapMapEvaluator(_problem, false), cudamaps(_problem->count()) {
+	populateMaps(cache);
 }
 
-RasterTotalOverlapMapEvaluatorCudaGLS::RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights) : RasterTotalOverlapMapEvaluator(_problem, _glsWeights, false), cudamaps(_problem->count()) {
-	populateMaps();
+RasterTotalOverlapMapEvaluatorCudaGLS::RasterTotalOverlapMapEvaluatorCudaGLS(std::shared_ptr<RasterPackingProblem> _problem, std::shared_ptr<GlsWeightSet> _glsWeights, bool cache) : RasterTotalOverlapMapEvaluator(_problem, _glsWeights, false), cudamaps(_problem->count()) {
+	populateMaps(cache);
 }
 
-void RasterTotalOverlapMapEvaluatorCudaGLS::populateMaps() {
+void RasterTotalOverlapMapEvaluatorCudaGLS::populateMaps(bool cache) {
 	for (int itemId = 0; itemId < problem->count(); itemId++) {
 		for (uint angle = 0; angle < problem->getItem(itemId)->getAngleCount(); angle++) {
 			std::shared_ptr<TotalOverlapMapCuda> curMap = std::shared_ptr<TotalOverlapMapCuda>(new TotalOverlapMapCuda(problem->getIfps()->getRasterNoFitPolygon(0, 0, problem->getItemType(itemId), angle), -1));

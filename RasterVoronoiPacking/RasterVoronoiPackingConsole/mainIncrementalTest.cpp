@@ -89,6 +89,18 @@ int main(int argc, char* argv[])
 		std::cout << " Speedup was " << (float)serialduration / (float)serialincduration << "." << std::endl;
 	}
 
+	long long cacheduration;
+	{
+		// 1.3 - Cache creation
+		qsrand(seed);
+		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterProblem->count());
+		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluatorCache = std::shared_ptr<RasterTotalOverlapMapEvaluatorGLS>(new RasterTotalOverlapMapEvaluatorGLS(rasterProblem, weights, true));
+		std::shared_ptr<RasterStripPackingCompactor> compactorCache = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterProblem, overlapEvaluatorCache, 0.04, 0.01));
+		std::shared_ptr<RasterStripPackingSolver> solverCache(new RasterStripPackingSolver(rasterProblem, overlapEvaluatorCache));
+		cacheduration = measureOverlapEvaluatorTime(solverCache, "cache", compactorCache, argOutputImages);
+		std::cout << " Speedup was " << (float)serialduration / (float)cacheduration << "." << std::endl;
+	}
+
 	long long fullduration = -1;
 	if (!argIgnoreFullMethod) {
 		// 1.4 - Full creation
@@ -122,7 +134,7 @@ int main(int argc, char* argv[])
 
 	long long cudaduration = -1;
 	if(!testFullMethod) {
-		// 1.1 - Cuda version
+		// 2.1 - Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
 		std::shared_ptr<GlsWeightSetCuda> weightsCuda = copyWeights(weights, rasterCudaProblem->count());
@@ -135,7 +147,7 @@ int main(int argc, char* argv[])
 
 	long long cudaincduration = -1;
 	if(!testFullMethod) {
-		// 1.2 - Incremental Cuda version
+		// 2.2 - Incremental Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
 		std::shared_ptr<GlsWeightSetCuda> weightsCudaInc = copyWeights(weights, rasterCudaProblem->count());
@@ -146,9 +158,22 @@ int main(int argc, char* argv[])
 		std::cout << " Speedup was " << (float)serialduration / (float)cudaincduration << "." << std::endl;
 	}
 
+	long long cudacacheduration;
+	{
+		// 2.3 - Cuda Cache creation
+		qsrand(seed);
+		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
+		std::shared_ptr<GlsWeightSetCuda> weightsCudaCache = copyWeights(weights, rasterCudaProblem->count());
+		std::shared_ptr<RasterTotalOverlapMapEvaluator> overlapEvaluatorCudaCache = std::shared_ptr<RasterTotalOverlapMapEvaluatorCudaGLS>(new RasterTotalOverlapMapEvaluatorCudaGLS(rasterCudaProblem, weightsCudaCache, true));
+		std::shared_ptr<RasterStripPackingCompactor> compactorCudaCache = std::shared_ptr<RasterStripPackingCompactor>(new RasterStripPackingCompactor(length, rasterCudaProblem, overlapEvaluatorCudaCache, 0.04, 0.01));
+		std::shared_ptr<RasterStripPackingSolver> solverCudaCache(new RasterStripPackingSolver(rasterProblem, overlapEvaluatorCudaCache));
+		cudacacheduration = measureOverlapEvaluatorTime(solverCudaCache, "cudacache", compactorCudaCache, argOutputImages);
+		std::cout << " Speedup was " << (float)serialduration / (float)cudacacheduration << "." << std::endl;
+	}
+
 	long long cudafullduration = -1;
 	if (!argIgnoreFullMethod) {
-		// 1.4 - Full Cuda version
+		// 2.4 - Full Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
 		std::shared_ptr<GlsWeightSetCuda> weightsCudaFull = copyWeights(weights, rasterCudaProblem->count());
@@ -161,7 +186,7 @@ int main(int argc, char* argv[])
 
 	long long cudamatrixduration = -1;
 	if(!testFullMethod) {
-		// 1.5 - Matrix Cuda version
+		// 2.5 - Matrix Cuda version
 		qsrand(seed);
 		std::shared_ptr<GlsWeightSet> weights = generateRandomWeigths(rasterCudaProblem->count());
 		std::shared_ptr<GlsWeightSetCuda> weightsCudaFull = copyWeights(weights, rasterCudaProblem->count());
@@ -177,13 +202,13 @@ int main(int argc, char* argv[])
 		std::ofstream outfile;
 		if (!fileExists(args::get(argReport).c_str())) {
 			outfile.open(args::get(argReport));
-			outfile << "Case, Scale, Serial, Increment, Full, Matrix, Cuda, CudaInc, CudaFull, CudaMat" << std::endl;
+			outfile << "Case, Scale, Serial, Cache, Increment, Full, Matrix, Cuda, CudaCache, CudaInc, CudaFull, CudaMat" << std::endl;
 			outfile.close();
 		}
 		outfile.open(args::get(argReport), std::ios_base::app);
 		outfile << QFileInfo(fileName).baseName().toStdString() << "," << rasterProblem->getScale() <<
-			"," << serialduration << "," << serialincduration << "," << fullduration << "," << matrixduration << 
-			"," << cudaduration << "," << cudaincduration << "," << cudafullduration << "," << cudamatrixduration << std::endl;
+			"," << serialduration << "," << cacheduration << "," << serialincduration << "," << fullduration << "," << matrixduration << 
+			"," << cudaduration << "," << cudacacheduration << "," << cudaincduration << "," << cudafullduration << "," << cudamatrixduration << std::endl;
 		outfile.close();
 	}
 

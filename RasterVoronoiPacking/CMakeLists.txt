@@ -55,6 +55,7 @@ set(cuda_SRCS
 	common/cuda/rasterpackingcudaproblem.cu
 	common/cuda/totaloverlapmapcuda.cu
 	common/cuda/totaloverlapmatrixcuda.cu
+	common/cuda/totaloverlapmapcachecuda.cpp
 	common/cuda/glsweightsetcuda.cu
 	)
 
